@@ -43,7 +43,7 @@
     "postcss": "^8.4.0",
     "autoprefixer": "^10.4.0",
     "@tailwindcss/postcss": "^4.0.0",
-    "@opennextjs/cloudflare": "^2.0.0",
+    "@opennextjs/cloudflare": "^1.0.0",
     "wrangler": "^4.0.0",
     "@cloudflare/workers-types": "^5.20260708.1",
     "drizzle-kit": "^0.30.0"
