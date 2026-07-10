@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "node -e \"process.platform==='linux'&&require('child_process').execSync('npm install --no-save @tailwindcss/oxide-linux-x64-gnu lightningcss-linux-x64-gnu @ast-grep/napi-linux-x64-gnu',{cwd:__dirname,stdio:'inherit'})\"",
-   "build": "next build && mkdir -p .next/standalone/.next/server && node -e \"require('fs').writeFileSync('.next/standalone/.next/server/pages-manifest.json','{}')\" && opennextjs-cloudflare build --skipNextBuild",
+    "build": "next build && opennextjs-cloudflare build",
     "build:cf": "next build && opennextjs-cloudflare build --skipNextBuild",
     "preview": "opennextjs-cloudflare build --skipNextBuild && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build --skipNextBuild && opennextjs-cloudflare deploy",
