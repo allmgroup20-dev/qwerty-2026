@@ -17,12 +17,12 @@ npm install
 wrangler login
 
 # Create D1 database
-wrangler d1 create jobayer-db
+wrangler d1 create jgcareer-db
 
 # Update wrangler.jsonc with your database_id
 
 # Apply migrations
-wrangler d1 migrations apply jobayer-db --remote
+wrangler d1 migrations apply jgcareer-db --remote
 
 # Run locally
 npm run dev
