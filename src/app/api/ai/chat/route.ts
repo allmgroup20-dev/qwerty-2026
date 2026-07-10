@@ -4,7 +4,7 @@ import { getDB } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, workerId, language } = await request.json();
+    const { prompt, workerId, language } = await request.json() as { prompt: string; workerId?: string; language?: string };
     const apiKey = process.env.OPENROUTER_API_KEY;
 
     if (!apiKey) {
