@@ -17,7 +17,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json() as { name: string; nameBn?: string; description?: string; descriptionBn?: string; price: number; currency?: string; commissionPercentage?: number; commissionFixed?: number; imageUrl?: string; category?: string };
     const env = getDB();
 
     await execute(env,
