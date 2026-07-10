@@ -23,7 +23,7 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(activeTab === "worker" ? { phone, password } : { username: phone, password }),
       });
-      const data = await res.json();
+      const data = await res.json() as { error?: string };
       if (!res.ok) throw new Error(data.error || "Login failed");
       window.location.href = activeTab === "worker" ? "/dashboard" : "/company";
     } catch (err) {
