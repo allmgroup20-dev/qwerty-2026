@@ -44,7 +44,7 @@
     "@tailwindcss/postcss": "^4.0.0",
     "@opennextjs/cloudflare": "^1.0.0",
     "wrangler": "^4.0.0",
-    "drizzle-kit": "^0.30.0",
-    "@cloudflare/workers-types": "^4.20250401.0"
+    "@cloudflare/workers-types": "^5.20260708.1",
+    "drizzle-kit": "^0.30.0"
   }
 }

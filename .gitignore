@@ -5,5 +5,6 @@ dist/
 *.tsbuildinfo
 .env
 .env.local
+cloudflare-env.d.ts
 .DS_Store
 *.log

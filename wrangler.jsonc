@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "jobayer-group-career",
   "main": ".open-next/worker.js",
-  "compatibility_date": "2025-09-01",
+  "compatibility_date": "2025-07-08",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": ".open-next/assets",
