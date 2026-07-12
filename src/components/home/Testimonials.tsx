@@ -103,7 +103,7 @@ export default function Testimonials() {
 
   return (
     <section className="max-w-[1120px] mx-auto mt-6 md:mt-8 px-3.5 md:px-5" id="reviewSection">
-      <div className="flex w-fit gap-2 px-4 py-2.5 mx-auto mb-4 rounded-full bg-[rgba(29,78,216,.08)] border border-[rgba(29,78,216,.15)] font-extrabold text-sm text-[#1E3A8A]">
+      <div className="flex w-fit gap-2 px-4 py-2.5 mx-auto mb-4 rounded-full bg-primary/10 border border-primary/20 font-extrabold text-sm text-[#1E3A8A]">
         💬 আগে সন্দেহ ছিল, আজ মাসে ২৫,০০০-৫০,০০০+ টাকা আয় করছেন!
       </div>
 
@@ -111,11 +111,11 @@ export default function Testimonials() {
         <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${slideIdx * 100}%)` }}>
           {slides.map((slide, i) => (
             <div key={i} className="min-w-full px-2.5 box-border">
-              <div className="p-6 md:p-7 rounded-[16px] bg-white border border-[#E2E8F0] shadow-md text-center">
-                <div className="text-[#1D4ED8] text-xl mb-2.5">{slide.stars} <span className="text-[#64748B] text-sm font-bold">{slide.rating}</span></div>
-                <p className="text-sm text-[#1E293B] leading-relaxed mb-3.5 italic">&ldquo;{slide.quote}&rdquo;</p>
+              <div className="p-6 md:p-7 rounded-[16px] bg-white border border-border shadow-md text-center">
+                <div className="text-[#1D4ED8] text-xl mb-2.5">{slide.stars} <span className="text-text-secondary text-sm font-bold">{slide.rating}</span></div>
+                <p className="text-sm text-text leading-relaxed mb-3.5 italic">&ldquo;{slide.quote}&rdquo;</p>
                 <div className="font-bold text-sm text-[#1D4ED8]">{slide.author}</div>
-                <div className="text-xs text-[#64748B] font-semibold">{slide.label}</div>
+                <div className="text-xs text-text-secondary font-semibold">{slide.label}</div>
               </div>
             </div>
           ))}
@@ -129,36 +129,36 @@ export default function Testimonials() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
         {chatCards.map((card, i) => (
-          <div key={i} className="relative p-4 rounded-[16px] bg-white border border-[#E2E8F0] shadow-sm">
+          <div key={i} className="relative p-4 rounded-[16px] bg-white border border-border shadow-sm">
             <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-[4px]" style={{ background: "linear-gradient(180deg,#1D4ED8,#FF6B35)" }} />
             <div className="flex items-center gap-2.5 mb-2">
               <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${card.gradient} flex items-center justify-center text-base font-black text-white shrink-0`}>
                 {card.avatar}
               </div>
               <div>
-                <div className="font-extrabold text-sm text-[#1E293B]">{card.name}</div>
-                <div className="text-[11px] text-[#64748B] font-semibold">{card.platform}</div>
+                <div className="font-extrabold text-sm text-text">{card.name}</div>
+                <div className="text-[11px] text-text-secondary font-semibold">{card.platform}</div>
               </div>
               <div className="ml-auto text-[#1D4ED8] text-xs">{card.stars}</div>
             </div>
-            <div className="ml-2 p-3 rounded-xl bg-[rgba(255,255,255,.06)] text-[13px] text-[#1E293B] leading-relaxed relative">
+            <div className="ml-2 p-3 rounded-xl bg-[rgba(255,255,255,.06)] text-[13px] text-text leading-relaxed relative">
               {card.msg}
             </div>
-            <div className="text-[11px] text-[#64748B] font-semibold text-right mt-1.5">{card.time}</div>
+            <div className="text-[11px] text-text-secondary font-semibold text-right mt-1.5">{card.time}</div>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
         {(showAllReviews ? hiddenReviews : hiddenReviews.slice(0, 4)).map((review, i) => (
-          <div key={i} className="p-4 rounded-[16px] bg-white border border-[#E2E8F0] shadow-sm">
-            <div className="text-[#1D4ED8] text-sm mb-1.5">{review.stars} <span className="text-[#64748B] text-xs font-bold">{review.rating}</span></div>
-            <div className="font-bold text-sm text-[#1E293B] mb-1.5 pl-2 border-l-[3px] border-[#1D4ED8]">{review.name}</div>
-            <div className="text-[13px] text-[#1E293B] leading-relaxed">{review.text}</div>
+          <div key={i} className="p-4 rounded-[16px] bg-white border border-border shadow-sm">
+            <div className="text-[#1D4ED8] text-sm mb-1.5">{review.stars} <span className="text-text-secondary text-xs font-bold">{review.rating}</span></div>
+            <div className="font-bold text-sm text-text mb-1.5 pl-2 border-l-[3px] border-[#1D4ED8]">{review.name}</div>
+            <div className="text-[13px] text-text leading-relaxed">{review.text}</div>
           </div>
         ))}
         {!showAllReviews && (
-          <button onClick={() => setShowAllReviews(true)} className="col-span-1 md:col-span-2 p-3.5 rounded-xl border-2 border-[#1D4ED8] bg-transparent text-[#1D4ED8] font-extrabold text-sm cursor-pointer transition-all hover:bg-[rgba(29,78,216,.04)]">
+          <button onClick={() => setShowAllReviews(true)} className="col-span-1 md:col-span-2 p-3.5 rounded-xl border-2 border-[#1D4ED8] bg-transparent text-[#1D4ED8] font-extrabold text-sm cursor-pointer transition-all hover:bg-[rgba(30,58,90,.04)]">
             📢 আরো মতামত দেখুন ({hiddenReviews.length}টি)
           </button>
         )}

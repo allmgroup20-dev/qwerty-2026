@@ -48,7 +48,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     <>
       <ScrollProgressBar />
       <Navbar />
-      <main className="min-h-screen">{children}</main>
+      <main className="min-h-screen pt-16 md:pt-20">{children}</main>
       <Footer />
       <BottomNav />
       <SmartInstall />

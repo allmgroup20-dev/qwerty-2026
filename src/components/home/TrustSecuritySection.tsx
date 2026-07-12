@@ -2,15 +2,15 @@
 
 export default function TrustSecuritySection() {
   const badges = [
-    { icon: "🔒", text: "SSL সুরক্ষিত", color: "bg-white border-[#E2E8F0] text-[#1E293B]" },
+    { icon: "🔒", text: "SSL সুরক্ষিত", color: "bg-white border-border text-[#1E293B]" },
     { icon: "✅", text: "২৪ ঘণ্টা — কোনো শর্ত ছাড়াই টাকা ফেরত", color: "bg-[rgba(16,185,129,.1)] border-[rgba(16,185,129,.3)] text-[#10B981]" },
-    { icon: "⚡", text: "সাথে সাথে এক্সেস", color: "bg-white border-[#E2E8F0] text-[#1E293B]" },
-    { icon: "📞", text: "২৪/৭ কাস্টমার সাপোর্ট", color: "bg-white border-[#E2E8F0] text-[#1E293B]" },
+    { icon: "⚡", text: "সাথে সাথে এক্সেস", color: "bg-white border-border text-[#1E293B]" },
+    { icon: "📞", text: "২৪/৭ কাস্টমার সাপোর্ট", color: "bg-white border-border text-[#1E293B]" },
   ];
 
   return (
     <section className="max-w-[900px] mx-auto mt-6 md:mt-8 px-3.5 md:px-5">
-      <div className="flex w-fit gap-2 px-4 py-2.5 mx-auto mb-4 rounded-full bg-[rgba(29,78,216,.08)] border border-[rgba(29,78,216,.15)] font-extrabold text-sm text-[#1E3A8A]">
+      <div className="flex w-fit gap-2 px-4 py-2.5 mx-auto mb-4 rounded-full bg-primary/10 border border-primary/20 font-extrabold text-sm text-[#1E3A8A]">
         🔒 বিশ্বাসযোগ্যতা ও নিরাপত্তা
       </div>
 

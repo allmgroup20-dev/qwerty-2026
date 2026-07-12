@@ -24,15 +24,15 @@ export default function StatsCounter() {
           if (item.separator) return <div key={i} className="w-px h-6 bg-[#E2E8F0]" />;
           if (item.chip) {
             return (
-              <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-[#E2E8F0] text-[10px] sm:text-[11px] font-semibold text-[#64748B] leading-none">
+              <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-[#E2E8F0] text-[10px] sm:text-[11px] font-semibold text-text-secondary leading-none">
                 {item.chip}
               </span>
             );
           }
           return (
             <div key={i} className="flex flex-col items-center gap-0.5">
-              <span className="text-sm sm:text-base font-black text-[#1E293B] leading-tight">{item.num}</span>
-              <span className="text-[10px] sm:text-[11px] font-semibold text-[#64748B] leading-tight">{item.label}</span>
+              <span className="text-sm sm:text-base font-black text-text leading-tight">{item.num}</span>
+              <span className="text-[10px] sm:text-[11px] font-semibold text-text-secondary leading-tight">{item.label}</span>
             </div>
           );
         })}

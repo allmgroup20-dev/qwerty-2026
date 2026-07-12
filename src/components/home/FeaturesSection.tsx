@@ -52,8 +52,8 @@ function FeatureCard({ feature, index }: { feature: typeof features[0]; index: n
       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-500`}>
         {feature.icon}
       </div>
-      <h3 className="text-base font-bold text-[#1E293B] mb-2.5">{feature.title}</h3>
-      <p className="text-sm text-[#64748B] leading-relaxed">{feature.desc}</p>
+      <h3 className="text-base font-bold text-text mb-2.5">{feature.title}</h3>
+      <p className="text-sm text-text-secondary leading-relaxed">{feature.desc}</p>
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#2563EB]/0 via-transparent to-[#7C3AED]/0 opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none" />
     </div>
   );
@@ -64,11 +64,11 @@ export default function FeaturesSection() {
     <section className="py-10 md:py-14 bg-white">
       <div className="max-w-[1120px] mx-auto px-3.5 md:px-5">
         <div className="text-center mb-8 animate-fade-up">
-          <div className="inline-flex gap-2 px-4 py-2.5 mx-auto mb-3.5 rounded-full bg-[rgba(29,78,216,.08)] border border-[rgba(29,78,216,.15)] font-extrabold text-sm text-[#1E3A8A]">
+          <div className="inline-flex gap-2 px-4 py-2.5 mx-auto mb-3.5 rounded-full bg-primary/10 border border-primary/20 font-extrabold text-sm text-[#1E3A8A]">
             ✨ কেন এই বান্ডেল সবার থেকে আলাদা?
           </div>
-          <h2 className="text-xl md:text-2xl font-black text-[#1E293B] mb-2">একটি সফল ক্যারিয়ার গড়তে আপনার যা কিছু দরকার</h2>
-          <p className="text-sm font-semibold text-[#64748B] max-w-xl mx-auto">
+          <h2 className="text-xl md:text-2xl font-black text-text mb-2">একটি সফল ক্যারিয়ার গড়তে আপনার যা কিছু দরকার</h2>
+          <p className="text-sm font-semibold text-text-secondary max-w-xl mx-auto">
             শুধু কোর্স নয় — সম্পূর্ণ ক্যারিয়ার গাইডেন্স, ক্লায়েন্ট খোঁজা এবং আজীবন সাপোর্ট — সবকিছু এক প্যাকেজে
           </p>
         </div>

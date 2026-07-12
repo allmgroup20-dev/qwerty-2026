@@ -22,14 +22,14 @@ export default function PaymentGallery() {
     <section className="max-w-[1120px] mx-auto mt-6 md:mt-8 px-3.5 md:px-5">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-center gap-2 p-3.5 rounded-[14px] border-2 border-dashed border-[#E2E8F0] bg-white text-[#1D4ED8] font-extrabold text-sm cursor-pointer transition-all hover:border-[#1D4ED8] hover:bg-[rgba(29,78,216,.04)]"
+        className="w-full flex items-center justify-center gap-2 p-3.5 rounded-[14px] border-2 border-dashed border-border bg-white text-[#1D4ED8] font-extrabold text-sm cursor-pointer transition-all hover:border-[#1D4ED8] hover:bg-[rgba(30,58,90,.04)]"
       >
         🧾 {open ? "সংকুচিত করুন" : "পেমেন্ট স্ক্রিনশট দেখুন (১০টি)"}
         <span className={`transition-transform duration-300 ${open ? "rotate-180" : ""}`}>▼</span>
       </button>
       {open && (
         <div className="mt-3">
-          <div className="flex w-fit gap-2 px-4 py-2.5 mx-auto mb-3.5 rounded-full bg-[rgba(29,78,216,.08)] border border-[rgba(29,78,216,.15)] font-extrabold text-sm text-[#1E3A8A]">
+          <div className="flex w-fit gap-2 px-4 py-2.5 mx-auto mb-3.5 rounded-full bg-primary/10 border border-primary/20 font-extrabold text-sm text-[#1E3A8A]">
             💰 ব্যাংক, বিকাশ ও নগদে পেমেন্টের বাস্তব ছবি — দেখুন!
           </div>
           <h3 className="text-lg md:text-xl font-black text-[#1E293B] mb-1 text-center">📸 রিয়েল পার্টনার — রিয়েল পেমেন্ট প্রমাণ</h3>

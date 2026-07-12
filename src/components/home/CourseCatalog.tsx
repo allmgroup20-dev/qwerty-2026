@@ -275,8 +275,8 @@ export default function CourseCatalog() {
   const tabContent = (items: string[]) => (
     <div className="grid gap-2">
       {items.map((item, i) => (
-        <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-[#E2E8F0]">
-          <span className="text-[11px] font-bold text-[#1E293B] leading-tight">{item}</span>
+        <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-border">
+          <span className="text-[11px] font-bold text-text leading-tight">{item}</span>
         </div>
       ))}
     </div>
@@ -286,7 +286,7 @@ export default function CourseCatalog() {
     switch (activeTab) {
       case 0: return (
         <div>
-          <p className="text-sm font-semibold text-[#64748B] mb-3">নিচের প্রতিটি বিষয়ের ওপর ক্লিক করলেই বিস্তারিত দেখতে পাবেন</p>
+          <p className="text-sm font-semibold text-text-secondary mb-3">নিচের প্রতিটি বিষয়ের ওপর ক্লিক করলেই বিস্তারিত দেখতে পাবেন</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {[
               { icon: "💼", title: "ফ্রিল্যান্সিং ও অনলাইন আর্নিং", desc: "ঘরে বসেই বিশ্বের যেকোনো প্রান্ত থেকে ফ্রিল্যান্সিং ও ডিজিটাল মার্কেটিং করে আয় করার পূর্ণাঙ্গ গাইড" },
@@ -300,10 +300,10 @@ export default function CourseCatalog() {
               { icon: "🛠️", title: "সফটওয়্যার টুলস", desc: "এমএস অফিস, ফাইভার, আপওয়ার্ক, ওয়ার্ডপ্রেস, ইউটিউব — সব টুলসের প্রিমিয়াম ভার্সন" },
               { icon: "🔐", title: "নোটস ও ডিজিটাল সুরক্ষা", desc: "আরিফ নোটস, কপিরাইট কোর্স ও ডিজিটাল নিরাপত্তা — শেখার পাশাপাশি সুরক্ষিত থাকুন" },
             ].map((item, i) => (
-              <div key={i} className="flex flex-col gap-1.5 p-3.5 rounded-[14px] bg-white border border-[#E2E8F0] cursor-pointer transition-all hover:border-[#2563EB] hover:shadow-md" onClick={() => setActiveTab(i + 3 >= 10 ? 9 : i + 3)}>
+              <div key={i} className="flex flex-col gap-1.5 p-3.5 rounded-[14px] bg-white border border-border cursor-pointer transition-all hover:border-[#2563EB] hover:shadow-md" onClick={() => setActiveTab(i + 3 >= 10 ? 9 : i + 3)}>
                 <span className="text-2xl leading-none">{item.icon}</span>
-                <span className="font-bold text-sm text-[#1E293B] leading-tight">{item.title}</span>
-                <span className="text-[12px] text-[#64748B] leading-snug">{item.desc}</span>
+                <span className="font-bold text-sm text-text leading-tight">{item.title}</span>
+                <span className="text-[12px] text-text-secondary leading-snug">{item.desc}</span>
               </div>
             ))}
           </div>
@@ -311,67 +311,67 @@ export default function CourseCatalog() {
       );
       case 1: return (
         <div>
-          <h4 className="font-black text-base text-[#1E293B] mb-2">🏛️ প্রতিষ্ঠানসমূহ</h4>
-          <p className="text-sm font-semibold text-[#64748B] mb-3">প্রধান প্রতিষ্ঠানসমূহের তালিকা</p>
+          <h4 className="font-black text-base text-text mb-2">🏛️ প্রতিষ্ঠানসমূহ</h4>
+          <p className="text-sm font-semibold text-text-secondary mb-3">প্রধান প্রতিষ্ঠানসমূহের তালিকা</p>
           {tabContent(institutions)}
         </div>
       );
       case 2: return (
         <div>
-          <h4 className="font-black text-base text-[#1E293B] mb-2">🏆 যে সকল প্রশিক্ষকবৃন্দের কোর্স আপনি পাবেন</h4>
-          <p className="text-sm font-semibold text-[#64748B] mb-3">তালিকায় থাকা সকল জনপ্রিয় প্রশিক্ষকবৃন্দের কোর্স</p>
+          <h4 className="font-black text-base text-text mb-2">🏆 যে সকল প্রশিক্ষকবৃন্দের কোর্স আপনি পাবেন</h4>
+          <p className="text-sm font-semibold text-text-secondary mb-3">তালিকায় থাকা সকল জনপ্রিয় প্রশিক্ষকবৃন্দের কোর্স</p>
           {tabContent(trainers)}
         </div>
       );
       case 3: return (
         <div>
-          <h4 className="font-black text-base text-[#1E293B] mb-2">💼 ফ্রিল্যান্সিং, ডিজিটাল মার্কেটিং, এসইও ও ডেটা</h4>
-          <p className="text-sm font-semibold text-[#64748B] mb-3">তালিকায় থাকা প্রত্যেকটি কোর্স</p>
+          <h4 className="font-black text-base text-text mb-2">💼 ফ্রিল্যান্সিং, ডিজিটাল মার্কেটিং, এসইও ও ডেটা</h4>
+          <p className="text-sm font-semibold text-text-secondary mb-3">তালিকায় থাকা প্রত্যেকটি কোর্স</p>
           {tabContent(freelancing)}
         </div>
       );
       case 4: return (
         <div>
-          <h4 className="font-black text-base text-[#1E293B] mb-2">🌍 ই-কমার্স, ব্যবসা উদ্যোগ ও পেশাদার দক্ষতা</h4>
-          <p className="text-sm font-semibold text-[#64748B] mb-3">তালিকায় থাকা প্রত্যেকটি কোর্স</p>
+          <h4 className="font-black text-base text-text mb-2">🌍 ই-কমার্স, ব্যবসা উদ্যোগ ও পেশাদার দক্ষতা</h4>
+          <p className="text-sm font-semibold text-text-secondary mb-3">তালিকায় থাকা প্রত্যেকটি কোর্স</p>
           {tabContent(ecommerce)}
         </div>
       );
       case 5: return (
         <div>
-          <h4 className="font-black text-base text-[#1E293B] mb-2">👨‍💻 কোডিং, ওয়েব ও সফটওয়্যার ডেভেলপমেন্ট</h4>
-          <p className="text-sm font-semibold text-[#64748B] mb-3">তালিকায় থাকা প্রত্যেকটি কোর্স</p>
+          <h4 className="font-black text-base text-text mb-2">👨‍💻 কোডিং, ওয়েব ও সফটওয়্যার ডেভেলপমেন্ট</h4>
+          <p className="text-sm font-semibold text-text-secondary mb-3">তালিকায় থাকা প্রত্যেকটি কোর্স</p>
           {tabContent(development)}
         </div>
       );
       case 6: return (
         <div>
-          <h4 className="font-black text-base text-[#1E293B] mb-2">📚 ভাষা শিক্ষা ও চাকরি প্রস্তুতি</h4>
-          <p className="text-sm font-semibold text-[#64748B] mb-3">তালিকায় থাকা প্রত্যেকটি কোর্স</p>
+          <h4 className="font-black text-base text-text mb-2">📚 ভাষা শিক্ষা ও চাকরি প্রস্তুতি</h4>
+          <p className="text-sm font-semibold text-text-secondary mb-3">তালিকায় থাকা প্রত্যেকটি কোর্স</p>
           {tabContent(language)}
         </div>
       );
       case 7: return (
         <div>
-          <h4 className="font-black text-base text-[#1E293B] mb-2">🎨 UI/UX, ভিজ্যুয়াল মাল্টিমিডিয়া ও থ্রিডি</h4>
-          <p className="text-sm font-semibold text-[#64748B] mb-3">তালিকায় থাকা প্রত্যেকটি কোর্স</p>
+          <h4 className="font-black text-base text-text mb-2">🎨 UI/UX, ভিজ্যুয়াল মাল্টিমিডিয়া ও থ্রিডি</h4>
+          <p className="text-sm font-semibold text-text-secondary mb-3">তালিকায় থাকা প্রত্যেকটি কোর্স</p>
           {tabContent(design)}
         </div>
       );
       case 8: return (
         <div>
-          <h4 className="font-black text-base text-[#1E293B] mb-2">🛠️ সফটওয়্যার টুলস ও ডিজিটাল প্ল্যাটফর্ম</h4>
-          <p className="text-sm font-semibold text-[#64748B] mb-3">এই সফটওয়্যার গুলোর প্রিমিয়াম ভার্সন</p>
+          <h4 className="font-black text-base text-text mb-2">🛠️ সফটওয়্যার টুলস ও ডিজিটাল প্ল্যাটফর্ম</h4>
+          <p className="text-sm font-semibold text-text-secondary mb-3">এই সফটওয়্যার গুলোর প্রিমিয়াম ভার্সন</p>
           {tabContent(tools)}
         </div>
       );
       case 9: return (
         <div>
-          <h4 className="font-black text-base text-[#1E293B] mb-2">🔐 নোটস ও সুরক্ষা</h4>
-          <p className="text-sm font-semibold text-[#64748B] mb-3">শেখার পাশাপাশি প্রয়োজনীয় নিরাপত্তা বিষয়ক রিসোর্স</p>
+          <h4 className="font-black text-base text-text mb-2">🔐 নোটস ও সুরক্ষা</h4>
+          <p className="text-sm font-semibold text-text-secondary mb-3">শেখার পাশাপাশি প্রয়োজনীয় নিরাপত্তা বিষয়ক রিসোর্স</p>
           <div className="flex flex-wrap gap-2">
             {["📒 Arif Notes | সকল নোটস", "🔐 Copyright Content Course", "🛡️ ডিজিটাল সুরক্ষা"].map((item) => (
-              <span key={item} className="px-3 py-2 rounded-full bg-white border border-[#E2E8F0] font-bold text-xs text-[#1E293B]">{item}</span>
+              <span key={item} className="px-3 py-2 rounded-full bg-white border border-border font-bold text-xs text-text">{item}</span>
             ))}
           </div>
         </div>
@@ -381,16 +381,16 @@ export default function CourseCatalog() {
 
   return (
     <section className="max-w-[1120px] mx-auto mt-6 md:mt-8 px-3.5 md:px-5" id="courses">
-      <div className="rounded-[20px] p-[18px_16px_16px] md:p-[20px] bg-[linear-gradient(135deg,rgba(29,78,216,.06),rgba(29,78,216,.02))] border border-[rgba(29,78,216,.14)]">
-        <h3 className="font-black text-base md:text-lg text-[#1E293B] mb-1 text-center">🎯 দেখুন — ২৩০+ কোর্সে আপনি কী পাচ্ছেন</h3>
-        <p className="text-sm font-semibold text-[#64748B] mb-4 text-center">প্রতিটি বিভাগে ২০-৫০টি কোর্স — নিচে ব্রাউজ করুন!</p>
+      <div className="rounded-[20px] p-[18px_16px_16px] md:p-[20px] bg-[linear-gradient(135deg,rgba(29,78,216,.06),rgba(29,78,216,.02))] border border-primary/20">
+        <h3 className="font-black text-base md:text-lg text-text mb-1 text-center">🎯 দেখুন — ২৩০+ কোর্সে আপনি কী পাচ্ছেন</h3>
+        <p className="text-sm font-semibold text-text-secondary mb-4 text-center">প্রতিটি বিভাগে ২০-৫০টি কোর্স — নিচে ব্রাউজ করুন!</p>
 
-        <div className="flex gap-1.5 mb-3.5 p-1.5 rounded-[14px] bg-white border border-[#E2E8F0] overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1.5 mb-3.5 p-1.5 rounded-[14px] bg-white border border-border overflow-x-auto scrollbar-hide">
           {tabs.map((tab, i) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(i)}
-              className={`px-3 py-2 rounded-[10px] text-xs font-bold border-none whitespace-nowrap cursor-pointer transition-all font-inherit ${activeTab === i ? "bg-gradient-to-r from-[#1D4ED8] to-[#FF6B35] text-white shadow-md" : "bg-transparent text-[#64748B] hover:bg-[rgba(29,78,216,.08)]"}`}
+              className={`px-3 py-2 rounded-[10px] text-xs font-bold border-none whitespace-nowrap cursor-pointer transition-all font-inherit ${activeTab === i ? "bg-gradient-to-r from-[#1D4ED8] to-[#FF6B35] text-white shadow-md" : "bg-transparent text-text-secondary hover:bg-[rgba(29,78,216,.08)]"}`}
             >
               {tab.label}
             </button>
@@ -401,19 +401,19 @@ export default function CourseCatalog() {
           {renderTab()}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-[#E2E8F0]">
+        <div className="mt-4 pt-4 border-t border-border">
           <button
             onClick={() => setShowAll(!showAll)}
-            className="w-full flex items-center justify-center gap-2 p-3.5 rounded-[14px] border-2 border-dashed border-[#E2E8F0] bg-white text-[#1D4ED8] font-extrabold text-sm cursor-pointer transition-all hover:border-[#1D4ED8] hover:bg-[rgba(29,78,216,.04)]"
+            className="w-full flex items-center justify-center gap-2 p-3.5 rounded-[14px] border-2 border-dashed border-border bg-white text-[#1D4ED8] font-extrabold text-sm cursor-pointer transition-all hover:border-[#1D4ED8] hover:bg-[rgba(30,58,90,.04)]"
           >
             📂 {showAll ? "সংকুচিত করুন" : "সব প্ল্যাটফর্ম ও ট্রেইনার দেখুন (২১টি)"}
             <span className={`transition-transform duration-300 ${showAll ? "rotate-180" : ""}`}>▼</span>
           </button>
           {showAll && (
             <div className="mt-4 grid gap-4">
-              <div className="rounded-[16px] p-4 bg-white border border-[#E2E8F0]">
-                <h4 className="font-black text-sm text-[#1E293B] mb-3">🏛️ আমাদের প্রতিষ্ঠানসমূহ</h4>
-                <p className="text-xs font-semibold text-[#64748B] mb-3">যেসব প্ল্যাটফর্ম ও প্রতিষ্ঠানের কোর্স আপনি পাচ্ছেন</p>
+              <div className="rounded-[16px] p-4 bg-white border border-border">
+                <h4 className="font-black text-sm text-text mb-3">🏛️ আমাদের প্রতিষ্ঠানসমূহ</h4>
+                <p className="text-xs font-semibold text-text-secondary mb-3">যেসব প্ল্যাটফর্ম ও প্রতিষ্ঠানের কোর্স আপনি পাচ্ছেন</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {[
                     ["https://jobayergroup.com/wp-content/uploads/2026/06/10-Minute-School.jpg", "📘 টেন মিনিট স্কুল"],
@@ -426,17 +426,17 @@ export default function CourseCatalog() {
                     ["https://jobayergroup.com/wp-content/uploads/2026/06/Problem-KI.png", "🧩 প্রব্লেম কেআই"],
                     ["https://jobayergroup.com/wp-content/uploads/2026/06/REPTO.jpg", "📖 রেপটো"],
                   ].map(([src, name]) => (
-                    <div key={name} className="flex flex-col items-center gap-2 p-3 rounded-[10px] bg-white border border-[#E2E8F0]">
+                    <div key={name} className="flex flex-col items-center gap-2 p-3 rounded-[10px] bg-white border border-border">
                       <img src={src} alt={name} loading="lazy" className="w-full h-16 object-contain rounded-md" />
-                      <span className="text-[11px] font-bold text-[#1E293B] text-center leading-tight">{name}</span>
+                      <span className="text-[11px] font-bold text-text text-center leading-tight">{name}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="rounded-[16px] p-4 bg-white border border-[#E2E8F0]">
-                <h4 className="font-black text-sm text-[#1E293B] mb-3">👨‍🏫 শীর্ষ প্রশিক্ষকবৃন্দ</h4>
-                <p className="text-xs font-semibold text-[#64748B] mb-3">যেসব তারকা প্রশিক্ষকের কোর্স আপনি পাচ্ছেন</p>
+              <div className="rounded-[16px] p-4 bg-white border border-border">
+                <h4 className="font-black text-sm text-text mb-3">👨‍🏫 শীর্ষ প্রশিক্ষকবৃন্দ</h4>
+                <p className="text-xs font-semibold text-text-secondary mb-3">যেসব তারকা প্রশিক্ষকের কোর্স আপনি পাচ্ছেন</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {[
                     ["https://jobayergroup.com/wp-content/uploads/2026/06/Ayman-Sadiq.jpg", "👑 আয়মান সাদিক"],
@@ -452,11 +452,11 @@ export default function CourseCatalog() {
                     ["https://jobayergroup.com/wp-content/uploads/2026/06/Vaibhav-Sisinity.jpg", "💼 ভৈভব সিসিনিটি"],
                     ["https://jobayergroup.com/wp-content/uploads/2026/06/Soban-Tariq.jpg", "🔍 সোবান তারিক"],
                   ].map(([src, name]) => (
-                    <div key={name} className="flex flex-col items-center gap-2 p-3 rounded-[12px] bg-white border border-[#E2E8F0]">
+                    <div key={name} className="flex flex-col items-center gap-2 p-3 rounded-[12px] bg-white border border-border">
                       <div className="w-16 h-16 rounded-full overflow-hidden bg-[#F8F9FA]">
                         <img src={src} alt={name} loading="lazy" className="w-full h-full object-cover" />
                       </div>
-                      <span className="text-[11px] font-bold text-[#1E293B] text-center leading-tight">{name}</span>
+                      <span className="text-[11px] font-bold text-text text-center leading-tight">{name}</span>
                     </div>
                   ))}
                 </div>

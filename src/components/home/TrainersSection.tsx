@@ -42,8 +42,8 @@ function TrainerCard({ trainer, index }: { trainer: typeof trainers[0]; index: n
       <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${gradients[index % gradients.length]} flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-500`}>
         <span className="text-xl font-black text-white">{trainer.name[0]}</span>
       </div>
-      <h3 className="text-sm font-bold text-[#1E293B] mb-1">{trainer.name}</h3>
-      <p className="text-xs text-[#64748B] mb-3">{trainer.org}</p>
+      <h3 className="text-sm font-bold text-text mb-1">{trainer.name}</h3>
+      <p className="text-xs text-text-secondary mb-3">{trainer.org}</p>
       <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F59E0B]/10 text-[#D97706] text-xs font-bold">
         <s className="text-[#94A3B8]">৳{trainer.price}</s>
         <span className="bg-gradient-to-r from-[#2563EB] to-[#7C3AED] text-white px-2 py-0.5 rounded-full text-[10px]">ফ্রি</span>
@@ -63,8 +63,8 @@ export default function TrainersSection() {
             </svg>
             Top Trainers
           </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1E293B] mb-4">আমাদের শীর্ষ ১২ প্রশিক্ষক</h2>
-          <p className="text-lg text-[#64748B] max-w-2xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-text mb-4">আমাদের শীর্ষ ১২ প্রশিক্ষক</h2>
+          <p className="text-lg text-text-secondary max-w-2xl mx-auto">
             দেশের সেরা ১২ জন প্রশিক্ষকের ২৩০টির বেশি কোর্স — সবকিছু একসাথে, আজীবনের জন্য।
           </p>
         </div>

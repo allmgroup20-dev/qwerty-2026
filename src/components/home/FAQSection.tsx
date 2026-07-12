@@ -56,7 +56,7 @@ export default function FAQSection() {
           <div key={i} className="rounded-[14px] bg-white border border-[#E2E8F0] overflow-hidden shadow-sm">
             <button
               onClick={() => toggle(i)}
-              className="w-full flex items-center justify-between p-4 text-sm font-bold text-[#1E293B] bg-transparent border-none cursor-pointer text-left font-inherit hover:bg-[rgba(29,78,216,.04)] transition-colors"
+              className="w-full flex items-center justify-between p-4 text-sm font-bold text-text bg-transparent border-none cursor-pointer text-left font-inherit hover:bg-[rgba(30,58,90,.04)] transition-colors"
             >
               <span>{faq.q}</span>
               <span className={`text-[#64748B] text-xs transition-transform duration-200 ${openIdx === i ? "rotate-180" : ""}`}>▼</span>

@@ -92,7 +92,7 @@ export default function HeroSection() {
     <>
       <div className="text-center pt-5 pb-1">
         <div className="text-[28px] md:text-[38px] font-black leading-[1.15]">
-          <span className="text-[#1E3A8A]">Jobayer Group</span>
+          <span className="text-primary">Jobayer Group</span>
           <span className="block text-lg md:text-[18px] opacity-70 font-bold">Career</span>
         </div>
       </div>
@@ -109,13 +109,13 @@ export default function HeroSection() {
           <div className="text-center animate-fade-up">
             <div className="flex flex-wrap gap-2 justify-center mb-4">
               <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-white text-sm font-bold">
-                <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
                 {toBn(liveCount)}+ সক্রিয় শিক্ষার্থী
               </span>
             </div>
 
-            <div className="inline-flex gap-2 px-4 py-2.5 mx-auto mb-3.5 rounded-full bg-[rgba(30,58,138,.08)] border border-[rgba(30,58,138,.2)] font-extrabold text-sm text-[#1E3A8A]">
-              💰 সরাসরি কাজ শিখে প্রথম মাসেই <span className="text-[#FFBF00] font-black">১১,০০০</span> থেকে <span className="text-[#FFBF00] font-black">৯২,০০০</span> টাকা পর্যন্ত উপার্জনের বাস্তবমুখী সুযোগ!
+            <div className="inline-flex gap-2 px-4 py-2.5 mx-auto mb-3.5 rounded-full bg-primary/10 border border-primary/20 font-extrabold text-sm text-primary">
+              💰 সরাসরি কাজ শিখে প্রথম মাসেই <span className="text-secondary font-black">১১,০০০</span> থেকে <span className="text-secondary font-black">৯২,০০০</span> টাকা পর্যন্ত উপার্জনের বাস্তবমুখী সুযোগ!
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight mb-4">
@@ -132,7 +132,7 @@ export default function HeroSection() {
               দেশের সেরা ১২ জন প্রশিক্ষকের ২৩০টির বেশি কোর্স — আজীবনের জন্য। পছন্দ না হলে ২৪ ঘণ্টায় টাকা ফেরত।
             </p>
 
-            <div className="max-w-[820px] mx-auto mb-5 p-3.5 rounded-[20px] bg-[linear-gradient(135deg,rgba(29,78,216,.06),rgba(234,88,12,.06),rgba(29,78,216,.04))] border border-[rgba(255,255,255,.1)] text-left">
+            <div className="max-w-[820px] mx-auto mb-5 p-3.5 rounded-[20px] bg-gradient-to-br from-primary/5 via-orange-500/5 to-primary/5 border border-white/10 text-left">
               <p className="text-center text-white font-extrabold text-sm mb-2.5 m-0">
                 ▶️ <strong>২ মিনিটের ভিডিও দেখুন</strong> — নতুন ডিজিটাল পেশা শুরু করুন
               </p>
@@ -181,7 +181,7 @@ export default function HeroSection() {
           </p>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F8FAFC] to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-bg to-transparent pointer-events-none" />
       </section>
     </>
   );

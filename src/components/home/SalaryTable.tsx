@@ -103,13 +103,13 @@ export default function SalaryTable() {
 
   return (
     <section className="max-w-[1120px] mx-auto mt-6 md:mt-8 px-3.5 md:px-5" id="earnings">
-      <div className="rounded-[20px] p-[18px_16px_16px] md:p-[20px] bg-[linear-gradient(135deg,rgba(29,78,216,.06),rgba(29,78,216,.02))] border border-[rgba(29,78,216,.14)]">
-        <div className="flex w-fit gap-2 px-4 py-2.5 mx-auto mb-3.5 rounded-full bg-[rgba(29,78,216,.08)] border border-[rgba(29,78,216,.15)] font-extrabold text-sm text-[#1E3A8A]">
+      <div className="rounded-[20px] p-[18px_16px_16px] md:p-[20px] bg-[linear-gradient(135deg,rgba(29,78,216,.06),rgba(29,78,216,.02))] border border-primary/20">
+        <div className="flex w-fit gap-2 px-4 py-2.5 mx-auto mb-3.5 rounded-full bg-primary/10 border border-primary/20 font-extrabold text-sm text-[#1E3A8A]">
           📊 লাইভ আয় দেখুন — কে কত টাকা পাচ্ছে
         </div>
 
         <div className="text-center mb-4">
-          <div className="inline-flex items-center gap-2.5 px-4 py-3 rounded-[16px] bg-[linear-gradient(90deg,rgba(29,78,216,.1),rgba(234,88,12,.1),rgba(29,78,216,.1))] border border-[#E2E8F0]">
+          <div className="inline-flex items-center gap-2.5 px-4 py-3 rounded-[16px] bg-[linear-gradient(90deg,rgba(30,58,90,.1),rgba(234,88,12,.1),rgba(30,58,90,.1))] border border-[#E2E8F0]">
             <span className="w-3 h-3 rounded-full bg-[#FF6B35] animate-pulse shadow-[0_0_12px_rgba(234,88,12,.8)]" />
             <span className="font-black text-lg">🟢 লাইভ — বোনাস বিতরণ করা হচ্ছে</span>
           </div>

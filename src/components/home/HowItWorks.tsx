@@ -29,12 +29,12 @@ export default function HowItWorks() {
 
   return (
     <section className="max-w-[1120px] mx-auto mt-6 md:mt-8 px-3.5 md:px-5">
-      <div className="rounded-[20px] p-[18px_16px_16px] md:p-[20px] bg-[linear-gradient(135deg,rgba(29,78,216,.06),rgba(29,78,216,.02))] border border-[rgba(29,78,216,.14)]">
-        <div className="flex w-fit gap-2 px-4 py-2.5 mx-auto mb-3.5 rounded-full bg-[rgba(29,78,216,.08)] border border-[rgba(29,78,216,.15)] font-extrabold text-sm text-[#1E3A8A]">
+      <div className="rounded-[20px] p-[18px_16px_16px] md:p-[20px] bg-[linear-gradient(135deg,rgba(29,78,216,.06),rgba(29,78,216,.02))] border border-primary/20">
+        <div className="flex w-fit gap-2 px-4 py-2.5 mx-auto mb-3.5 rounded-full bg-primary/10 border border-primary/20 font-extrabold text-sm text-[#1E3A8A]">
           ⚙️ আয়ের সহজ ৩টি ধাপ
         </div>
 
-        <h3 className="text-lg md:text-xl font-black text-[#1E293B] mb-4 text-center">আপনার আয়ের সহজ ৩টি উপায়:</h3>
+        <h3 className="text-lg md:text-xl font-black text-text mb-4 text-center">আপনার আয়ের সহজ ৩টি উপায়:</h3>
 
         <div className="grid gap-3 md:gap-4 mb-4">
           {steps.map((step, i) => (
@@ -43,7 +43,7 @@ export default function HowItWorks() {
                 {step.num}
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-sm text-[#1E293B] mb-1">{step.icon} {step.title}</h4>
+                <h4 className="font-bold text-sm text-text mb-1">{step.icon} {step.title}</h4>
                 <p className="text-xs text-[#475569] leading-[1.6]">
                   {step.desc} <span className="font-bold text-[#1D4ED8]">{step.highlight}</span>
                 </p>
