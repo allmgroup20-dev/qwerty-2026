@@ -3,4 +3,7 @@ module.exports = {
   images: {
     unoptimized: true,
   },
+  turbopack: {
+    root: __dirname,
+  },
 }
