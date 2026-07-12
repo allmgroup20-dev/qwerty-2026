@@ -18,13 +18,13 @@
     {
       "binding": "DB",
       "database_name": "jgcareer-db",
-      "database_id": "3e54502f-3cc2-4529-a082-3019726a7784"
+      "database_id": "534339da-b5c4-41f8-bcfb-978dc453d83d"
     }
   ],
   "kv_namespaces": [
     {
       "binding": "CACHE",
-      "id": "6ee0dd4bc9b147feb8400759e6ce33be"
+      "id": "3263fd155e8b4031b6275c7fb2d88d8b"
     }
   ]
 }
