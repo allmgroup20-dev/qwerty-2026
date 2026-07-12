@@ -40,36 +40,36 @@ export default function SmartInstall() {
   return (
     <div className="fixed bottom-[72px] left-1/2 -translate-x-1/2 z-[9999] w-[92%] max-w-[380px]">
       {showPrompt && (
-        <div className="flex items-center gap-3 p-3.5 rounded-[16px] bg-[rgba(15,23,42,.92)] backdrop-blur-[12px] border border-[rgba(255,255,255,.12)] shadow-[0_12px_28px_rgba(0,0,0,.35)]">
-          <div className="w-[42px] h-[42px] rounded-[10px] bg-gradient-to-br from-[#2563EB] to-[#7C3AED] flex items-center justify-center text-white font-black text-sm flex-shrink-0">JG</div>
+        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-primary-dark/95 backdrop-blur-md border border-white/10 shadow-xl">
+          <div className="w-[42px] h-[42px] rounded-lg bg-gradient-to-br from-info to-accent flex items-center justify-center text-white font-black text-sm flex-shrink-0">JG</div>
           <div className="flex-1 min-w-0">
             <div className="text-white text-xs font-extrabold truncate">Jobayer Group Career</div>
-            <div className="text-[#94A3B8] text-[10px] font-semibold">অ্যাপ হিসেবে ইনস্টল করুন</div>
+            <div className="text-text-secondary text-[10px] font-semibold">অ্যাপ হিসেবে ইনস্টল করুন</div>
           </div>
-          <button onClick={handleInstall} className="px-4 py-2 rounded-[10px] bg-gradient-to-r from-[#2563EB] to-[#7C3AED] text-white text-xs font-extrabold border-none cursor-pointer shadow-md hover:brightness-110 transition-all">⚡ ইনস্টল</button>
-          <button onClick={() => setShowPrompt(false)} className="text-[#64748B] text-sm border-none bg-transparent cursor-pointer hover:text-white transition-colors">✕</button>
+          <button onClick={handleInstall} className="px-4 py-2 rounded-lg bg-gradient-to-r from-info to-accent text-white text-xs font-extrabold border-none cursor-pointer shadow-md hover:brightness-110 transition-all">⚡ ইনস্টল</button>
+          <button onClick={() => setShowPrompt(false)} className="text-text-secondary text-sm border-none bg-transparent cursor-pointer hover:text-white transition-colors">✕</button>
         </div>
       )}
       {showIOS && (
-        <div className="p-4 rounded-[16px] bg-[rgba(15,23,42,.95)] backdrop-blur-[12px] border border-[rgba(255,255,255,.12)] shadow-[0_12px_28px_rgba(0,0,0,.35)]">
+        <div className="p-4 rounded-xl bg-primary-dark/95 backdrop-blur-md border border-white/10 shadow-xl">
           <div className="flex items-start justify-between mb-2.5">
             <h4 className="text-white font-extrabold text-sm">📱 ইনস্টল করার নিয়ম</h4>
-            <button onClick={() => setShowIOS(false)} className="text-[#64748B] text-sm border-none bg-transparent cursor-pointer hover:text-white">✕</button>
+            <button onClick={() => setShowIOS(false)} className="text-text-secondary text-sm border-none bg-transparent cursor-pointer hover:text-white">✕</button>
           </div>
-          <p className="text-[#CBD5E1] text-xs font-semibold mb-3 leading-[1.5]">
+          <p className="text-text-secondary text-xs font-semibold mb-3 leading-relaxed">
             আপনার ব্রাউজারে নিচের ধাপগুলো ফলো করুন:
           </p>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5 text-xs text-[#CBD5E1]">
-              <span className="w-[26px] h-[26px] rounded-full bg-[rgba(37,99,235,.2)] flex items-center justify-center text-[#60A5FA] font-black flex-shrink-0">১</span>
-              <span>শেয়ার আইকন <span className="inline-block px-2 py-0.5 rounded bg-[rgba(255,255,255,.08)] text-white font-bold">⎙</span> ট্যাপ করুন</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2.5 text-xs text-text-secondary">
+              <span className="w-[26px] h-[26px] rounded-full bg-info/20 flex items-center justify-center text-info font-black flex-shrink-0">১</span>
+              <span>শেয়ার আইকন <span className="inline-block px-2 py-0.5 rounded bg-white/10 text-white font-bold">⎙</span> ট্যাপ করুন</span>
             </div>
-            <div className="flex items-center gap-2.5 text-xs text-[#CBD5E1]">
-              <span className="w-[26px] h-[26px] rounded-full bg-[rgba(37,99,235,.2)] flex items-center justify-center text-[#60A5FA] font-black flex-shrink-0">২</span>
+            <div className="flex items-center gap-2.5 text-xs text-text-secondary">
+              <span className="w-[26px] h-[26px] rounded-full bg-info/20 flex items-center justify-center text-info font-black flex-shrink-0">২</span>
               <span>&ldquo;হোম স্ক্রিনে যোগ করুন&rdquo; নির্বাচন করুন</span>
             </div>
-            <div className="flex items-center gap-2.5 text-xs text-[#CBD5E1]">
-              <span className="w-[26px] h-[26px] rounded-full bg-[rgba(37,99,235,.2)] flex items-center justify-center text-[#60A5FA] font-black flex-shrink-0">৩</span>
+            <div className="flex items-center gap-2.5 text-xs text-text-secondary">
+              <span className="w-[26px] h-[26px] rounded-full bg-info/20 flex items-center justify-center text-info font-black flex-shrink-0">৩</span>
               <span>&ldquo;যোগ করুন&rdquo; বাটনে ক্লিক করুন ✅</span>
             </div>
           </div>
