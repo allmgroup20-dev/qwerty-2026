@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 
 const sections = [
   { id: "home", icon: "🏠", label: "হোম", scrollTo: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
@@ -10,7 +11,6 @@ const sections = [
 ];
 
 export default function BottomStickyNav() {
-  const navRef = useRef<HTMLDivElement>(null);
   const btnsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
@@ -49,27 +49,28 @@ export default function BottomStickyNav() {
   };
 
   return (
-    <div ref={navRef} className="fixed bottom-0 left-0 right-0 z-[9998] md:hidden bg-white/95 backdrop-blur-md border-t border-[#E2E8F0] shadow-[0_-4px_20px_rgba(0,0,0,.08)]">
-      <div className="flex items-center">
-        {sections.map((s, i) => (
-          <button
-            key={s.id}
-            ref={(el) => { btnsRef.current[i] = el; }}
-            onClick={() => handleClick(s)}
-            className="flex-1 flex flex-col items-center gap-0.5 py-2.5 border-none bg-transparent text-[#94A3B8] font-bold text-[10px] cursor-pointer transition-all active"
-          >
-            <span className="text-lg">{s.icon}</span>
-            <span>{s.label}</span>
-          </button>
-        ))}
-        <a
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-white/95 backdrop-blur-md border-t border-[#E2E8F0] shadow-[0_-4px_24px_rgba(0,0,0,.06)]">
+      <div className="flex items-center gap-0 px-2 py-1">
+        <div className="flex flex-1 gap-0 justify-around min-w-0">
+          {sections.map((s, i) => (
+            <button
+              key={s.id}
+              ref={(el) => { btnsRef.current[i] = el; }}
+              onClick={() => handleClick(s)}
+              className="flex flex-col items-center justify-center gap-0 flex-1 min-w-0 border-none bg-transparent text-[#94A3B8] font-bold text-[10px] cursor-pointer transition-all min-h-[44px] relative"
+            >
+              <span className="text-[17px] leading-tight">{s.icon}</span>
+              <span className="text-[10px] leading-tight mt-0.5">{s.label}</span>
+            </button>
+          ))}
+        </div>
+        <Link
           href="/register"
-          className="flex flex-col items-center gap-0.5 py-2.5 px-4 bg-gradient-to-r from-[#FF6B35] to-[#E85D2C] text-white font-extrabold text-[10px] no-underline cursor-pointer"
+          className="flex items-center justify-center gap-1 px-3 py-2 min-h-[44px] rounded-[10px] bg-gradient-to-r from-[#FF6B35] to-[#E85D2C] text-white font-extrabold text-xs no-underline shadow-[0_6px_20px_rgba(234,88,12,.35)] shrink-0"
         >
-          <span className="text-lg">🔥</span>
-          <span>শুরু করুন</span>
-        </a>
+          🚀 শুরু করুন
+        </Link>
       </div>
-    </div>
+    </nav>
   );
 }

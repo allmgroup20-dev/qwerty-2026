@@ -3,6 +3,30 @@
 import Link from "next/link";
 
 export default function HowItWorks() {
+  const steps = [
+    {
+      num: "১",
+      icon: "📝",
+      title: "বিনামূল্যে রেজিস্টার করুন",
+      desc: "আপনার অ্যাকাউন্ট খুলুন। সাথে সাথেই সব কোর্স ও টুলস খুলে যাবে!",
+      highlight: "⏱ ৩০ সেকেন্ড",
+    },
+    {
+      num: "২",
+      icon: "📢",
+      title: "লিংক শেয়ার করুন",
+      desc: "আপনার লিংক ফেসবুক ও হোয়াটসঅ্যাপে শেয়ার করুন। কোনো অভিজ্ঞতা লাগে না — সবকিছু রেডিমেড দেওয়া আছে!",
+      highlight: "🎯 শুরু করুন আজই",
+    },
+    {
+      num: "৩",
+      icon: "💰",
+      title: "টাকা তুলুন",
+      desc: "আপনার লিংকে যতজন যুক্ত হবে, তত আয় সরাসরি বিকাশ/নগদে চলে আসবে!",
+      highlight: "🟢 সরাসরি পেমেন্ট",
+    },
+  ];
+
   return (
     <section className="max-w-[1120px] mx-auto mt-6 md:mt-8 px-3.5 md:px-5">
       <div className="rounded-[20px] p-[18px_16px_16px] md:p-[20px] bg-[linear-gradient(135deg,rgba(29,78,216,.06),rgba(29,78,216,.02))] border border-[rgba(29,78,216,.14)]">
@@ -13,29 +37,7 @@ export default function HowItWorks() {
         <h3 className="text-lg md:text-xl font-black text-[#1E293B] mb-4 text-center">আপনার আয়ের সহজ ৩টি উপায়:</h3>
 
         <div className="grid gap-3 md:gap-4 mb-4">
-          {[
-            {
-              num: "১",
-              icon: "📝",
-              title: "অ্যাকাউন্ট খুলুন",
-              desc: "মাত্র ৯৯ টাকা দিন। সাথে সাথেই সব কোর্স ও টুলস খুলে যাবে!",
-              highlight: "⏱ ৩০ সেকেন্ড",
-            },
-            {
-              num: "২",
-              icon: "📢",
-              title: "লিংক শেয়ার করুন",
-              desc: "আপনার লিংক ফেসবুক ও হোয়াটসঅ্যাপে শেয়ার করুন। কোনো অভিজ্ঞতা লাগে না — সবকিছু রেডিমেড দেওয়া আছে!",
-              highlight: "🎯 শুরু করুন আজই",
-            },
-            {
-              num: "৩",
-              icon: "💰",
-              title: "টাকা তুলুন",
-              desc: "আপনার লিংকে যতজন যুক্ত হবে, তত আয় সরাসরি বিকাশ/নগদে চলে আসবে!",
-              highlight: "🟢 সরাসরি পেমেন্ট",
-            },
-          ].map((step, i) => (
+          {steps.map((step, i) => (
             <div key={i} className="flex items-start gap-3 p-4 rounded-[14px] bg-white border border-[#E2E8F0] shadow-[0_6px_14px_rgba(0,0,0,.06)]">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1D4ED8] to-[#FF6B35] flex items-center justify-center text-white font-black text-base flex-shrink-0">
                 {step.num}
@@ -56,7 +58,7 @@ export default function HowItWorks() {
 
         <div className="text-center mt-4">
           <Link href="/register" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-[14px] bg-gradient-to-r from-[#FF6B35] to-[#E85D2C] text-white font-black text-sm no-underline shadow-[0_12px_28px_rgba(234,88,12,.35)] hover:-translate-y-0.5 transition-all cursor-pointer">
-            🚀 এখনই শুরু করুন →
+            🚀 এখনই রেজিস্টার করুন →
           </Link>
         </div>
       </div>

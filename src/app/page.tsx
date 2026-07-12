@@ -1,9 +1,6 @@
-"use client";
-
 import HeroSection from "@/components/home/HeroSection";
 import ProblemSolutionCards from "@/components/home/ProblemSolutionCards";
 import StatsCounter from "@/components/home/StatsCounter";
-import FeaturesSection from "@/components/home/FeaturesSection";
 import HowItWorks from "@/components/home/HowItWorks";
 import PriceAnchor from "@/components/home/PriceAnchor";
 import CourseCatalog from "@/components/home/CourseCatalog";
@@ -23,7 +20,6 @@ export default function HomePage() {
       <HeroSection />
       <ProblemSolutionCards />
       <StatsCounter />
-      <FeaturesSection />
       <HowItWorks />
       <PriceAnchor />
       <CourseCatalog />

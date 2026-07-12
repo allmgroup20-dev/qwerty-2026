@@ -1,35 +1,41 @@
 "use client";
-import React from "react";
-
-const stats = [
-  { value: "৮৬৬+", label: "সক্রিয় শিক্ষার্থী" },
-  { value: "৪.৯★", label: "ফেসবুক মূল্যায়ন" },
-  { value: "৮+ বছর", label: "পেশাদার অভিজ্ঞতা" },
-  { value: "৫০,০০০+", label: "সর্বোচ্চ মাসিক আয়" },
-];
 
 export default function StatsCounter() {
+  const items = [
+    { num: "৮৬৬+", label: "সক্রিয় শিক্ষার্থী" },
+    { separator: true },
+    { num: "৪.৯★", label: "ফেসবুক মূল্যায়ন" },
+    { separator: true },
+    { num: "৮+ বছর", label: "পেশাদার অভিজ্ঞতা" },
+    { separator: true },
+    { num: "৫০,০০০+", label: "সর্বোচ্চ মাসিক আয়" },
+    { separator: true },
+    { chip: "⚡ সাথে সাথে অ্যাক্সেস" },
+    { separator: true },
+    { chip: "📚 লাইফটাইম আপডেট" },
+    { separator: true },
+    { chip: "✅ ২৪ ঘণ্টা ফেরত" },
+  ];
+
   return (
-    <div className="bg-white border-y border-[#E2E8F0] py-3.5 md:py-[18px] w-full">
-      <div className="max-w-[1100px] mx-auto flex justify-center items-center flex-wrap gap-[10px_14px] md:gap-4">
-        {stats.map((s, i) => (
-          <React.Fragment key={s.label}>
-            <div className="flex flex-col items-center gap-0.5">
-              <span className="text-base md:text-xl font-black text-[#1E293B]">{s.value}</span>
-              <span className="text-[10px] md:text-[11px] font-semibold text-[#64748B] tracking-[0.3px]">{s.label}</span>
+    <div className="bg-white border-t border-b border-[#E2E8F0] py-3.5 px-3 w-full">
+      <div className="max-w-[1100px] mx-auto flex justify-center items-center flex-wrap gap-x-4 gap-y-2">
+        {items.map((item, i) => {
+          if (item.separator) return <div key={i} className="w-px h-6 bg-[#E2E8F0]" />;
+          if (item.chip) {
+            return (
+              <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-[#E2E8F0] text-[10px] sm:text-[11px] font-semibold text-[#64748B] leading-none">
+                {item.chip}
+              </span>
+            );
+          }
+          return (
+            <div key={i} className="flex flex-col items-center gap-0.5">
+              <span className="text-sm sm:text-base font-black text-[#1E293B] leading-tight">{item.num}</span>
+              <span className="text-[10px] sm:text-[11px] font-semibold text-[#64748B] leading-tight">{item.label}</span>
             </div>
-            {i !== stats.length - 1 && <div className="w-px h-6 bg-[#E2E8F0]" />}
-          </React.Fragment>
-        ))}
-        {[
-          { icon: "⚡", label: "সাথে সাথে অ্যাক্সেস" },
-          { icon: "📚", label: "লাইফটাইম আপডেট" },
-          { icon: "✅", label: "২৪ ঘণ্টা ফেরত" },
-        ].map((s) => (
-          <div key={s.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/12 text-[10px] font-semibold text-[#64748B]">
-            {s.icon} {s.label}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
