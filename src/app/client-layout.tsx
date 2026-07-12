@@ -1,11 +1,34 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Navbar from "@/components/layout/Navbar";
 import BottomNav from "@/components/layout/BottomNav";
 import Footer from "@/components/layout/Footer";
 import SmartInstall from "@/components/home/SmartInstall";
 import { useLanguageStore } from "@/lib/store";
+
+function ScrollProgressBar() {
+  const barRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    const update = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = `${Math.min(100, (scrollTop / Math.max(docHeight, 1)) * 100)}%`;
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[99999] h-[3px] bg-transparent pointer-events-none">
+      <div ref={barRef} className="h-full bg-gradient-to-r from-[#1D4ED8] via-[#FF6B35] to-[#1D4ED8] transition-all duration-100" style={{ width: "0%" }} />
+    </div>
+  );
+}
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { lang } = useLanguageStore();
@@ -23,6 +46,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   return (
     <>
+      <ScrollProgressBar />
       <Navbar />
       <main className="min-h-screen">{children}</main>
       <Footer />
