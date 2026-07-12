@@ -18,13 +18,13 @@ export default function StatsCounter() {
   ];
 
   return (
-    <div className="bg-white border-t border-b border-[#E2E8F0] py-3.5 px-3 w-full">
-      <div className="max-w-[1100px] mx-auto flex justify-center items-center flex-wrap gap-x-4 gap-y-2">
+    <div className="bg-white rounded-2xl border border-border py-4 px-4">
+      <div className="flex justify-center items-center flex-wrap gap-x-4 gap-y-2">
         {items.map((item, i) => {
-          if (item.separator) return <div key={i} className="w-px h-6 bg-[#E2E8F0]" />;
+          if (item.separator) return <div key={i} className="w-px h-6 bg-border" />;
           if (item.chip) {
             return (
-              <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-[#E2E8F0] text-[10px] sm:text-[11px] font-semibold text-text-secondary leading-none">
+              <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-xs font-semibold text-text-secondary leading-none">
                 {item.chip}
               </span>
             );
@@ -32,7 +32,7 @@ export default function StatsCounter() {
           return (
             <div key={i} className="flex flex-col items-center gap-0.5">
               <span className="text-sm sm:text-base font-black text-text leading-tight">{item.num}</span>
-              <span className="text-[10px] sm:text-[11px] font-semibold text-text-secondary leading-tight">{item.label}</span>
+              <span className="text-xs sm:text-xs font-semibold text-text-secondary leading-tight">{item.label}</span>
             </div>
           );
         })}

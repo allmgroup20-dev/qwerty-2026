@@ -38,6 +38,18 @@
 }
 
 @layer components {
+  .section-container {
+    @apply mx-auto max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+  .section-spacing {
+    @apply mb-12 md:mb-16;
+  }
+  .section-header {
+    @apply text-center mb-8 md:mb-10;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 font-extrabold text-sm text-primary;
+  }
   .btn-primary {
     @apply bg-action text-white px-6 py-3 rounded-xl font-semibold 
            transition-all duration-300 hover:bg-action-light 
