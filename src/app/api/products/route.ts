@@ -5,7 +5,7 @@ import { getDB } from "@/lib/db";
 export async function GET() {
   try {
     const products = await query(
-      getDB(),
+      await getDB(),
       "SELECT * FROM products WHERE is_active = 1 ORDER BY created_at DESC",
       []
     );
@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as { name: string; nameBn?: string; description?: string; descriptionBn?: string; price: number; currency?: string; commissionPercentage?: number; commissionFixed?: number; imageUrl?: string; category?: string };
-    const env = getDB();
+    const env = await getDB();
 
     await execute(env,
       `INSERT INTO products (name, name_bn, description, description_bn, price, currency, commission_percentage, commission_fixed, image_url, category, is_active)

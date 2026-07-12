@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = await queryFirst<{ username: string; name: string; password: string; role: string }>(
-      getDB(),
+      await getDB(),
       "SELECT username, name, password, role FROM company_users WHERE username = ?",
       [username]
     );

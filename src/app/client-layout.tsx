@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import BottomNav from "@/components/layout/BottomNav";
 import Footer from "@/components/layout/Footer";
+import SmartInstall from "@/components/home/SmartInstall";
 import { useLanguageStore } from "@/lib/store";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -20,6 +21,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <main className="min-h-screen">{children}</main>
       <Footer />
       <BottomNav />
+      <SmartInstall />
     </>
   );
 }

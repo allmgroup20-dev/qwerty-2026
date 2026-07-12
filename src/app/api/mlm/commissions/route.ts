@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
          ORDER BY c.created_at DESC LIMIT 50`;
 
     const params = workerId ? [workerId] : [];
-    const commissions = await query(getDB(), sql, params);
+    const commissions = await query(await getDB(), sql, params);
 
     return NextResponse.json({ commissions });
   } catch (error) {

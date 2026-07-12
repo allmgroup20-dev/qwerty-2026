@@ -1,29 +1,36 @@
 "use client";
-
-import { useLanguageStore } from "@/lib/store";
+import React from "react";
 
 const stats = [
-  { key: "members", en: "Active Members", bn: "সক্রিয় সদস্য", value: "10K+", suffix: "" },
-  { key: "orders", en: "Orders Completed", bn: "অর্ডার সম্পন্ন", value: "50K+", suffix: "" },
-  { key: "earnings", en: "Total Payout", bn: "মোট পেআউট", value: "৳5Cr+", suffix: "" },
-  { key: "satisfaction", en: "Satisfaction", bn: "সন্তুষ্টি", value: "99%", suffix: "" },
+  { value: "৮৬৬+", label: "সক্রিয় শিক্ষার্থী" },
+  { value: "৪.৯★", label: "ফেসবুক মূল্যায়ন" },
+  { value: "৮+ বছর", label: "পেশাদার অভিজ্ঞতা" },
+  { value: "৫০,০০০+", label: "সর্বোচ্চ মাসিক আয়" },
 ];
 
 export default function StatsCounter() {
-  const { lang } = useLanguageStore();
-
   return (
-    <section className="py-16 gradient-primary">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((stat, i) => (
-            <div key={i} className="text-center text-white animate-fade-up" style={{ animationDelay: `${i * 0.15}s` }}>
-              <p className="text-3xl md:text-4xl font-bold mb-2">{stat.value}</p>
-              <p className="text-sm text-white/60">{lang === "bn" ? stat.bn : stat.en}</p>
+    <div className="bg-white border-y border-[#E2E8F0] py-3.5 md:py-[18px] w-full">
+      <div className="max-w-[1100px] mx-auto flex justify-center items-center flex-wrap gap-[10px_14px] md:gap-4">
+        {stats.map((s, i) => (
+          <React.Fragment key={s.label}>
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-base md:text-xl font-black text-[#1E293B]">{s.value}</span>
+              <span className="text-[10px] md:text-[11px] font-semibold text-[#64748B] tracking-[0.3px]">{s.label}</span>
             </div>
-          ))}
-        </div>
+            {i !== stats.length - 1 && <div className="w-px h-6 bg-[#E2E8F0]" />}
+          </React.Fragment>
+        ))}
+        {[
+          { icon: "⚡", label: "সাথে সাথে অ্যাক্সেস" },
+          { icon: "📚", label: "লাইফটাইম আপডেট" },
+          { icon: "✅", label: "২৪ ঘণ্টা ফেরত" },
+        ].map((s) => (
+          <div key={s.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/12 text-[10px] font-semibold text-[#64748B]">
+            {s.icon} {s.label}
+          </div>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }

@@ -1,9 +1,28 @@
-export function getDB(): { DB: D1Database } {
-  return { DB: process.env.DB as unknown as D1Database };
+let localDBInstance: ReturnType<typeof import("./local-d1").createLocalDB> | null = null;
+let localDBInit = false;
+
+async function getLocalDB() {
+  if (!localDBInit) {
+    localDBInit = true;
+    try {
+      const { createLocalDB } = await import("./local-d1");
+      localDBInstance = createLocalDB();
+    } catch (e) {
+      console.warn("Local D1 not available:", (e as Error)?.message);
+    }
+  }
+  return localDBInstance;
 }
 
-export function ensureDB(): D1Database {
+export async function getDB(): Promise<{ DB: D1Database }> {
   const db = process.env.DB as unknown as D1Database | undefined;
-  if (!db) throw new Error("D1 Database not bound - check your Cloudflare settings");
-  return db;
+  if (db) return { DB: db };
+  const local = await getLocalDB();
+  if (local) return { DB: local as unknown as D1Database };
+  throw new Error("D1 Database not available - run migrations first");
+}
+
+export async function ensureDB(): Promise<D1Database> {
+  const { DB } = await getDB();
+  return DB;
 }

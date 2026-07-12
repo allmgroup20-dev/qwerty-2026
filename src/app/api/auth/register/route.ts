@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "All fields required" }, { status: 400 });
     }
 
-    const env = getDB();
+    const env = await getDB();
 
     const existing = await queryFirst<{ worker_id: string }>(
       env, "SELECT worker_id FROM workers WHERE phone = ?", [phone]

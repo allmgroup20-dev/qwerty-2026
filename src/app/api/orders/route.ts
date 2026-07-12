@@ -6,7 +6,7 @@ import { generateId } from "@/lib/utils";
 export async function POST(request: NextRequest) {
   try {
     const { workerId, productId, productName, quantity, totalAmount, currency, paymentMethod } = await request.json() as { workerId: string; productId?: string; productName?: string; quantity?: number; totalAmount: number; currency?: string; paymentMethod?: string };
-    const env = getDB();
+    const env = await getDB();
     const orderId = generateId("ORD");
 
     await execute(env,
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       : "SELECT * FROM orders ORDER BY created_at DESC LIMIT 50";
 
     const params = workerId ? [workerId] : [];
-    const orders = await query(getDB(), sql, params);
+    const orders = await query(await getDB(), sql, params);
 
     return NextResponse.json({ orders });
   } catch (error) {

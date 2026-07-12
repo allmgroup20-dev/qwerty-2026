@@ -7,6 +7,7 @@ export default function CompanyLoginPage() {
   const { lang } = useLanguageStore();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -58,7 +59,12 @@ export default function CompanyLoginPage() {
             <label className="block text-sm font-medium text-text-secondary mb-2">
               {lang === "bn" ? "পাসওয়ার্ড" : "Password"}
             </label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field" required />
+            <div className="relative">
+              <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="input-field w-full pr-11" required />
+              <button type="button" onClick={() => setShowPassword((p) => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 border-none bg-transparent cursor-pointer text-[#94A3B8] hover:text-[#64748B] transition-colors text-lg leading-none">
+                {showPassword ? "🙈" : "👁"}
+              </button>
+            </div>
           </div>
           <button type="submit" disabled={loading} className="btn-primary w-full text-base !py-3.5">
             {loading ? (lang === "bn" ? "লগইন হচ্ছে..." : "Logging in...") : (lang === "bn" ? "লগইন" : "Login")}

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const members = await query(
-      getDB(),
+      await getDB(),
       `SELECT w.worker_id, w.name, w.phone, w.level, w.join_date, 
               w.total_team_members, t.parent_id
        FROM workers w 

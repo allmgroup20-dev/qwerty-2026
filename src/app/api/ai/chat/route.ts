@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const tokens = data.usage?.total_tokens || 0;
 
     if (workerId) {
-      await execute(getDB(),
+      await execute(await getDB(),
         "INSERT INTO ai_log (worker_id, prompt, response, model, tokens_used) VALUES (?, ?, ?, ?, ?)",
         [workerId, prompt, text, model, tokens]
       );
