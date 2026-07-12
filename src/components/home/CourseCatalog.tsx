@@ -385,7 +385,7 @@ export default function CourseCatalog() {
         <h3 className="font-black text-base md:text-lg text-[#1E293B] mb-1 text-center">🎯 দেখুন — ২৩০+ কোর্সে আপনি কী পাচ্ছেন</h3>
         <p className="text-sm font-semibold text-[#64748B] mb-4 text-center">প্রতিটি বিভাগে ২০-৫০টি কোর্স — নিচে ব্রাউজ করুন!</p>
 
-        <div className="flex gap-1.5 mb-3.5 p-1.5 rounded-[14px] bg-white border border-[#E2E8F0] overflow-x-auto scrollbar-none">
+        <div className="flex gap-1.5 mb-3.5 p-1.5 rounded-[14px] bg-white border border-[#E2E8F0] overflow-x-auto scrollbar-hide">
           {tabs.map((tab, i) => (
             <button
               key={tab.id}

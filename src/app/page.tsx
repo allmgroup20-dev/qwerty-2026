@@ -1,3 +1,5 @@
+"use client";
+
 import HeroSection from "@/components/home/HeroSection";
 import ProblemSolutionCards from "@/components/home/ProblemSolutionCards";
 import StatsCounter from "@/components/home/StatsCounter";
@@ -12,7 +14,6 @@ import FAQSection from "@/components/home/FAQSection";
 import TrustSecuritySection from "@/components/home/TrustSecuritySection";
 import FinalCtaSection from "@/components/home/FinalCtaSection";
 import LiveNotificationBar from "@/components/home/LiveNotificationBar";
-import BottomStickyNav from "@/components/home/BottomStickyNav";
 
 export default function HomePage() {
   return (
@@ -31,7 +32,6 @@ export default function HomePage() {
       <TrustSecuritySection />
       <FinalCtaSection />
       <LiveNotificationBar />
-      <BottomStickyNav />
     </>
   );
 }

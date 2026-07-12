@@ -54,7 +54,7 @@ export default function LiveNotificationBar() {
   return (
     <div
       ref={barRef}
-      className="fixed bottom-[72px] left-1/2 -translate-x-1/2 z-[9999] max-w-[94vw] md:max-w-[560px] px-4 py-3 rounded-[14px] bg-white border border-[#E2E8F0] shadow-[0_16px_40px_rgba(0,0,0,.12)] items-center gap-2.5 opacity-0 translate-y-[120%] transition-all duration-400"
+      className="live-notif-bar fixed bottom-[72px] left-1/2 -translate-x-1/2 z-[9999] max-w-[94vw] md:max-w-[560px] px-4 py-3 rounded-[14px] bg-white border border-[#E2E8F0] shadow-[0_16px_40px_rgba(0,0,0,.12)] items-center gap-2.5 opacity-0 translate-y-[120%] transition-all duration-400"
       style={{ display: "none", backdropFilter: "blur(12px)" }}
     />
   );
