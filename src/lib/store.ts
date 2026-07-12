@@ -6,7 +6,7 @@ interface LanguageState {
 }
 
 export const useLanguageStore = create<LanguageState>((set) => ({
-  lang: (typeof document !== "undefined" && (document.cookie.match(/lang=([^;]+)/)?.[1] as "en" | "bn")) || "en",
+  lang: (typeof document !== "undefined" && (document.cookie.match(/lang=([^;]+)/)?.[1] as "en" | "bn")) || "bn",
   setLang: (lang) => {
     document.cookie = `lang=${lang};path=/;max-age=31536000`;
     document.documentElement.lang = lang;

@@ -15,6 +15,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     document.cookie = `lang=${lang};path=/;max-age=31536000`;
   }, [lang]);
 
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  }, []);
+
   return (
     <>
       <Navbar />

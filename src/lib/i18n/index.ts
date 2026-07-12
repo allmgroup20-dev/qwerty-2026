@@ -20,7 +20,7 @@ export function setTranslations(en: TranslationMap, bn: TranslationMap) {
   bnTranslations = bn;
 }
 
-export function t(key: string, lang: "en" | "bn" = "en"): string {
+export function t(key: string, lang: "en" | "bn" = "bn"): string {
   if (lang === "bn" && bnTranslations[key]) {
     return bnTranslations[key];
   }

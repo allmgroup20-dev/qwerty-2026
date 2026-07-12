@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   const response = NextResponse.next();
-  const lang = request.cookies.get("lang")?.value || "en";
+  const lang = request.cookies.get("lang")?.value || "bn";
   response.headers.set("x-language", lang);
   return response;
 }
