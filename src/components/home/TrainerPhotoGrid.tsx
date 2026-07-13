@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import Image from "next/image";
 import { useLanguageStore } from "@/lib/store";
 import { trainerPhotoGrid } from "@/data/landing-page-data";
 
@@ -26,8 +27,12 @@ export default function TrainerPhotoGrid() {
             key={i}
             className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-b from-primary/[0.03] to-transparent border border-border hover:border-primary/30 transition-all"
           >
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-orange flex items-center justify-center text-2xl shadow-md">
-              {(lang === "bn" ? t.nameBn : t.nameEn).charAt(0)}
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-primary to-orange flex items-center justify-center shadow-md relative">
+              {t.image ? (
+                <Image src={t.image} alt={lang === "bn" ? t.nameBn : t.nameEn} fill className="object-cover" sizes="64px" />
+              ) : (
+                <span className="text-2xl font-bold text-white">{(lang === "bn" ? t.nameBn : t.nameEn).charAt(0)}</span>
+              )}
             </div>
             <span className="text-xs font-bold text-text text-center leading-tight">
               {lang === "bn" ? t.nameBn : t.nameEn}
