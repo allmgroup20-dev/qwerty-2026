@@ -49,11 +49,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   return (
     <>
-      {!isHome && <ScrollProgressBar />}
-      {!isHome && <Navbar />}
+      <ScrollProgressBar />
+      <Navbar />
       <main className={isHome ? "" : "min-h-screen pt-16 md:pt-20"}>{children}</main>
-      {!isHome && <Footer />}
-      {!isHome && <BottomNav />}
+      <Footer />
+      <BottomNav />
       {!isHome && <SmartInstall />}
     </>
   );

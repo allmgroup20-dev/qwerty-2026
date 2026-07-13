@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
 
-// Re-export from product-list page
-export { default } from "../product-list/page";
+export default function ProductsPage() {
+  redirect("/");
+}

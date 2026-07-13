@@ -35,9 +35,9 @@ export default function Footer() {
             <div className="flex flex-col gap-2.5">
               {[
                 { en: "Home", bn: "হোম", href: "/" },
-                { en: "Products", bn: "পণ্য", href: "/products" },
-                { en: "Login", bn: "লগইন", href: "/login" },
-                { en: "Register", bn: "নিবন্ধন", href: "/register" },
+                { en: "Courses", bn: "কোর্স সমূহ", href: "/courses" },
+                { en: "Trainers", bn: "প্রশিক্ষক", href: "/trainers" },
+                { en: "FAQ", bn: "FAQ", href: "/faq" },
               ].map((item) => (
                 <Link key={item.href} href={item.href} className="text-white/60 hover:text-secondary text-sm transition-colors">
                   {lang === "bn" ? item.bn : item.en}

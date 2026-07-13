@@ -1,24 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-
-const testimonials = [
-  {
-    stars: "★★★★★", rating: "5.0/5",
-    quote: "জোবায়ের গ্রুপের নির্দেশিকা আর সহায়তার কারণে আজ আমি নিজের ল্যাপটপ থেকে মাসে ২৫,০০০+ টাকা ইনকাম করছি।",
-    author: "মিতা ইসলাম", label: "ফ্রিল্যান্সার, সিলেট",
-  },
-  {
-    stars: "★★★★★", rating: "4.9/5",
-    quote: "এই কোর্সটা আমাকে রিয়েল মার্কেটের জন্য প্রস্তুত করেছে। এখন নিয়মিত ক্লায়েন্ট পাচ্ছি। সবার কাছে রেকমেন্ড করব!",
-    author: "নীলা হোসেন", label: "ডিজিটাল মার্কেটার, ঢাকা",
-  },
-  {
-    stars: "★★★★★", rating: "5.0/5",
-    quote: "৭ মাসে এখন মাসিক আয় ৪০,০০০+। সবচেয়ে বড় কথা, একটা সহায়ক কমিউনিটি পেয়েছি।",
-    author: "রাফসান জামান", label: "ই-কমার্স আর্নার, চট্টগ্রাম",
-  },
-];
+import { testimonials } from "@/data/landing-page-data";
 
 export default function Testimonials() {
   const [slideIdx, setSlideIdx] = useState(0);
@@ -40,6 +23,7 @@ export default function Testimonials() {
       <div className="section-header">
         <div className="badge mx-auto mb-3 border-info/20 bg-info/10 text-info">💬 শিক্ষার্থীদের মতামত</div>
         <h3 className="text-lg md:text-xl font-black text-text">যারা ইতিমধ্যেই সফল হয়েছেন</h3>
+        <p className="text-sm font-semibold text-text-secondary mt-1">{testimonials.length} জন শিক্ষার্থীর সাফল্যের গল্প</p>
       </div>
 
       <div className="overflow-hidden relative">
