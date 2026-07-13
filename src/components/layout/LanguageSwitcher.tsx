@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLanguageStore } from "@/lib/store";
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ showSolid = true }: { showSolid?: boolean }) {
   const { lang, setLang } = useLanguageStore();
   const [open, setOpen] = useState(false);
 
@@ -11,7 +11,9 @@ export default function LanguageSwitcher() {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all text-sm font-medium"
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm font-medium ${
+          showSolid ? "bg-gray-100 hover:bg-gray-200 text-text" : "bg-white/10 hover:bg-white/20 text-white"
+        }`}
       >
         <span className="text-base">{lang === "en" ? "🇬🇧" : "🇧🇩"}</span>
         <span>{lang === "en" ? "EN" : "বাংলা"}</span>

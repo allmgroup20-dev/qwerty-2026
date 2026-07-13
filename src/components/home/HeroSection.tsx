@@ -2,19 +2,23 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { heroData, testimonials } from "@/data/landing-page-data";
+import { useLanguageStore } from "@/lib/store";
+import { heroData, testimonials, heroSectionBadgeBn, heroSectionBadgeEn } from "@/data/landing-page-data";
 
 function toBn(v: number) {
   return String(v).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[parseInt(d, 10)]);
 }
 
 export default function HeroSection() {
+  const { lang } = useLanguageStore();
   const [liveCount, setLiveCount] = useState(866);
 
   useEffect(() => {
     const id = setInterval(() => setLiveCount((p) => p + Math.floor(Math.random() * 3) + 1), 15000);
     return () => clearInterval(id);
   }, []);
+
+  const h = heroData;
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[#0B1121] via-[#111B33] to-[#0F1A2E]">
@@ -30,47 +34,49 @@ export default function HeroSection() {
           <div className="flex flex-wrap gap-2 justify-center mb-4">
             <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-white text-sm font-bold">
               <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              {toBn(liveCount)}+ সক্রিয় শিক্ষার্থী
+              {toBn(liveCount)}+ {lang === "bn" ? h.liveCountLabelBn : h.liveCountLabelEn}
             </span>
-            {heroData.badges.map((badge, i) => (
+            {h.badges.map((badge, i) => (
               <span key={i} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm text-white/80 text-xs font-bold">
-                {badge.icon} {badge.text}
+                {badge.icon} {lang === "bn" ? badge.textBn : badge.textEn}
               </span>
             ))}
           </div>
 
           <div className="inline-flex gap-2 px-4 py-2.5 mx-auto mb-3.5 rounded-full bg-primary/10 border border-primary/20 font-extrabold text-sm text-primary">
-            💰 সরাসরি কাজ শিখে প্রথম মাসেই <span className="text-secondary font-black">১১,০০০</span> থেকে <span className="text-secondary font-black">৯২,০০০</span> টাকা পর্যন্ত উপার্জনের বাস্তবমুখী সুযোগ!
+            {lang === "bn" ? heroSectionBadgeBn : heroSectionBadgeEn}
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tight mb-4">
-            <span className="text-white">{heroData.headlineBn}</span>
+            <span className="text-white">{lang === "bn" ? h.headlineBn : h.headlineEn}</span>
           </h1>
 
           <p className="text-base md:text-lg text-white/60 max-w-3xl mx-auto mb-6 leading-relaxed">
-            {heroData.subheadBn}
+            {lang === "bn" ? h.subheadBn : h.subheadEn}
           </p>
 
           <div className="max-w-3xl mx-auto mb-8 grid gap-4 md:grid-cols-2">
             <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-left">
-              <p className="text-warning font-bold text-sm mb-1">⚡ সমস্যা:</p>
-              <p className="text-white/70 text-sm leading-relaxed">{heroData.problemBn}</p>
+              <p className="text-warning font-bold text-sm mb-1">⚡ {lang === "bn" ? "সমস্যা:" : "Problem:"}</p>
+              <p className="text-white/70 text-sm leading-relaxed">{lang === "bn" ? h.problemBn : h.problemEn}</p>
             </div>
             <div className="p-4 rounded-xl bg-success/10 border border-success/20 text-left">
-              <p className="text-success font-bold text-sm mb-1">✅ সমাধান:</p>
-              <p className="text-white/70 text-sm leading-relaxed">{heroData.solutionBn}</p>
+              <p className="text-success font-bold text-sm mb-1">✅ {lang === "bn" ? "সমাধান:" : "Solution:"}</p>
+              <p className="text-white/70 text-sm leading-relaxed">{lang === "bn" ? h.solutionBn : h.solutionEn}</p>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-3 justify-center mb-6">
-            <Link href="/register" className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-orange to-orange-dark text-white font-bold text-lg shadow-xl shadow-orange/30 hover:shadow-orange/40 hover:-translate-y-0.5 transition-all duration-300">
-              {heroData.ctaBn} →
+            <Link href={h.ctaHref} className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-orange to-orange-dark text-white font-bold text-lg shadow-xl shadow-orange/30 hover:shadow-orange/40 hover:-translate-y-0.5 transition-all duration-300">
+              {lang === "bn" ? h.ctaBn : h.ctaEn} →
             </Link>
           </div>
 
           <div className="p-4 rounded-2xl bg-white/5 border border-white/10 max-w-2xl mx-auto">
             <p className="text-white/80 text-sm leading-relaxed font-bold">
-              🏆 {testimonials.length} জন শিক্ষার্থী ইতিমধ্যেই সফল হয়েছেন! তাদের গড় মাসিক আয় <span className="text-secondary">২৫,০০০+ টাকা</span>
+              {lang === "bn"
+                ? `🏆 ${testimonials.length} জন শিক্ষার্থী ইতিমধ্যেই সফল হয়েছেন! তাদের গড় মাসিক আয় ২৫,০০০+ টাকা`
+                : `🏆 ${testimonials.length} students have already succeeded! Their average monthly income is 25,000+ BDT`}
             </p>
           </div>
         </div>

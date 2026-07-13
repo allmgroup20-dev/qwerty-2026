@@ -1,17 +1,24 @@
 "use client";
 
-import { trainers, courseCategories } from "@/data/landing-page-data";
 import Image from "next/image";
+import { useLanguageStore } from "@/lib/store";
+import { trainers, courseCategories } from "@/data/landing-page-data";
 
 export default function TrainersPage() {
+  const { lang } = useLanguageStore();
+
   return (
     <div className="min-h-screen bg-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
         <div className="text-center mb-8">
-          <div className="badge mx-auto mb-3">👨‍🏫 আমাদের প্রশিক্ষক</div>
-          <h1 className="text-2xl md:text-3xl font-black text-text">দেশের সেরা ১২ জন বিশেষজ্ঞ প্রশিক্ষক</h1>
+          <div className="badge mx-auto mb-3">👨‍🏫 {lang === "bn" ? "আমাদের প্রশিক্ষক" : "Our Trainers"}</div>
+          <h1 className="text-2xl md:text-3xl font-black text-text">
+            {lang === "bn" ? `দেশের সেরা ${trainers.length} জন বিশেষজ্ঞ প্রশিক্ষক` : `Bangladesh's Top ${trainers.length} Expert Trainers`}
+          </h1>
           <p className="text-text-secondary font-semibold mt-2 max-w-2xl mx-auto">
-            প্রতিটি প্রশিক্ষকই নিজ নিজ ক্ষেত্রে ৫+ বছরের অভিজ্ঞ। রিয়েল মার্কেট প্রজেক্ট ও হাতে-কলমে শেখান।
+            {lang === "bn"
+              ? "প্রতিটি প্রশিক্ষকই নিজ নিজ ক্ষেত্রে ৫+ বছরের অভিজ্ঞ। রিয়েল মার্কেট প্রজেক্ট ও হাতে-কলমে শেখান।"
+              : "Each trainer has 5+ years of experience. They teach real market projects hands-on."}
           </p>
         </div>
 
@@ -26,14 +33,14 @@ export default function TrainersPage() {
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-black text-text">{trainer.nameBn}</h3>
-                    <p className="text-info text-sm font-bold">{trainer.specialty}</p>
-                    <p className="text-xs text-text-secondary font-medium mt-0.5">{trainer.credential}</p>
+                    <p className="text-info text-sm font-bold">{lang === "bn" ? trainer.specialtyBn : trainer.specialtyEn}</p>
+                    <p className="text-xs text-text-secondary font-medium mt-0.5">{lang === "bn" ? trainer.credentialBn : trainer.credentialEn}</p>
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-border">
-                  <p className="text-xs font-bold text-text-secondary mb-2">📚 {catCount}টি ক্যাটাগরিতে কোর্স:</p>
+                  <p className="text-xs font-bold text-text-secondary mb-2">📚 {catCount}টি {lang === "bn" ? "ক্যাটাগরিতে কোর্স:" : "categories:"}</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {trainer.courses.slice(0, 3).map((c, ci) => (
+                    {(lang === "bn" ? trainer.coursesBn : trainer.coursesEn).slice(0, 3).map((c, ci) => (
                       <span key={ci} className="px-2.5 py-1 rounded-lg bg-primary/5 text-primary text-xs font-bold">{c}</span>
                     ))}
                   </div>
@@ -44,9 +51,11 @@ export default function TrainersPage() {
         </div>
 
         <div className="mt-10 text-center p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-info/5 border border-primary/20">
-          <h2 className="text-lg font-black text-text mb-2">আপনার প্রশিক্ষক কে?</h2>
+          <h2 className="text-lg font-black text-text mb-2">{lang === "bn" ? "আপনার প্রশিক্ষক কে?" : "Who is Your Trainer?"}</h2>
           <p className="text-text-secondary font-semibold max-w-xl mx-auto">
-            রেজিস্টার করার পর আপনি আপনার পছন্দের প্রশিক্ষকের কোর্স বেছে নিতে পারবেন। সব কোর্সই আপনার জন্য উন্মুক্ত!
+            {lang === "bn"
+              ? "রেজিস্টার করার পর আপনি আপনার পছন্দের প্রশিক্ষকের কোর্স বেছে নিতে পারবেন। সব কোর্সই আপনার জন্য উন্মুক্ত!"
+              : "After registration, you can choose courses from your preferred trainer. All courses are open to you!"}
           </p>
         </div>
       </div>

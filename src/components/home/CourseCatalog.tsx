@@ -3,17 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { courseCategories, trainers } from "@/data/landing-page-data";
+import { useLanguageStore } from "@/lib/store";
+import { courseCategories, trainers, platforms } from "@/data/landing-page-data";
 
 export default function CourseCatalog() {
+  const { lang } = useLanguageStore();
   const [showTrainers, setShowTrainers] = useState(false);
 
   return (
     <div className="rounded-2xl p-5 md:p-6 bg-gradient-to-br from-primary/5 to-primary/5 border border-primary/20">
       <div className="section-header">
-        <div className="badge mx-auto mb-3">🎯 দেখুন — ২৩০+ কোর্সে আপনি কী পাচ্ছেন</div>
-        <h3 className="text-lg md:text-xl font-black text-text">২৩০+ প্রিমিয়াম কোর্স — {courseCategories.length}টি বিভাগে</h3>
-        <p className="text-sm font-semibold text-text-secondary mt-1">দেশের সেরা {trainers.length} জন প্রশিক্ষকের কোর্স</p>
+        <div className="badge mx-auto mb-3">🎯 {lang === "bn" ? "দেখুন — ২৩০+ কোর্সে আপনি কী পাচ্ছেন" : "See What You Get with 230+ Courses"}</div>
+        <h3 className="text-lg md:text-xl font-black text-text">{lang === "bn" ? `২৩০+ প্রিমিয়াম কোর্স — ${courseCategories.length}টি বিভাগে` : `230+ Premium Courses in ${courseCategories.length} Categories`}</h3>
+        <p className="text-sm font-semibold text-text-secondary mt-1">{lang === "bn" ? `দেশের সেরা ${trainers.length} জন প্রশিক্ষকের কোর্স` : `Courses from Bangladesh's top ${trainers.length} trainers`}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -21,8 +23,8 @@ export default function CourseCatalog() {
           <div key={cat.id} className="flex items-center gap-3 p-3.5 rounded-xl bg-white border border-border hover:border-info/30 hover:shadow-sm transition-all">
             <span className="text-2xl leading-none">{cat.icon}</span>
             <div>
-              <span className="font-bold text-sm text-text leading-tight block">{cat.title}</span>
-              <span className="text-xs text-text-secondary">{cat.courses.length}+ কোর্স</span>
+              <span className="font-bold text-sm text-text leading-tight block">{lang === "bn" ? cat.titleBn : cat.titleEn}</span>
+              <span className="text-xs text-text-secondary">{cat.courses.length}+ {lang === "bn" ? "কোর্স" : "courses"}</span>
             </div>
           </div>
         ))}
@@ -33,21 +35,23 @@ export default function CourseCatalog() {
           onClick={() => setShowTrainers(!showTrainers)}
           className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl border-2 border-dashed border-border bg-white text-info font-extrabold text-sm cursor-pointer transition-all hover:border-info hover:bg-info/5"
         >
-          👨‍🏫 {showTrainers ? "ট্রেইনারদের তালিকা সংকুচিত করুন" : "সব ট্রেইনার দেখুন (১২ জন)"}
+          👨‍🏫 {showTrainers
+            ? (lang === "bn" ? "ট্রেইনারদের তালিকা সংকুচিত করুন" : "Hide Trainer List")
+            : (lang === "bn" ? `সব ট্রেইনার দেখুন (${trainers.length} জন)` : `Show All ${trainers.length} Trainers`)}
           <span className={`transition-transform duration-300 ${showTrainers ? "rotate-180" : ""}`}>▼</span>
         </button>
         {showTrainers && (
           <div className="mt-4">
             <div className="rounded-xl p-4 bg-white border border-border">
-              <h4 className="font-black text-sm text-text mb-3">👨‍🏫 শীর্ষ প্রশিক্ষকবৃন্দ</h4>
-              <p className="text-xs font-semibold text-text-secondary mb-3">যেসব তারকা প্রশিক্ষকের কোর্স আপনি পাচ্ছেন</p>
+              <h4 className="font-black text-sm text-text mb-3">👨‍🏫 {lang === "bn" ? "শীর্ষ প্রশিক্ষকবৃন্দ" : "Top Trainers"}</h4>
+              <p className="text-xs font-semibold text-text-secondary mb-3">{lang === "bn" ? "যেসব তারকা প্রশিক্ষকের কোর্স আপনি পাচ্ছেন" : "Courses from these star trainers"}</p>
               <div className="flex flex-wrap gap-2">
                 {trainers.map((t) => (
                   <div key={t.name} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-border">
                     <div className="w-8 h-8 rounded-lg overflow-hidden bg-gradient-to-br from-info to-orange relative flex-shrink-0">
                       <Image src={t.image} alt={t.nameBn} fill className="object-cover" sizes="32px" />
                     </div>
-                    <span className="font-bold text-xs text-text">{t.nameBn} — {t.specialty}</span>
+                    <span className="font-bold text-xs text-text">{t.nameBn} — {lang === "bn" ? t.specialtyBn : t.specialtyEn}</span>
                   </div>
                 ))}
               </div>
@@ -58,7 +62,7 @@ export default function CourseCatalog() {
 
       <div className="text-center mt-4">
         <Link href="/courses" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-orange to-orange-dark text-white font-black text-sm no-underline shadow-lg shadow-orange/30 hover:-translate-y-0.5 transition-all cursor-pointer">
-          📚 সম্পূর্ণ ক্যাটালগ দেখুন →
+          📚 {lang === "bn" ? "সম্পূর্ণ ক্যাটালগ দেখুন →" : "View Full Catalog →"}
         </Link>
       </div>
     </div>

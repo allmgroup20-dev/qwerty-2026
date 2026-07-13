@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useLanguageStore } from "@/lib/store";
 import { faqs } from "@/data/landing-page-data";
 
 const previewFaqs = faqs.slice(0, 4);
 
 export default function FAQSection() {
+  const { lang } = useLanguageStore();
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
   return (
     <div className="rounded-2xl p-5 md:p-6 bg-white border border-border">
       <div className="section-header">
-        <div className="badge mx-auto mb-3">🤔 আপনার মনে কি প্রশ্ন আছে?</div>
-        <h3 className="text-lg md:text-xl font-black text-text">সচরাচর জিজ্ঞাসা</h3>
+        <div className="badge mx-auto mb-3">🤔 {lang === "bn" ? "আপনার মনে কি প্রশ্ন আছে?" : "Have Questions?"}</div>
+        <h3 className="text-lg md:text-xl font-black text-text">{lang === "bn" ? "সচরাচর জিজ্ঞাসা" : "Frequently Asked Questions"}</h3>
       </div>
 
       <div className="grid gap-2.5 max-w-3xl mx-auto">
@@ -24,14 +26,14 @@ export default function FAQSection() {
               aria-expanded={openIdx === i}
               className="w-full flex items-center justify-between p-4 text-sm font-bold text-text bg-transparent border-none cursor-pointer text-left font-[inherit] hover:bg-primary/5 transition-colors"
             >
-              <span>{faq.q}</span>
+              <span>{lang === "bn" ? faq.qBn : faq.qEn}</span>
               <span className={`text-text-secondary text-xs transition-transform duration-200 ${openIdx === i ? "rotate-180" : ""}`}>▼</span>
             </button>
             <div
               className="overflow-hidden transition-all duration-300 ease-in-out"
               style={{ maxHeight: openIdx === i ? "300px" : "0px", padding: openIdx === i ? "0 16px 16px" : "0 16px" }}
             >
-              <p className="text-sm text-text-secondary leading-relaxed m-0">{faq.a}</p>
+              <p className="text-sm text-text-secondary leading-relaxed m-0">{lang === "bn" ? faq.aBn : faq.aEn}</p>
             </div>
           </div>
         ))}
@@ -39,7 +41,7 @@ export default function FAQSection() {
 
       <div className="text-center mt-4">
         <Link href="/faq" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-bg border border-border text-info font-bold text-sm hover:bg-info/5 transition-all">
-          📖 সব প্রশ্ন ও উত্তর দেখুন ({faqs.length}টি)
+          📖 {lang === "bn" ? `সব প্রশ্ন ও উত্তর দেখুন (${faqs.length}টি)` : `View All ${faqs.length} FAQs`}
         </Link>
       </div>
     </div>

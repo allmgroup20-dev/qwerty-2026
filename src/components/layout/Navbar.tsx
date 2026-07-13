@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useLanguageStore } from "@/lib/store";
 import LanguageSwitcher from "./LanguageSwitcher";
 
@@ -15,6 +16,8 @@ const menuItems = [
 
 export default function Navbar() {
   const { lang } = useLanguageStore();
+  const pathname = usePathname();
+  const isHome = pathname === "/";
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -24,12 +27,14 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const showSolid = !isHome || scrolled;
+
   return (
     <>
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white/90 backdrop-blur-lg shadow-sm border-b border-border"
+          showSolid
+            ? "bg-white/95 backdrop-blur-lg shadow-sm border-b border-border"
             : "bg-transparent"
         }`}
       >
@@ -40,7 +45,7 @@ export default function Navbar() {
                 JG
               </div>
               <div className="hidden sm:block">
-                <span className={`font-bold text-lg ${scrolled ? "text-primary" : "text-white"}`}>Jobayer</span>
+                <span className={`font-bold text-lg ${showSolid ? "text-primary" : "text-white"}`}>Jobayer</span>
                 <span className="text-secondary font-bold"> Group</span>
               </div>
             </Link>
@@ -51,7 +56,7 @@ export default function Navbar() {
                   key={item.key}
                   href={item.href}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    scrolled
+                    showSolid
                       ? "text-text-secondary hover:text-primary hover:bg-primary/5"
                       : "text-white/80 hover:text-white hover:bg-white/10"
                   }`}
@@ -62,16 +67,20 @@ export default function Navbar() {
             </div>
 
             <div className="flex items-center gap-3">
-              <LanguageSwitcher />
-              <Link href="/login" className="hidden sm:inline-flex btn-primary text-sm !px-5 !py-2.5">
+              <LanguageSwitcher showSolid={showSolid} />
+              <Link href="/login" className={`hidden sm:inline-flex text-sm !px-5 !py-2.5 rounded-xl font-bold transition-all ${
+                showSolid
+                  ? "btn-primary"
+                  : "border border-white/30 text-white hover:bg-white/10"
+              }`}>
                 {lang === "bn" ? "লগইন" : "Login"}
               </Link>
               <button
-                className={`md:hidden p-2 rounded-lg ${scrolled ? "hover:bg-primary/5" : "hover:bg-white/10"}`}
+                className={`md:hidden p-2 rounded-lg ${showSolid ? "hover:bg-primary/5 text-primary" : "hover:bg-white/10 text-white"}`}
                 onClick={() => setMobileOpen(!mobileOpen)}
                 aria-label={lang === "bn" ? "মেনু" : "Menu"}
               >
-                <svg className={`w-6 h-6 ${scrolled ? "text-primary" : "text-white"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   {mobileOpen ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   ) : (
@@ -94,25 +103,16 @@ export default function Navbar() {
                   key={item.key}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className="px-4 py-3 rounded-xl text-base font-medium text-text-secondary 
-                           hover:text-primary hover:bg-primary/5 transition-all"
+                  className="px-4 py-3 rounded-xl text-base font-medium text-text-secondary hover:text-primary hover:bg-primary/5 transition-all"
                 >
                   {lang === "bn" ? item.bn : item.en}
                 </Link>
               ))}
               <div className="h-px bg-border my-2" />
-              <Link
-                href="/login"
-                onClick={() => setMobileOpen(false)}
-                className="btn-primary text-center text-sm"
-              >
+              <Link href="/login" onClick={() => setMobileOpen(false)} className="btn-primary text-center text-sm">
                 {lang === "bn" ? "লগইন" : "Login"}
               </Link>
-              <Link
-                href="/register"
-                onClick={() => setMobileOpen(false)}
-                className="btn-secondary text-center text-sm"
-              >
+              <Link href="/register" onClick={() => setMobileOpen(false)} className="btn-secondary text-center text-sm">
                 {lang === "bn" ? "নিবন্ধন" : "Register"}
               </Link>
             </div>

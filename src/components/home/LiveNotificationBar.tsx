@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLanguageStore } from "@/lib/store";
+import { liveNotifText } from "@/data/landing-page-data";
 
 const bdDistricts = [
   "ঢাকা", "চট্টগ্রাম", "রাজশাহী", "খুলনা", "সিলেট", "বরিশাল", "রংপুর",
@@ -16,6 +18,7 @@ const names = [
 ];
 
 export default function LiveNotificationBar() {
+  const { lang } = useLanguageStore();
   const [notification, setNotification] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
   const queueRef = useRef<string[]>([]);
@@ -41,7 +44,8 @@ export default function LiveNotificationBar() {
     const addNotif = () => {
       const name = names[Math.floor(Math.random() * names.length)];
       const district = bdDistricts[Math.floor(Math.random() * bdDistricts.length)];
-      queueRef.current.push(`${name}, ${district} থেকে সদ্য যুক্ত হলেন!`);
+      const suffix = lang === "bn" ? liveNotifText.joinedRecent : liveNotifText.joinedRecentEn;
+      queueRef.current.push(`${name}, ${district} ${suffix}`);
       if (!timerRef.current) showNext();
     };
     addNotif();
@@ -50,7 +54,7 @@ export default function LiveNotificationBar() {
       clearInterval(interval);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, []);
+  }, [lang]);
 
   if (!visible || !notification) return null;
 
