@@ -7,7 +7,7 @@ import { testimonials, chatTestimonials, gridTestimonials, phpSliderTestimonials
 
 type TabType = "carousel" | "chat" | "grid";
 
-export default function Testimonials() {
+export default function Testimonials({ compact }: { compact?: boolean }) {
   const { lang } = useLanguageStore();
   const [slideIdx, setSlideIdx] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -15,17 +15,19 @@ export default function Testimonials() {
   const [activeTab, setActiveTab] = useState<TabType>("carousel");
 
   const allCarouselTestimonials = [...testimonials, ...phpSliderTestimonials];
+  const displayCarousel = compact ? allCarouselTestimonials.slice(0, 4) : allCarouselTestimonials;
 
   useEffect(() => {
+    if (compact) return;
     if (activeTab !== "carousel") return;
-    intervalRef.current = setInterval(() => setSlideIdx((p) => (p + 1) % allCarouselTestimonials.length), 4000);
+    intervalRef.current = setInterval(() => setSlideIdx((p) => (p + 1) % displayCarousel.length), 4000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [activeTab, allCarouselTestimonials.length]);
+  }, [activeTab, displayCarousel.length, compact]);
 
   const goTo = (n: number) => {
     setSlideIdx(n);
     if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => setSlideIdx((p) => (p + 1) % allCarouselTestimonials.length), 4000);
+    intervalRef.current = setInterval(() => setSlideIdx((p) => (p + 1) % displayCarousel.length), 4000);
   };
 
   const visibleGrid = showAllGrid ? gridTestimonials : gridTestimonials.slice(0, 4);
@@ -38,22 +40,24 @@ export default function Testimonials() {
 
   return (
     <div className="rounded-2xl p-5 md:p-6 bg-white border border-border">
-      {/* Tab Switcher */}
-      <div className="flex flex-wrap gap-2 justify-center mb-5">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => { setActiveTab(tab.id); setSlideIdx(0); }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === tab.id
-                ? "bg-info text-white shadow-lg shadow-info/30"
-                : "bg-white border border-border text-text-secondary hover:border-info/30"
-            }`}
-          >
-            {lang === "bn" ? tab.labelBn : tab.labelEn}
-          </button>
-        ))}
-      </div>
+      {/* Tab Switcher — hidden in compact mode */}
+      {!compact && (
+        <div className="flex flex-wrap gap-2 justify-center mb-5">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id); setSlideIdx(0); }}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === tab.id
+                  ? "bg-info text-white shadow-lg shadow-info/30"
+                  : "bg-white border border-border text-text-secondary hover:border-info/30"
+              }`}
+            >
+              {lang === "bn" ? tab.labelBn : tab.labelEn}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="section-header">
         <div className="badge mx-auto mb-3 border-info/20 bg-info/10 text-info">
@@ -69,10 +73,10 @@ export default function Testimonials() {
       </div>
 
       {/* Carousel */}
-      {activeTab === "carousel" && (
+      {(activeTab === "carousel" || compact) && (
         <div className="overflow-hidden relative">
           <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${slideIdx * 100}%)` }}>
-            {allCarouselTestimonials.map((t, i) => (
+            {displayCarousel.map((t, i) => (
               <div key={i} className="min-w-full px-2 box-border">
                 <div className="p-6 md:p-7 rounded-xl bg-bg border border-border text-center">
                   <div className="text-info text-xl mb-2.5">{t.stars} <span className="text-text-secondary text-sm font-bold">{t.rating}</span></div>
@@ -84,7 +88,7 @@ export default function Testimonials() {
             ))}
           </div>
           <div className="flex justify-center gap-2 mt-3.5">
-            {allCarouselTestimonials.map((_, i) => (
+            {displayCarousel.map((_, i) => (
               <button key={i} onClick={() => goTo(i)} className={`w-2.5 h-2.5 rounded-full border-none p-0 cursor-pointer transition-all ${i === slideIdx ? "bg-info scale-125" : "bg-border"}`} />
             ))}
           </div>
@@ -92,7 +96,7 @@ export default function Testimonials() {
       )}
 
       {/* Chat-style testimonials */}
-      {activeTab === "chat" && (
+      {!compact && activeTab === "chat" && (
         <div className="space-y-4">
           {chatTestimonials.map((t, i) => (
             <div key={i} className="bg-white border border-border rounded-2xl p-4 md:p-5 flex gap-3.5 relative overflow-hidden">
@@ -123,7 +127,7 @@ export default function Testimonials() {
       )}
 
       {/* Grid testimonials */}
-      {activeTab === "grid" && (
+      {!compact && activeTab === "grid" && (
         <div className="mt-4">
           <h4 className="text-base md:text-lg font-bold text-text mb-4 text-center">
             {lang === "bn" ? "আরও সফল শিক্ষার্থীদের মতামত" : "More Success Stories"}
