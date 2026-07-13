@@ -13,7 +13,7 @@ export default function HomePage() {
     <div className="bg-bg">
       <LiveNotificationBar />
       <HeroSection />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 pb-8 md:pb-12 -mt-8 relative z-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 pb-8 md:pb-12 relative z-20">
         <StatsCounter />
         <HowItWorks />
         <Testimonials />
