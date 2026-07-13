@@ -46,6 +46,8 @@ export interface CourseCategory {
   icon: string;
   titleBn: string;
   titleEn: string;
+  priceBn?: string;
+  priceEn?: string;
   platformLogos: string[];
   trainers: string[];
   courses: CourseItem[];
@@ -269,6 +271,7 @@ export const courseCategories: CourseCategory[] = [
   {
     id: "institutions", icon: "🏛️",
     titleBn: "প্রতিষ্ঠানসমূহ", titleEn: "Institutions",
+    priceBn: "২০,০০০", priceEn: "20,000",
     descriptionBn: "প্রধান প্রতিষ্ঠানসমূহের তালিকা।",
     descriptionEn: "List of major institutions.",
     platformLogos: [], trainers: [],
@@ -288,6 +291,7 @@ export const courseCategories: CourseCategory[] = [
   {
     id: "trainers", icon: "👨‍🏫",
     titleBn: "প্রশিক্ষকবৃন্দ", titleEn: "Trainers",
+    priceBn: "২৫,০০০", priceEn: "25,000",
     descriptionBn: "যে সকল প্রশিক্ষকবৃন্দের কোর্স আপনি ফ্রিতে পাবেন। তালিকায় থাকা সকল জনপ্রিয় প্রশিক্ষকবৃন্দের কোর্স একেবারে ফ্রিতেই পাবেন।",
     descriptionEn: "Courses you get for free from these trainers. All popular trainers' courses are completely free.",
     platformLogos: [], trainers: ["Ayman Sadiq", "Munzarin Shahid", "Jhankar Mahbub", "Khalid Farhan", "Sadman Sadik", "Freelancer Nasim", "Tahsan Khan", "Jubayer Hossain", "Abtahi Iptesam", "Mahade Hasan", "Vaibhav Sisinity", "Soban Tariq"],
@@ -310,6 +314,7 @@ export const courseCategories: CourseCategory[] = [
   {
     id: "freelancing", icon: "💼",
     titleBn: "ফ্রিল্যান্সিং", titleEn: "Freelancing",
+    priceBn: "১০,০০০", priceEn: "10,000",
     descriptionBn: "মূলধারার ফ্রিল্যান্সিং, ডিজিটাল মার্কেটিং, এসইও এবং ডেটা বিশ্লেষণ — তালিকায় থাকা প্রত্যেকটি কোর্স পাবেন একেবারে ফ্রিতে।",
     descriptionEn: "Mainstream freelancing, digital marketing, SEO and data analysis — every course is completely free.",
     platformLogos: ["Upwork", "Fiverr", "Freelancer"], trainers: ["Khalid Farhan", "Freelancer Nasim"],
@@ -351,6 +356,7 @@ export const courseCategories: CourseCategory[] = [
   {
     id: "ecommerce", icon: "🌍",
     titleBn: "ই-কমার্স", titleEn: "E-Commerce",
+    priceBn: "১৪,০০০", priceEn: "14,000",
     descriptionBn: "গ্লোবাল ই-কমার্স, ব্যবসা উদ্যোগ, পেশাদার পেশা ও অন্যান্য দক্ষতা।",
     descriptionEn: "Global e-commerce, business ventures, professional careers & other skills.",
     platformLogos: ["Shopify", "Amazon"], trainers: ["Mahade Hasan", "Jubayer Hossain"],
@@ -410,6 +416,7 @@ export const courseCategories: CourseCategory[] = [
   {
     id: "development", icon: "👨‍💻",
     titleBn: "ডেভেলপমেন্ট", titleEn: "Development",
+    priceBn: "১৮,০০০", priceEn: "18,000",
     descriptionBn: "কোডিং, ওয়েব ও সফটওয়্যার অ্যাপ্লিকেশন ডেভেলপমেন্ট।",
     descriptionEn: "Coding, web & software application development.",
     platformLogos: ["WordPress", "Figma"], trainers: ["Jhankar Mahbub", "Abtahi Iptesam"],
@@ -443,6 +450,7 @@ export const courseCategories: CourseCategory[] = [
   {
     id: "language-jobs", icon: "📚",
     titleBn: "ভাষা ও চাকরি", titleEn: "Language & Jobs",
+    priceBn: "৮,৫০০", priceEn: "8,500",
     descriptionBn: "সরকারি বেসরকারি চাকরি এবং ভাষা শিক্ষা কোর্সসমূহ।",
     descriptionEn: "Government & private job preparation and language learning courses.",
     platformLogos: ["YouTube"], trainers: ["Ayman Sadiq", "Munzarin Shahid", "Vaibhav Sisinity"],
@@ -484,6 +492,7 @@ export const courseCategories: CourseCategory[] = [
   {
     id: "uiux-multimedia", icon: "🎨",
     titleBn: "UI/UX ও মাল্টিমিডিয়া", titleEn: "UI/UX & Multimedia",
+    priceBn: "১৬,০০০", priceEn: "16,000",
     descriptionBn: "ইউআই/ইউএক্স, ভিজ্যুয়াল মাল্টিমিডিয়া ও থ্রিডি অ্যানিমেশন আর্টস।",
     descriptionEn: "UI/UX, visual multimedia & 3D animation arts.",
     platformLogos: ["Figma"], trainers: ["Sadman Sadik"],
@@ -522,6 +531,7 @@ export const courseCategories: CourseCategory[] = [
   {
     id: "software-tools", icon: "🛠️",
     titleBn: "সফটওয়্যার টুলস", titleEn: "Software Tools",
+    priceBn: "৬,০০০", priceEn: "6,000",
     descriptionBn: "সফটওয়্যার টুলস এবং ডিজিটাল প্ল্যাটফর্মের প্রয়োজনীয়তার ক্রমবিন্যাস — এই সফটওয়্যার গুলোর প্রিমিয়াম ভার্সন পাবেন ফ্রিতে।",
     descriptionEn: "Software tools and digital platforms sorted by necessity — get premium versions of these software for free.",
     platformLogos: [], trainers: [],
@@ -579,6 +589,7 @@ export const courseCategories: CourseCategory[] = [
   {
     id: "notes", icon: "🔐",
     titleBn: "নোটস", titleEn: "Notes",
+    priceBn: "৩,৫০০", priceEn: "3,500",
     descriptionBn: "শেখার পাশাপাশি প্রয়োজনীয় নিরাপত্তা বিষয়ক রিসোর্স।",
     descriptionEn: "Security-related resources alongside learning.",
     platformLogos: [], trainers: [],

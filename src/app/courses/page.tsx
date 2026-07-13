@@ -88,6 +88,16 @@ export default function CoursesPage() {
                 {activeCat.icon} {lang === "bn" ? activeCat.titleBn : activeCat.titleEn}
               </h4>
 
+              {activeCat.id !== "knowledge-skills" && activeCat.priceBn && (
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  <span className="font-bold text-text-secondary line-through">
+                    {lang === "bn" ? activeCat.priceBn : activeCat.priceEn}৳
+                  </span>
+                  <span className="text-text-secondary font-bold text-xs">→</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-primary to-orange text-white text-xs font-extrabold">৳৯৯</span>
+                </div>
+              )}
+
               {activeCat.descriptionBn && activeCat.id === "knowledge-skills" ? (
                 <p className="text-xs font-semibold text-text-secondary -mt-2">
                   {lang === "bn" ? activeCat.descriptionBn : activeCat.descriptionEn}
