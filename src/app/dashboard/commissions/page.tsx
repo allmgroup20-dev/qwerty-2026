@@ -47,7 +47,7 @@ export default function CommissionsPage() {
                     <td className="p-4 text-sm font-semibold text-right">{formatCurrency(c.amount, c.currency)}</td>
                     <td className="p-4 text-center">
                       <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(c.status)}`}>
-                        {getStatusBadge(c.status)}
+                        {getStatusBadge(c.status, lang)}
                       </span>
                     </td>
                     <td className="p-4 text-sm text-text-secondary text-right">{formatDate(c.date)}</td>

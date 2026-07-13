@@ -51,18 +51,18 @@ export function getStatusColor(status: string): string {
   return colors[status?.toLowerCase()] || "text-gray-600 bg-gray-50";
 }
 
-export function getStatusBadge(status: string): string {
-  const labels: Record<string, string> = {
-    active: "Active",
-    inactive: "Inactive",
-    pending: "Pending",
-    completed: "Completed",
-    cancelled: "Cancelled",
-    paid: "Paid",
-    unpaid: "Unpaid",
-    processing: "Processing",
-    approved: "Approved",
-    rejected: "Rejected",
+export function getStatusBadge(status: string, lang: "bn" | "en" = "en"): string {
+  const labels: Record<string, Record<"bn" | "en", string>> = {
+    active: { bn: "সক্রিয়", en: "Active" },
+    inactive: { bn: "নিষ্ক্রিয়", en: "Inactive" },
+    pending: { bn: "বিচারাধীন", en: "Pending" },
+    completed: { bn: "সম্পন্ন", en: "Completed" },
+    cancelled: { bn: "বাতিল", en: "Cancelled" },
+    paid: { bn: "পরিশোধিত", en: "Paid" },
+    unpaid: { bn: "অপরিশোধিত", en: "Unpaid" },
+    processing: { bn: "প্রক্রিয়াধীন", en: "Processing" },
+    approved: { bn: "অনুমোদিত", en: "Approved" },
+    rejected: { bn: "প্রত্যাখ্যাত", en: "Rejected" },
   };
-  return labels[status?.toLowerCase()] || status;
+  return labels[status?.toLowerCase()]?.[lang] || status;
 }

@@ -54,7 +54,7 @@ export default function CompanyMembersPage() {
                     <td className="p-4 text-sm text-center font-medium">{m.team}</td>
                     <td className="p-4 text-center">
                       <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(m.status)}`}>
-                        {getStatusBadge(m.status)}
+                        {getStatusBadge(m.status, lang)}
                       </span>
                     </td>
                     <td className="p-4 text-sm text-text-secondary text-right">{formatDate(m.date)}</td>

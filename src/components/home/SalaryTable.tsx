@@ -10,14 +10,16 @@ function seededRandom(seed: number) {
   return Math.abs(Math.sin(seed) * 10000) % 1;
 }
 
-function generateRow(index: number): RowData {
+function generateRow(index: number, lang: "bn" | "en"): RowData {
   const seed = index * 999;
   const name = salaryNames[Math.floor(seededRandom(seed) * salaryNames.length)];
   const success = [7, 12, 22, 29, 38, 46, 55, 68, 79, 89].includes(index % 100);
   const amount = success
     ? Math.floor(seededRandom(seed + 2) * 1501) + 1000
     : Math.floor(seededRandom(seed + 3) * 136) + 15;
-  const status = success ? "নগদে ট্রান্সফার হয়েছে" : "বোনাস দেওয়া হয়েছে";
+  const status = success
+    ? (lang === "bn" ? "নগদে ট্রান্সফার হয়েছে" : "Transferred in Cash")
+    : (lang === "bn" ? "বোনাস দেওয়া হয়েছে" : "Bonus Given");
   return { name, amount, status, success };
 }
 
@@ -27,6 +29,8 @@ function toBn(v: number) {
 
 export default function SalaryTable() {
   const { lang } = useLanguageStore();
+  const langRef = useRef(lang);
+  langRef.current = lang;
   const [rows, setRows] = useState<RowData[]>([]);
   const ref = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -46,13 +50,13 @@ export default function SalaryTable() {
       const startIdx = Math.floor(top / itemH);
       if (startIdx !== baseRef.current) {
         baseRef.current = startIdx;
-        setRows(Array.from({ length: 14 }, (_, i) => generateRow(startIdx + i)));
+        setRows(Array.from({ length: 14 }, (_, i) => generateRow(startIdx + i, langRef.current)));
       }
       rafRef.current = requestAnimationFrame(scroll);
     };
     rafRef.current = requestAnimationFrame(scroll);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, []);
+  }, [lang]);
 
   return (
     <div className="rounded-2xl p-5 md:p-6 bg-white border border-border">

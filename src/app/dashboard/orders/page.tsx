@@ -30,7 +30,7 @@ export default function OrdersPage() {
               <div className="text-right">
                 <p className="font-bold text-sm text-primary">{formatCurrency(order.amount, order.currency)}</p>
                 <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                  {getStatusBadge(order.status)}
+                  {getStatusBadge(order.status, lang)}
                 </span>
               </div>
             </Card>
