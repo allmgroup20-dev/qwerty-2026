@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useLanguageStore } from "@/lib/store";
+import { liveSalaryText } from "@/data/landing-page-data";
 import SalaryTable from "@/components/home/SalaryTable";
 import PaymentGallery from "@/components/home/PaymentGallery";
+import LiveNotificationBar from "@/components/home/LiveNotificationBar";
+
+const bdDistricts = [
+  "ঢাকা","চট্টগ্রাম","রাজশাহী","খুলনা","সিলেট","বরিশাল","রংপুর",
+  "ময়মনসিংহ","কুমিল্লা","নরসিংদী","গাজীপুর","নারায়ণগঞ্জ","টাঙ্গাইল",
+  "ফরিদপুর","বগুড়া","দিনাজপুর","পাবনা","কুষ্টিয়া","যশোর","কক্সবাজার",
+];
 
 const tabs = [
   { id: "salary", labelBn: "📊 লাইভ স্যালারি", labelEn: "📊 Live Earnings" },
@@ -13,9 +21,32 @@ const tabs = [
 export default function LiveUpdatesPage() {
   const { lang } = useLanguageStore();
   const [activeTab, setActiveTab] = useState("salary");
+  const [notifMessage, setNotifMessage] = useState<string | null>(null);
+  const latestNameRef = useRef<string | null>(null);
+
+  const buildNotif = useCallback((name: string) => {
+    const district = bdDistricts[Math.floor(Math.random() * bdDistricts.length)];
+    const suffix = lang === "bn" ? liveSalaryText.liveNotifJoined : liveSalaryText.liveNotifJoinedEn;
+    return `${name}, ${district} ${suffix}`;
+  }, [lang]);
+
+  const handleNewSuccess = useCallback((name: string) => {
+    latestNameRef.current = name;
+    setNotifMessage(buildNotif(name));
+  }, [buildNotif]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (latestNameRef.current) {
+        setNotifMessage(buildNotif(latestNameRef.current));
+      }
+    }, 30000);
+    return () => clearInterval(id);
+  }, [buildNotif]);
 
   return (
     <div className="min-h-screen bg-bg">
+      <LiveNotificationBar message={notifMessage} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-6">
         <div className="text-center mb-2">
           <div className="badge mx-auto mb-3 border-success/20 bg-success/10 text-success">
@@ -47,7 +78,7 @@ export default function LiveUpdatesPage() {
           ))}
         </div>
 
-        {activeTab === "salary" && <SalaryTable />}
+        {activeTab === "salary" && <SalaryTable onNewSuccess={handleNewSuccess} />}
         {activeTab === "proof" && <PaymentGallery />}
       </div>
     </div>

@@ -2,27 +2,31 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLanguageStore } from "@/lib/store";
-import { liveNotifText } from "@/data/landing-page-data";
 
 const bdDistricts = [
-  "ঢাকা", "চট্টগ্রাম", "রাজশাহী", "খুলনা", "সিলেট", "বরিশাল", "রংপুর",
-  "ময়মনসিংহ", "কুমিল্লা", "নরসিংদী", "গাজীপুর", "নারায়ণগঞ্জ", "টাঙ্গাইল",
-  "ফরিদপুর", "বগুড়া", "দিনাজপুর", "পাবনা", "কুষ্টিয়া", "যশোর", "কক্সবাজার",
+  "\u09A2\u09BE\u0995\u09BE", "\u099A\u099F\u09CD\u099F\u0997\u09CD\u09B0\u09BE\u09AE", "\u09B0\u09BE\u099C\u09B6\u09BE\u09B9\u09C0", "\u0996\u09C1\u09B2\u09A8\u09BE", "\u09B8\u09BF\u09B2\u09C7\u099F", "\u09AC\u09B0\u09BF\u09B6\u09BE\u09B2", "\u09B0\u0982\u09AA\u09C1\u09B0",
+  "\u09AE\u09DF\u09AE\u09A8\u09B8\u09BF\u0982\u09B9", "\u0995\u09C1\u09AE\u09BF\u09B2\u09CD\u09B2\u09BE", "\u09A8\u09B0\u09B8\u09BF\u0982\u09A6\u09C0", "\u0997\u09BE\u099C\u09C0\u09AA\u09C1\u09B0", "\u09A8\u09BE\u09B0\u09BE\u09DF\u09A3\u0997\u099E\u09CD\u099C", "\u099F\u09BE\u0999\u09CD\u0997\u09BE\u0987\u09B2",
+  "\u09AB\u09B0\u09BF\u09A6\u09AA\u09C1\u09B0", "\u09AC\u0997\u09C1\u09A1\u09BC\u09BE", "\u09A6\u09BF\u09A8\u09BE\u099C\u09AA\u09C1\u09B0", "\u09AA\u09BE\u09AC\u09A8\u09BE", "\u0995\u09C1\u09B7\u09CD\u099F\u09BF\u09AF\u09BC\u09BE", "\u09AF\u09B6\u09CB\u09B0", "\u0995\u0995\u09CD\u09B8\u09AC\u09BE\u099C\u09BE\u09B0",
 ];
 
 const names = [
-  "সাকিব আহমেদ", "নাজনীন আক্তার", "করিম মিয়া", "সাদিয়া ইসলাম",
-  "রাজিব হাসান", "ফারহানা ইয়াসমিন", "মো. সাজিদ হোসেন", "তানিয়া বেগম",
-  "রবিউল আলম", "নুসরাত জাহান", "আরিফুল ইসলাম", "তামান্না হাসান",
-  "মর্জিনা খাতুন", "শামীমা আক্তার", "ফারিয়া ইসলাম",
+  "\u09B8\u09BE\u0995\u09BF\u09AC \u0986\u09B9\u09AE\u09C7\u09A6", "\u09A8\u09BE\u099C\u09A8\u09C0\u09A8 \u0986\u0995\u09CD\u09A4\u09BE\u09B0", "\u0995\u09B0\u09BF\u09AE \u09AE\u09BF\u09AF\u09BC\u09BE", "\u09B8\u09BE\u09A6\u09BF\u09AF\u09BC\u09BE \u0987\u09B8\u09B2\u09BE\u09AE",
+  "\u09B0\u09BE\u099C\u09BF\u09AC \u09B9\u09BE\u09B8\u09BE\u09A8", "\u09AB\u09BE\u09B0\u09B9\u09BE\u09A8\u09BE \u0987\u09AF\u09BC\u09BE\u09B8\u09AE\u09BF\u09A8", "\u09AE\u09CB. \u09B8\u09BE\u099C\u09BF\u09A6 \u09B9\u09CB\u09B8\u09C7\u09A8", "\u09A4\u09BE\u09A8\u09BF\u09AF\u09BC\u09BE \u09AC\u09C7\u0997\u09AE",
+  "\u09B0\u09AC\u09BF\u0989\u09B2 \u0986\u09B2\u09AE", "\u09A8\u09C1\u09B8\u09B0\u09BE\u09A4 \u099C\u09BE\u09B9\u09BE\u09A8", "\u0986\u09B0\u09BF\u09AB\u09C1\u09B2 \u0987\u09B8\u09B2\u09BE\u09AE", "\u09A4\u09BE\u09AE\u09BE\u09A8\u09CD\u09A8\u09BE \u09B9\u09BE\u09B8\u09BE\u09A8",
+  "\u09AE\u09B0\u09CD\u099C\u09BF\u09A8\u09BE \u0996\u09BE\u09A4\u09C1\u09A8", "\u09B6\u09BE\u09AE\u09BF\u09AE\u09BE \u0986\u0995\u09CD\u09A4\u09BE\u09B0", "\u09AB\u09BE\u09B0\u09BF\u09AF\u09BC\u09BE \u0987\u09B8\u09B2\u09BE\u09AE",
 ];
 
-export default function LiveNotificationBar() {
+interface Props {
+  message?: string | null;
+}
+
+export default function LiveNotificationBar({ message }: Props) {
   const { lang } = useLanguageStore();
   const [notification, setNotification] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
   const queueRef = useRef<string[]>([]);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastMsgRef = useRef<string | null>(null);
 
   const showNext = () => {
     if (queueRef.current.length === 0) {
@@ -41,11 +45,19 @@ export default function LiveNotificationBar() {
   };
 
   useEffect(() => {
+    if (!message || message === lastMsgRef.current) return;
+    lastMsgRef.current = message;
+    queueRef.current.push(message);
+    if (!timerRef.current) showNext();
+  }, [message]);
+
+  useEffect(() => {
+    if (message !== undefined) return;
     const addNotif = () => {
       const name = names[Math.floor(Math.random() * names.length)];
       const district = bdDistricts[Math.floor(Math.random() * bdDistricts.length)];
-      const suffix = lang === "bn" ? liveNotifText.joinedRecent : liveNotifText.joinedRecentEn;
-      queueRef.current.push(`${name}, ${district} ${suffix}`);
+      const msg = name + ", " + district + " " + (lang === "bn" ? "\u09A5\u09C7\u0995\u09C7 \u09B8\u09A6\u09CD\u09AF \u09AF\u09C1\u0995\u09CD\u09A4 \u09B9\u09B2\u09C7\u09A8!" : "just joined!");
+      queueRef.current.push(msg);
       if (!timerRef.current) showNext();
     };
     addNotif();
@@ -54,13 +66,13 @@ export default function LiveNotificationBar() {
       clearInterval(interval);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [lang]);
+  }, [lang, message]);
 
   if (!visible || !notification) return null;
 
   return (
     <div className="fixed bottom-[72px] left-1/2 -translate-x-1/2 z-[9999] max-w-[94vw] md:max-w-[560px] px-4 py-3 rounded-xl bg-white border border-border shadow-xl flex items-center gap-2.5 animate-fade-up transition-all duration-[400ms]">
-      <span className="flex-shrink-0 text-base">🎉</span>
+      <span className="flex-shrink-0 text-base">{String.fromCodePoint(0x1F389)}</span>
       <span className="font-bold text-sm leading-relaxed text-text">{notification}</span>
     </div>
   );
