@@ -1,4 +1,4 @@
-export interface Testimonial {
+﻿export interface Testimonial {
   stars: string;
   rating: string;
   quoteBn: string;
@@ -559,7 +559,7 @@ export const statsSectionText = {
 };
 
 export const heroSectionBadgeBn = "💰 সরাসরি কাজ শিখে প্রথম মাসেই ১১,০০০ থেকে ৯২,০০০ টাকা পর্যন্ত উপার্জনের বাস্তবমুখী সুযোগ!";
-export const heroSectionBadgeEn = "💰 Learn directly and earn 11,000 to 92,000 BDT from your first month!";
+export const heroSectionBadgeEn = "💰 Earn from ৳11,000 to ৳92,000/month — real opportunity, real results!";
 
 export const salaryNames = [
   "Ayan Rahman","সুমন দাস","Maria Gomes","Ratan Marma","উদয় বড়ুয়া",
@@ -823,9 +823,52 @@ export const checkoutCtaData = {
   discountLabelEn: "99.99% OFF",
 };
 
+
 export const heroFeatureGridItems = [
-  { icon: "🏆", textBn: "২৩০+ প্রিমিয়াম কোর্স (উপহার)", textEn: "230+ Premium Courses (Gift)" },
-  { icon: "💰", textBn: "লাইভ আয়ের প্রমাণ", textEn: "Live Income Proof" },
-  { icon: "💳", textBn: "বাস্তব পেমেন্ট প্রমাণ", textEn: "Real Payment Proof" },
-  { icon: "🛡️", textBn: "২৪ ঘণ্টা টাকা ফেরত গ্যারান্টি", textEn: "24h Money Back Guarantee" },
+  { icon: "🎯+", textBn: "২৩০+ প্রিমিয়াম কোর্স (উপহার)", textEn: "230+ Premium Courses (Gift)" },
+  { icon: "📊", textBn: "লাইভ ইনকাম প্রুফ", textEn: "Live Income Proof" },
+  { icon: "💳", textBn: "রিয়েল পেমেন্ট প্রুফ", textEn: "Real Payment Proof" },
+  { icon: "🔄", textBn: "২৪ ঘন্টা মানি ব্যাক গ্যারান্টি", textEn: "24h Money Back Guarantee" },
 ];
+
+export const phpSliderTestimonials: Testimonial[] = [
+  { stars: "★★★★★", rating: "5.0/5", quoteBn: "\"প্রথমে আমার সন্দেহ ছিল, কিন্তু যোগ দেওয়ার পর প্রথম মাসেই ৪৫,০০০ টাকা আয় করেছি। ট্রেইনাররা অসাধারণ!\"", quoteEn: "\"I was skeptical at first, but after joining I earned ৳45,000 in my first month. The trainers are amazing!\"", authorBn: "রাকিব এইচ", authorEn: "Rakib H.", labelBn: "ফ্রিল্যান্সার, ঢাকা", labelEn: "Freelancer, Dhaka" },
+  { stars: "★★★★★", rating: "5.0/5", quoteBn: "\"২৩০+ কোর্স মাত্র ৯৯ টাকায় দারুণ ব্যাপার। কোর্সের মান চমৎকার। সবার জন্য রেকমেন্ডেড!\"", quoteEn: "\"230+ courses for only ৳99 is a steal. The course quality is top-notch. Highly recommend!\"", authorBn: "ফাতিমা কে", authorEn: "Fatima K.", labelBn: "শিক্ষার্থী, চট্টগ্রাম", labelEn: "Student, Chattogram" },
+  { stars: "★★★★★", rating: "4.9/5", quoteBn: "\"ক্লায়েন্ট ফাইন্ডিং গাইড একাই দামের ১০ গুণ মূল্যবান। আমি ৩ দিনের মধ্যেই প্রথম প্রজেক্ট পেয়ে গিয়েছি!\"", quoteEn: "\"The client-finding guide alone is worth 10x the price. I landed my first project in 3 days!\"", authorBn: "শাহিন এ", authorEn: "Shahin A.", labelBn: "ওয়েব ডেভেলপার, সিলেট", labelEn: "Web Developer, Sylhet" },
+  { stars: "★★★★★", rating: "5.0/5", quoteBn: "\"আগে কিছুই আয় করতাম না। এখন ফ্রিল্যান্সিং থেকে মাসে ২৫,০০০+ টাকা আয় করি। জোবায়ের গ্রুপকে ধন্যবাদ!\"", quoteEn: "\"I was earning nothing before. Now I make ৳25,000+ monthly from freelancing. Thank you Jobayer Group!\"", authorBn: "নুসরাত জে", authorEn: "Nusrat J.", labelBn: "ভার্চুয়াল অ্যাসিস্ট্যান্ট, রাজশাহী", labelEn: "Virtual Assistant, Rajshahi" },
+  { stars: "★★★★★", rating: "4.9/5", quoteBn: "\"শুধু ইংরেজি কোর্সগুলিই ৯৯ টাকার চেয়ে অনেক বেশি মূল্যবান। মাত্র ২ সপ্তাহে আমার স্পিকিং স্কিল নাটকীয়ভাবে উন্নত হয়েছে।\"", quoteEn: "\"The English courses alone are worth ৳99. I improved my speaking skills dramatically in just 2 weeks.\"", authorBn: "আরিফ এম", authorEn: "Arif M.", labelBn: "চাকরিপ্রার্থী, খুলনা", labelEn: "Job Seeker, Khulna" },
+];
+
+export const trainerPhotoGrid = [
+  { nameBn: "তানভিরুল ইসলাম", nameEn: "Tanvirul Islam", specialtyBn: "ইংরেজি ও নেতৃত্ব", specialtyEn: "English & Leadership" },
+  { nameBn: "শরিফুল ইসলাম", nameEn: "Shariful Islam", specialtyBn: "ইংরেজি ও ভর্তি", specialtyEn: "English & Admission" },
+  { nameBn: "মোঃ রাশেদ", nameEn: "Md. Rashed", specialtyBn: "ফ্রিল্যান্সিং ও ডেভ", specialtyEn: "Freelancing & Dev" },
+  { nameBn: "মোঃ হাসান", nameEn: "Md. Hasan", specialtyBn: "ই-কমার্স ও মার্কেটিং", specialtyEn: "E-Commerce & Marketing" },
+  { nameBn: "আব্দুল্লাহ আল মামুন", nameEn: "Abdullah Al Mamun", specialtyBn: "UI/UX ও ডিজাইন", specialtyEn: "UI/UX & Design" },
+  { nameBn: "সাজিব দাস", nameEn: "Sajib Das", specialtyBn: "ডেভ ও সফটওয়্যার টুলস", specialtyEn: "Dev & Software Tools" },
+  { nameBn: "জাকির হোসেন", nameEn: "Jakir Hossain", specialtyBn: "ডিজিটাল মার্কেটিং", specialtyEn: "Digital Marketing" },
+  { nameBn: "মাহমুদ হাসান", nameEn: "Mahmud Hasan", specialtyBn: "ফ্রিল্যান্সিং ও ক্যারিয়ার", specialtyEn: "Freelancing & Career" },
+  { nameBn: "রফিকুল ইসলাম", nameEn: "Rafiqul Islam", specialtyBn: "ভাষা ও পেশা", specialtyEn: "Language & Jobs" },
+  { nameBn: "শারমিন আখতার", nameEn: "Sharmin Akhter", specialtyBn: "মাল্টিমিডিয়া ও কন্টেন্ট", specialtyEn: "Multimedia & Content" },
+  { nameBn: "নুসরাত জাহান", nameEn: "Nusrat Jahan", specialtyBn: "UI/UX ও গ্রাফিক্স", specialtyEn: "UI/UX & Graphics" },
+  { nameBn: "ইমরান হোসেন", nameEn: "Imran Hossain", specialtyBn: "সফটওয়্যার ও ডেভেলপমেন্ট", specialtyEn: "Software & Development" },
+];
+
+export const bundlePricingData = {
+  totalValueBn: "১০,০০,০০০+ টাকা",
+  totalValueEn: "৳10,00,000+",
+  offerPriceBn: "৯৯ টাকা",
+  offerPriceEn: "৳99",
+  savingsTextBn: "আপনি ৯৯.৯% সাশ্রয় করছেন — মাত্র এক বেলা খাবারের দামে ২৩০+ কোর্স!",
+  savingsTextEn: "You save 99.9% — 230+ courses for the price of a lunch!",
+  platformLogos: [
+    { name: "Upwork", icon: "U" },
+    { name: "Fiverr", icon: "F" },
+    { name: "Shopify", icon: "S" },
+    { name: "WordPress", icon: "W" },
+    { name: "Amazon", icon: "A" },
+    { name: "YouTube", icon: "Y" },
+    { name: "Freelancer", icon: "Fr" },
+    { name: "Figma", icon: "Fi" },
+  ],
+};

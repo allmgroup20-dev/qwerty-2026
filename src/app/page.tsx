@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import LiveNotificationBar from "@/components/home/LiveNotificationBar";
 import HeroSection from "@/components/home/HeroSection";
@@ -15,6 +15,8 @@ import Testimonials from "@/components/home/Testimonials";
 import FAQSection from "@/components/home/FAQSection";
 import CheckoutCta from "@/components/home/CheckoutCta";
 import TrustSection from "@/components/home/TrustSection";
+import TrainerPhotoGrid from "@/components/home/TrainerPhotoGrid";
+import PlatformLogoGrid from "@/components/home/PlatformLogoGrid";
 
 export default function HomePage() {
   return (
@@ -28,9 +30,11 @@ export default function HomePage() {
         <HowItWorks />
         <PlatformShowcase />
         <CourseCatalog />
+        <PlatformLogoGrid />
         <GoogleDrivePreview />
         <SalaryTable />
         <PaymentGallery />
+        <TrainerPhotoGrid />
         <Testimonials />
         <FAQSection />
         <CheckoutCta />

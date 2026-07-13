@@ -1,20 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useLanguageStore } from "@/lib/store";
-import { courseCategories, trainers, platforms, platformPrices, trainerPrices } from "@/data/landing-page-data";
-
-function getCategoryValue(trainerNames: string[]): number {
-  return trainerNames.reduce((sum, name) => sum + (trainerPrices[name] || 0), 0);
-}
-
-function formatPrice(amount: number): string {
-  if (amount >= 100000) return `${(amount / 100000).toFixed(1)}L`;
-  if (amount >= 1000) return `${(amount / 1000).toFixed(0)}K`;
-  return amount.toString();
-}
+import { courseCategories, trainers, bundlePricingData } from "@/data/landing-page-data";
 
 export default function CourseCatalog() {
   const { lang } = useLanguageStore();
@@ -26,17 +15,17 @@ export default function CourseCatalog() {
     <div className="rounded-2xl p-5 md:p-6 bg-gradient-to-br from-primary/5 to-primary/5 border border-primary/20">
       <div className="section-header">
         <div className="badge mx-auto mb-3">
-          {lang === "bn" ? "দেখুন — ২৩০+ কোর্সে আপনি কী পাচ্ছেন" : "See What You Get with 230+ Courses"}
+          📚 {lang === "bn" ? "৯৯ টাকায় আপনি কী পাচ্ছেন" : "What You Get at ৳99"}
         </div>
         <h3 className="text-lg md:text-xl font-black text-text">
           {lang === "bn"
-            ? `২৩০+ প্রিমিয়াম কোর্স — ${courseCategories.length}টি বিভাগে`
-            : `230+ Premium Courses in ${courseCategories.length} Categories`}
+            ? "১০টি বিভাগ — ২৩০+ প্রিমিয়াম কোর্স"
+            : "10 Categories — 230+ Premium Courses"}
         </h3>
         <p className="text-sm font-semibold text-text-secondary mt-1">
           {lang === "bn"
-            ? `দেশের সেরা ${trainers.length} জন প্রশিক্ষকের কোর্স`
-            : `Courses from Bangladesh's top ${trainers.length} trainers`}
+            ? "প্রতিটি ট্যাবে ক্লিক করে সব ক্যাটাগরির কোর্সের সম্পূর্ণ তালিকা দেখুন"
+            : "Click on each tab to explore the full list of courses in every category"}
         </p>
       </div>
 
@@ -45,11 +34,7 @@ export default function CourseCatalog() {
           <button
             key={cat.id}
             onClick={() => setActiveTab(cat.id)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === cat.id
-                ? "bg-primary text-white shadow-lg shadow-primary/30"
-                : "bg-white border border-border text-text-secondary hover:border-primary/30 hover:text-text"
-            }`}
+            className={px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer }
           >
             {cat.icon} {lang === "bn" ? cat.titleBn : cat.titleEn}
           </button>
@@ -57,101 +42,75 @@ export default function CourseCatalog() {
       </div>
 
       {activeCategory && (
-        <div className="rounded-xl bg-white border border-border p-5 md:p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-black text-lg text-text">
-                {activeCategory.icon} {lang === "bn" ? activeCategory.titleBn : activeCategory.titleEn}
-              </h4>
-              <p className="text-xs font-semibold text-text-secondary mt-0.5">
-                {activeCategory.courses.length} {lang === "bn" ? "টি কোর্স" : "Courses"}
-                {" — "}
-                <span className="text-success font-extrabold">
-                  {lang === "bn" ? "মোট ভ্যালু: " : "Total Value: "}৳{formatPrice(getCategoryValue(activeCategory.trainers))}+
-                </span>
-              </p>
-            </div>
-          </div>
+        <div className="rounded-xl bg-white border border-border p-5 md:p-6 space-y-4">
+          <h4 className="font-black text-lg text-text">
+            {activeCategory.icon} {lang === "bn" ? activeCategory.titleBn : activeCategory.titleEn}
+          </h4>
+          <p className="text-xs font-semibold text-text-secondary -mt-3">
+            {activeCategory.courses.length} {lang === "bn" ? "টি কোর্স" : "Courses"}
+          </p>
 
-          <div className="space-y-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             {activeCategory.courses.map((course, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary/[0.03] to-transparent border border-border"
+                className="flex flex-col gap-1.5 p-4 rounded-xl bg-gradient-to-r from-primary/[0.03] to-transparent border border-border"
               >
-                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary font-black text-xs shrink-0">
-                  {idx + 1}
-                </span>
-                <span className="font-semibold text-sm text-text">
-                  {lang === "bn" ? course.nameBn : course.nameEn}
-                </span>
+                <div className="flex items-start gap-2">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10 text-primary font-black text-xs shrink-0 mt-0.5">
+                    {idx + 1}
+                  </span>
+                  <span className="font-semibold text-sm text-text leading-tight">
+                    {lang === "bn" ? course.nameBn : course.nameEn}
+                  </span>
+                </div>
+                {course.originalPrice && (
+                  <div className="flex items-center gap-2 ml-8">
+                    <span className="text-xs font-bold text-text-secondary line-through">৳{course.originalPrice.toLocaleString("en-IN")}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-primary to-orange text-white text-[10px] font-extrabold">৳৯৯</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
-          <div>
-            <h5 className="font-black text-sm text-text mb-3">
-              👨‍🏫 {lang === "bn" ? "প্রশিক্ষকবৃন্দ" : "Trainers"}
-            </h5>
-            <div className="flex flex-wrap gap-2">
+          {activeCategory.trainers.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              <span className="text-xs font-bold text-text-secondary mr-1">👨‍🏫</span>
               {activeCategory.trainers.map((tName) => {
                 const trainer = trainers.find((t) => t.name === tName);
-                const price = trainerPrices[tName] || 0;
-                if (!trainer) return null;
-                return (
-                  <div
-                    key={tName}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-border"
-                  >
-                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-gradient-to-br from-info to-orange relative shrink-0">
-                      <Image src={trainer.image} alt={trainer.nameBn} fill className="object-cover" sizes="32px" />
-                    </div>
-                    <div>
-                      <span className="font-bold text-xs text-text block leading-tight">
-                        {lang === "bn" ? trainer.nameBn : trainer.name}
-                      </span>
-                      <span className="font-bold text-[10px] text-success leading-tight">৳{formatPrice(price)}</span>
-                    </div>
-                  </div>
-                );
+                return trainer ? (
+                  <span key={tName} className="px-3 py-1 rounded-lg bg-white border border-border text-xs font-bold text-text">
+                    {lang === "bn" ? trainer.nameBn : trainer.name}
+                  </span>
+                ) : null;
               })}
             </div>
-          </div>
-
-          <div>
-            <h5 className="font-black text-sm text-text mb-3">
-              🏛️ {lang === "bn" ? "প্ল্যাটফর্ম" : "Platforms"}
-            </h5>
-            <div className="flex flex-wrap gap-2">
-              {activeCategory.platformLogos.map((logoPath) => {
-                const platform = platforms.find((p) => p.logo === logoPath);
-                if (!platform) return null;
-                const price = platformPrices[platform.name] || 0;
-                return (
-                  <div
-                    key={logoPath}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-border"
-                  >
-                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 relative shrink-0">
-                      <Image src={platform.logo} alt={platform.nameBn} fill className="object-contain p-1" sizes="32px" />
-                    </div>
-                    <div>
-                      <span className="font-bold text-xs text-text block leading-tight">
-                        {lang === "bn" ? platform.nameBn : platform.name}
-                      </span>
-                      <span className="font-bold text-[10px] text-success leading-tight">৳{formatPrice(price)}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          )}
         </div>
       )}
 
+      {/* Bundle Pricing Row */}
+      <div className="mt-5 p-5 rounded-xl bg-gradient-to-br from-primary/10 to-orange/5 border-2 border-primary/20 text-center">
+        <div className="text-sm font-bold text-text-secondary">
+          {lang === "bn" ? "মোট বান্ডেল মূল্য:" : "Total Bundle Value:"}
+        </div>
+        <div className="flex items-center justify-center gap-3 mt-2">
+          <span className="text-lg font-bold text-text-secondary line-through">
+            {lang === "bn" ? bundlePricingData.totalValueBn : bundlePricingData.totalValueEn}
+          </span>
+          <span className="text-3xl font-black text-warning">
+            {lang === "bn" ? bundlePricingData.offerPriceBn : bundlePricingData.offerPriceEn}
+          </span>
+        </div>
+        <div className="mt-2 text-sm font-bold text-warning">
+          🎉 {lang === "bn" ? bundlePricingData.savingsTextBn : bundlePricingData.savingsTextEn}
+        </div>
+      </div>
+
       <div className="text-center mt-5">
         <Link
-          href="/courses"
+          href="/register"
           className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-orange to-orange-dark text-white font-black text-sm no-underline shadow-lg shadow-orange/30 hover:-translate-y-0.5 transition-all cursor-pointer"
         >
           📚 {lang === "bn" ? "সম্পূর্ণ ক্যাটালগ দেখুন →" : "View Full Catalog →"}
