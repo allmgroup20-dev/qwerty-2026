@@ -9,14 +9,14 @@ export default function TrainerPhotoGrid() {
   return (
     <div className="rounded-2xl p-5 md:p-6 bg-white border border-border">
       <div className="section-header">
-        <div className="badge mx-auto mb-3">👨‍🏫 {lang === "bn" ? "আমাদের ট্রেইনার" : "Our Trainers"}</div>
+        <div className="badge mx-auto mb-3">👨‍🏫 {lang === "bn" ? "শীর্ষ প্রশিক্ষকবৃন্দ" : "Top Trainers"}</div>
         <h3 className="text-lg md:text-xl font-black text-text">
-          {lang === "bn" ? "এক্সপার্ট ট্রেইনার টিম" : "Expert Trainer Team"}
+          {lang === "bn" ? `যেসব তারকা প্রশিক্ষকের কোর্স আপনি ফ্রিতে পাচ্ছেন` : `Star trainers whose courses you get for free`}
         </h3>
         <p className="text-sm font-semibold text-text-secondary mt-1">
           {lang === "bn"
-            ? `${trainerPhotoGrid.length} জন অভিজ্ঞ মেন্টর — প্রতিটি কোর্সই হাতে-কলমে শেখানো হয়`
-            : `${trainerPhotoGrid.length} experienced mentors — every course is hands-on`}
+            ? `${trainerPhotoGrid.length} জন তারকা প্রশিক্ষকবৃন্দের কোর্স — সব একসাথে`
+            : `Courses from ${trainerPhotoGrid.length} star trainers — all in one place`}
         </p>
       </div>
 

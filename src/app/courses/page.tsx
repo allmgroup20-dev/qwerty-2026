@@ -32,7 +32,12 @@ export default function CoursesPage() {
 
         {/* Participating Platforms */}
         <div className="rounded-2xl p-5 bg-white border border-border">
-          <h3 className="font-black text-sm text-text mb-4 text-center">{lang === "bn" ? "🏛️ অংশগ্রহণকারী প্ল্যাটফর্মসমূহ" : "🏛️ Participating Platforms"}</h3>
+          <div className="badge mx-auto mb-3">🏛️ {lang === "bn" ? "আমাদের প্রতিষ্ঠানসমূহ" : "Our Institutions"}</div>
+          <p className="text-sm font-bold text-text-secondary text-center -mt-2 mb-4">
+            {lang === "bn"
+              ? "যেসব প্ল্যাটফর্ম ও প্রতিষ্ঠানের কোর্স আপনি ফ্রিতে পাচ্ছেন"
+              : "Courses you get for free from these platforms & institutions"}
+          </p>
           <div className="flex flex-wrap justify-center gap-3">
             {platforms.map((p) => (
               <div key={p.name} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-bg border border-border min-w-[80px]">
