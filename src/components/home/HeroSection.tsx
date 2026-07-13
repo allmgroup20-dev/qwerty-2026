@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLanguageStore } from "@/lib/store";
-import { heroData, testimonials, heroSectionBadgeBn, heroSectionBadgeEn } from "@/data/landing-page-data";
+import { heroData, testimonials, heroSectionBadgeBn, heroSectionBadgeEn, heroFeatureGridItems } from "@/data/landing-page-data";
 
 function toBn(v: number) {
   return String(v).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[parseInt(d, 10)]);
@@ -64,6 +64,15 @@ export default function HeroSection() {
               <p className="text-success font-bold text-sm mb-1">✅ {lang === "bn" ? "সমাধান:" : "Solution:"}</p>
               <p className="text-white/70 text-sm leading-relaxed">{lang === "bn" ? h.solutionBn : h.solutionEn}</p>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 max-w-xl mx-auto mb-6">
+            {heroFeatureGridItems.map((item, i) => (
+              <div key={i} className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 border border-white/10">
+                <span className="text-base">{item.icon}</span>
+                <span className="text-xs font-bold text-white/80">{lang === "bn" ? item.textBn : item.textEn}</span>
+              </div>
+            ))}
           </div>
 
           <div className="flex flex-wrap gap-3 justify-center mb-6">
