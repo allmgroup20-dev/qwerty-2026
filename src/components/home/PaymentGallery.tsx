@@ -23,10 +23,6 @@ export default function PaymentGallery() {
             className="group relative aspect-[3/4] rounded-xl overflow-hidden bg-bg border border-border cursor-pointer p-0 hover:shadow-lg transition-all"
           >
             <Image src={img.src} alt={img.alt} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw" />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 pt-6">
-              <p className="text-white text-xs font-bold">{img.label}</p>
-              {img.amount && <p className="text-success text-sm font-black">{img.amount}</p>}
-            </div>
           </button>
         ))}
       </div>
@@ -45,10 +41,6 @@ export default function PaymentGallery() {
               className="object-contain"
               sizes="(max-width: 768px) 100vw, 800px"
             />
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm px-4 py-2 rounded-xl text-center">
-              <p className="text-white text-sm font-bold">{galleryImages[lightbox].label}</p>
-              {galleryImages[lightbox].amount && <p className="text-success text-lg font-black">{galleryImages[lightbox].amount}</p>}
-            </div>
           </div>
           <div className="absolute bottom-4 left-4 right-4 flex justify-center gap-2">
             {galleryImages.map((_, i) => (

@@ -4,6 +4,7 @@ import LiveNotificationBar from "@/components/home/LiveNotificationBar";
 import HeroSection from "@/components/home/HeroSection";
 import StatsCounter from "@/components/home/StatsCounter";
 import HowItWorks from "@/components/home/HowItWorks";
+import PlatformShowcase from "@/components/home/PlatformShowcase";
 import CourseCatalog from "@/components/home/CourseCatalog";
 import Testimonials from "@/components/home/Testimonials";
 import SalaryTable from "@/components/home/SalaryTable";
@@ -19,6 +20,7 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 pb-8 md:pb-12 -mt-8 relative z-20">
         <StatsCounter />
         <HowItWorks />
+        <PlatformShowcase />
         <CourseCatalog />
         <Testimonials />
         <SalaryTable />

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { courseCategories, trainers, platforms } from "@/data/landing-page-data";
 
 function getTrainer(name: string) {
@@ -25,6 +26,20 @@ export default function CoursesPage() {
           <p className="text-text-secondary font-semibold mt-2 max-w-2xl mx-auto">
             দেশের সেরা ১২ জন প্রশিক্ষকের কোর্স। সব কোর্সে আজীবন অ্যাক্সেস। পছন্দ না হলে ২৪ ঘণ্টায় টাকা ফেরত।
           </p>
+        </div>
+
+        <div className="mb-8 rounded-2xl p-5 bg-white border border-border">
+          <h3 className="font-black text-sm text-text mb-3 text-center">🏛️ অংশগ্রহণকারী প্ল্যাটফর্মসমূহ</h3>
+          <div className="flex flex-wrap justify-center gap-4">
+            {platforms.map((p) => (
+              <div key={p.name} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-bg border border-border min-w-[80px]">
+                <div className="w-10 h-10 rounded-lg overflow-hidden bg-white relative flex items-center justify-center">
+                  <Image src={p.logo} alt={p.nameBn} width={36} height={36} className="object-contain" />
+                </div>
+                <span className="text-[10px] font-bold text-text text-center leading-tight">{p.nameBn}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="flex overflow-x-auto gap-2 pb-2 mb-6 scrollbar-hide">

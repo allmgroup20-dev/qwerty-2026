@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { courseCategories, trainers, platforms } from "@/data/landing-page-data";
+import { courseCategories, trainers } from "@/data/landing-page-data";
 
 export default function CourseCatalog() {
-  const [showAll, setShowAll] = useState(false);
+  const [showTrainers, setShowTrainers] = useState(false);
 
   return (
     <div className="rounded-2xl p-5 md:p-6 bg-gradient-to-br from-primary/5 to-primary/5 border border-primary/20">
@@ -30,28 +30,14 @@ export default function CourseCatalog() {
 
       <div className="mt-4">
         <button
-          onClick={() => setShowAll(!showAll)}
+          onClick={() => setShowTrainers(!showTrainers)}
           className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl border-2 border-dashed border-border bg-white text-info font-extrabold text-sm cursor-pointer transition-all hover:border-info hover:bg-info/5"
         >
-          📂 {showAll ? "সংকুচিত করুন" : "সব প্ল্যাটফর্ম ও ট্রেইনার দেখুন (২১টি)"}
-          <span className={`transition-transform duration-300 ${showAll ? "rotate-180" : ""}`}>▼</span>
+          👨‍🏫 {showTrainers ? "ট্রেইনারদের তালিকা সংকুচিত করুন" : "সব ট্রেইনার দেখুন (১২ জন)"}
+          <span className={`transition-transform duration-300 ${showTrainers ? "rotate-180" : ""}`}>▼</span>
         </button>
-        {showAll && (
-          <div className="mt-4 grid gap-4">
-            <div className="rounded-xl p-4 bg-white border border-border">
-              <h4 className="font-black text-sm text-text mb-3">🏛️ প্ল্যাটফর্মসমূহ</h4>
-              <p className="text-xs font-semibold text-text-secondary mb-3">যেসব প্ল্যাটফর্মের কোর্স আপনি পাচ্ছেন</p>
-              <div className="flex flex-wrap gap-3">
-                {platforms.map((p) => (
-                  <div key={p.name} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-border">
-                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-bg relative flex-shrink-0">
-                      <Image src={p.logo} alt={p.nameBn} fill className="object-contain p-1" sizes="32px" />
-                    </div>
-                    <span className="font-bold text-xs text-text">{p.nameBn}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+        {showTrainers && (
+          <div className="mt-4">
             <div className="rounded-xl p-4 bg-white border border-border">
               <h4 className="font-black text-sm text-text mb-3">👨‍🏫 শীর্ষ প্রশিক্ষকবৃন্দ</h4>
               <p className="text-xs font-semibold text-text-secondary mb-3">যেসব তারকা প্রশিক্ষকের কোর্স আপনি পাচ্ছেন</p>
