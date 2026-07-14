@@ -5,6 +5,7 @@ interface AIModel {
   model_id: string;
   name: string;
   tier: number;
+  provider: string;
 }
 
 interface FailoverState {
@@ -27,6 +28,11 @@ interface AIResponse {
   tokens: number;
 }
 
+const PROVIDER_ENDPOINTS: Record<string, string> = {
+  openrouter: "https://openrouter.ai/api/v1/chat/completions",
+  opencode: "https://opencode.ai/zen/v1/chat/completions",
+};
+
 async function getFailoverState(db: D1Database): Promise<FailoverState> {
   let state = await queryFirst<FailoverState>({ DB: db },
     "SELECT * FROM ai_model_failover_state WHERE id = 1"
@@ -40,18 +46,21 @@ async function getFailoverState(db: D1Database): Promise<FailoverState> {
   return state;
 }
 
-async function getActiveKeys(db: D1Database): Promise<string[]> {
-  const keys = await query<{ key_value: string }>({ DB: db },
-    "SELECT key_value FROM ai_api_keys WHERE is_active = 1 ORDER BY key_slot ASC"
-  );
+async function getActiveKeys(db: D1Database, provider?: string): Promise<string[]> {
+  const sql = provider
+    ? "SELECT key_value FROM ai_api_keys WHERE is_active = 1 AND provider = ? ORDER BY key_slot ASC"
+    : "SELECT key_value FROM ai_api_keys WHERE is_active = 1 ORDER BY key_slot ASC";
+  const params = provider ? [provider] : [];
+  const keys = await query<{ key_value: string }>({ DB: db }, sql, params);
   return keys.map((k) => k.key_value);
 }
 
-async function getActiveModels(db: D1Database): Promise<AIModel[]> {
-  const models = await query<AIModel>({ DB: db },
-    "SELECT model_id, name, tier FROM ai_models WHERE is_active = 1 ORDER BY tier ASC, model_id ASC"
-  );
-  return models;
+async function getActiveModels(db: D1Database, provider?: string): Promise<AIModel[]> {
+  const sql = provider
+    ? "SELECT model_id, name, tier, provider FROM ai_models WHERE is_active = 1 AND provider = ? ORDER BY tier ASC, model_id ASC"
+    : "SELECT model_id, name, tier, provider FROM ai_models WHERE is_active = 1 ORDER BY tier ASC, model_id ASC";
+  const params = provider ? [provider] : [];
+  return query<AIModel>({ DB: db }, sql, params);
 }
 
 async function checkReset(db: D1Database, state: FailoverState): Promise<FailoverState> {
@@ -69,17 +78,25 @@ async function checkReset(db: D1Database, state: FailoverState): Promise<Failove
 async function callModel(
   apiKey: string,
   modelId: string,
+  provider: string,
   messages: { role: string; content: string }[],
   maxTokens: number
 ): Promise<{ text: string; tokens: number } | null> {
+  const endpoint = PROVIDER_ENDPOINTS[provider];
+  if (!endpoint) return null;
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`,
+  };
+  if (provider === "openrouter") {
+    headers["HTTP-Referer"] = "https://jobayer-group-career.workers.dev";
+  }
+
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const res = await fetch(endpoint, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://jobayer-group-career.workers.dev",
-      },
+      headers,
       body: JSON.stringify({
         model: modelId,
         messages,
@@ -93,7 +110,7 @@ async function callModel(
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      console.error(`Model ${modelId} failed with status ${res.status}: ${errText}`);
+      console.error(`[${provider}] Model ${modelId} failed with status ${res.status}: ${errText}`);
       return null;
     }
 
@@ -110,49 +127,40 @@ async function callModel(
       tokens: data.usage?.total_tokens || 0,
     };
   } catch (e) {
-    console.error(`Model call error for ${modelId}:`, (e as Error)?.message);
+    console.error(`[${provider}] Model call error for ${modelId}:`, (e as Error)?.message);
     return null;
   }
 }
 
-export async function callAI(
-  request: AIRequest,
-  maxTokens = 500
-): Promise<AIResponse> {
-  const env = { DB: await ensureDB() };
-  const state = await getFailoverState(env.DB);
-  const updatedState = await checkReset(env.DB, state);
+async function tryProviderStage(
+  env: { DB: D1Database },
+  provider: string,
+  messages: { role: string; content: string }[],
+  maxTokens: number,
+  exhaustedSet: Set<string>
+): Promise<AIResponse | null> {
+  const keys = await getActiveKeys(env.DB, provider);
+  if (!keys.length) return null;
 
-  const exhaustedSet = new Set(
-    updatedState.exhausted_models ? updatedState.exhausted_models.split(",").filter(Boolean) : []
-  );
-
-  const keys = await getActiveKeys(env.DB);
-  if (!keys.length) {
-    throw new Error("No AI API keys configured. Add keys in AI Settings.");
-  }
-
-  const models = await getActiveModels(env.DB);
-
-  const messages = request.messages;
+  const models = await getActiveModels(env.DB, provider);
+  if (!models.length) return null;
 
   let lastError = "";
 
   for (let keyIdx = 0; keyIdx < keys.length; keyIdx++) {
     const apiKey = keys[keyIdx];
     for (const model of models) {
-      const modelKey = `${keyIdx}:${model.model_id}`;
+      const modelKey = `${provider}|${keyIdx}|${model.model_id}`;
       if (exhaustedSet.has(modelKey)) continue;
 
-      const result = await callModel(apiKey, model.model_id, messages, maxTokens);
+      const result = await callModel(apiKey, model.model_id, provider, messages, maxTokens);
       if (result) {
         await execute(env,
-          "UPDATE ai_model_failover_state SET current_key_slot = ?, current_model_index = ?, total_responses = total_responses + 1, today_responses = today_responses + 1, updated_at = datetime('now') WHERE id = 1",
-          [keyIdx + 1, models.indexOf(model)]
+          "UPDATE ai_model_failover_state SET total_responses = total_responses + 1, today_responses = today_responses + 1, updated_at = datetime('now') WHERE id = 1"
         );
         return {
           text: result.text,
-          model: model.model_id,
+          model: `${provider}:${model.model_id}`,
           tokens: result.tokens,
         };
       }
@@ -162,9 +170,40 @@ export async function callAI(
         "UPDATE ai_model_failover_state SET exhausted_models = ?, updated_at = datetime('now') WHERE id = 1",
         [Array.from(exhaustedSet).join(",")]
       );
-      lastError = `Model ${model.model_id} failed`;
+      lastError = `[${provider}] Model ${model.model_id} failed`;
     }
   }
 
-  throw new Error(`All AI models exhausted. ${lastError}`);
+  console.error(lastError);
+  return null;
+}
+
+export async function callAI(
+  request: AIRequest,
+  maxTokens = 500
+): Promise<AIResponse> {
+  const env = { DB: await ensureDB() };
+
+  const state = await getFailoverState(env.DB);
+  const updatedState = await checkReset(env.DB, state);
+
+  const exhaustedSet = new Set(
+    updatedState.exhausted_models ? updatedState.exhausted_models.split(",").filter(Boolean) : []
+  );
+
+  const messages = request.messages;
+
+  const openrouterKeys = await getActiveKeys(env.DB, "openrouter");
+  const opencodeKeys = await getActiveKeys(env.DB, "opencode");
+  if (!openrouterKeys.length && !opencodeKeys.length) {
+    throw new Error("No AI API keys configured. Add OpenRouter or OpenCode keys in AI Settings.");
+  }
+
+  const result = await tryProviderStage(env, "openrouter", messages, maxTokens, exhaustedSet);
+  if (result) return result;
+
+  const result2 = await tryProviderStage(env, "opencode", messages, maxTokens, exhaustedSet);
+  if (result2) return result2;
+
+  throw new Error("All AI models exhausted across all providers.");
 }

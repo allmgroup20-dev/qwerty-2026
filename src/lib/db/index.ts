@@ -154,6 +154,18 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       ('Jobayer Group', '52d1d87c3b2027f3f2660015ddf6463e97430b4e60099217143ac75a45646aa1', 'Jobayer Group', 'superadmin')
     `).run();
 
+    // Migrate ai_api_keys to add provider column
+    try {
+      await env.DB.prepare("ALTER TABLE ai_api_keys ADD COLUMN provider TEXT DEFAULT 'openrouter'").run();
+    } catch {
+      // column already exists
+    }
+    try {
+      await env.DB.prepare("ALTER TABLE ai_api_keys ADD COLUMN label TEXT DEFAULT ''").run();
+    } catch {
+      // column already exists
+    }
+
     // AI module tables
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_models (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -269,6 +281,22 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       ('microsoft/phi-3-mini-4k-instruct', 'Phi-3 Mini 4K', 5),
       ('tinyllama/tinyllama-1.1b-chat-v1.0', 'TinyLlama 1.1B', 5),
       ('openrouter/free', 'Free Router (Auto)', 5)
+    `).run();
+
+    // Seed OpenCode Go models
+    await env.DB.prepare(`INSERT OR IGNORE INTO ai_models (model_id, name, tier, provider) VALUES
+      ('opencode/deepseek-v4-flash', 'DeepSeek V4 Flash (OpenCode)', 1, 'opencode'),
+      ('opencode/deepseek-v4-pro', 'DeepSeek V4 Pro (OpenCode)', 2, 'opencode'),
+      ('opencode/qwen3.7-max', 'Qwen 3.7 Max (OpenCode)', 1, 'opencode'),
+      ('opencode/qwen3.7-plus', 'Qwen 3.7 Plus (OpenCode)', 2, 'opencode'),
+      ('opencode/kimi-k2.7-code', 'Kimi K2.7 Code (OpenCode)', 1, 'opencode'),
+      ('opencode/kimi-k2.6', 'Kimi K2.6 (OpenCode)', 2, 'opencode'),
+      ('opencode/glm-5.2', 'GLM 5.2 (OpenCode)', 1, 'opencode'),
+      ('opencode/glm-5.1', 'GLM 5.1 (OpenCode)', 2, 'opencode'),
+      ('opencode/mimo-v2.5', 'MiMo V2.5 (OpenCode)', 2, 'opencode'),
+      ('opencode/mimo-v2.5-pro', 'MiMo V2.5 Pro (OpenCode)', 3, 'opencode'),
+      ('opencode/minimax-m3', 'MiniMax M3 (OpenCode)', 2, 'opencode'),
+      ('opencode/minimax-m2.7', 'MiniMax M2.7 (OpenCode)', 3, 'opencode')
     `).run();
 
     // Seed default personas
