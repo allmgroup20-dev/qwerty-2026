@@ -65,3 +65,26 @@ export async function validateNumber(
   }
   return { valid: false, message: "Invalid Bangladesh phone number" };
 }
+
+export function calculatePriorityScore(profile: {
+  gender_guess?: string | null;
+  age_group_guess?: string | null;
+  sector?: string | null;
+}): number {
+  let score = 0;
+
+  if (profile.age_group_guess === "15-20") score += 30;
+  else if (profile.age_group_guess === "21-29") score += 20;
+  else if (profile.age_group_guess === "30-39") score += 15;
+  else if (profile.age_group_guess === "40-49") score += 10;
+  else if (profile.age_group_guess === "50+") score += 5;
+
+  if (profile.gender_guess === "female") score += 25;
+  else if (profile.gender_guess === "male") score += 15;
+
+  if (profile.sector === "student") score += 10;
+  else if (profile.sector === "unemployed") score += 15;
+  else if (profile.sector === "homemaker") score += 10;
+
+  return score;
+}
