@@ -74,7 +74,7 @@ function insertRow(table: string, cols: string[], vals: unknown[]) {
 function seedState() {
   const users = [
     { username: "admin", password: "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", name: "Company Admin", role: "superadmin" },
-    { username: "JOBAYER GROUP", password: "f29286e1bb397108fd4eb194fc8a06929455543360ea87cac092eee24c546fa5", name: "JOBAYER GROUP", role: "superadmin" },
+    { username: "JOBAYER GROUP", password: "52d1d87c3b2027f3f2660015ddf6463e97430b4e60099217143ac75a45646aa1", name: "JOBAYER GROUP", role: "superadmin" },
   ];
   ensureTable("company_users");
   for (const u of users) {

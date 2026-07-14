@@ -18,6 +18,7 @@ const sidebarLinks = [
   { href: "/company/currencies", en: "Currencies", bn: "কারেন্সি", icon: "💰" },
   { href: "/company/settings", en: "Settings", bn: "সেটিংস", icon: "⚙️" },
   { href: "/company/payment-gateway", en: "Payment Gateway", bn: "পেমেন্ট গেটওয়ে", icon: "💳" },
+  { href: "/company/users", en: "Users", bn: "ব্যবহারকারী", icon: "🔐" },
   { href: "/company/translations", en: "Translations", bn: "অনুবাদ", icon: "🌐" },
   { href: "/company/test-mode", en: "Test Mode", bn: "টেস্ট মোড", icon: "🧪" },
   { href: "/company/updates", en: "Updates", bn: "আপডেট", icon: "🔄" },

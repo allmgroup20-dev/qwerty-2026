@@ -10,6 +10,7 @@ const adminLinks = [
   { href: "/company/levels", en: "Commission Levels", bn: "কমিশন লেভেল", icon: "📊", color: "bg-purple-50 text-purple-600" },
   { href: "/company/currencies", en: "Currencies", bn: "কারেন্সি", icon: "💰", color: "bg-yellow-50 text-yellow-600" },
   { href: "/company/settings", en: "Settings", bn: "সেটিংস", icon: "⚙️", color: "bg-gray-50 text-gray-600" },
+  { href: "/company/users", en: "Users", bn: "ব্যবহারকারী", icon: "🔐", color: "bg-pink-50 text-pink-600" },
   { href: "/company/translations", en: "Translations", bn: "অনুবাদ", icon: "🌐", color: "bg-indigo-50 text-indigo-600" },
   { href: "/company/test-mode", en: "Test Mode", bn: "টেস্ট মোড", icon: "🧪", color: "bg-orange-50 text-orange-600" },
   { href: "/company/updates", en: "Updates", bn: "আপডেট", icon: "🔄", color: "bg-teal-50 text-teal-600" },
