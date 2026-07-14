@@ -21,8 +21,12 @@ export async function getDB(): Promise<{ DB: D1Database }> {
   } catch {}
   const db = process.env.DB as unknown as D1Database | undefined;
   if (db) return { DB: db };
-  const local = await getLocalDB();
-  if (local) return { DB: local as unknown as D1Database };
+  try {
+    const local = await getLocalDB();
+    if (local) return { DB: local as unknown as D1Database };
+  } catch (e) {
+    console.warn("Local D1 fallback failed:", (e as Error)?.message);
+  }
   throw new Error("D1 Database not available - run migrations first");
 }
 

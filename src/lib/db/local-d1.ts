@@ -1,6 +1,3 @@
-import fs from "fs";
-import path from "path";
-
 const g = globalThis as any;
 const GLOBAL_KEY = "__localD1State";
 
@@ -15,44 +12,15 @@ if (!g[GLOBAL_KEY]) {
 
 let state = g[GLOBAL_KEY] as Record<string, TableState>;
 
-function getStateFilePath(): string {
-  return path.resolve(process.cwd(), ".local-d1-state.json");
-}
-
 function load() {
   if (Object.keys(state).length > 0) return;
-  const file = getStateFilePath();
-  const oldFile = path.resolve(process.cwd(), ".open-next", ".local-d1-state.json");
-  try {
-    if (!fs.existsSync(file) && fs.existsSync(oldFile)) {
-      fs.copyFileSync(oldFile, file);
-      console.log("[local-d1] migrated state from .open-next/");
-    }
-    if (fs.existsSync(file)) {
-      const data = JSON.parse(fs.readFileSync(file, "utf-8"));
-      Object.assign(state, data);
-    }
-  } catch (e) {
-    console.warn("[local-d1] load error:", e);
-  }
-  if (Object.keys(state).length === 0) {
-    console.log("[local-d1] seeding defaults");
-    seedState();
-  }
-  console.log(`[local-d1] ready: ${Object.keys(state).length} tables from ${file}`);
+  console.log("[local-d1] seeding defaults");
+  seedState();
+  console.log(`[local-d1] ready: ${Object.keys(state).length} tables`);
 }
 
 function save() {
-  try {
-    const file = getStateFilePath();
-    const dir = path.dirname(file);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(file, JSON.stringify(state, null, 2));
-  } catch (e) {
-    console.warn("[local-d1] save error:", e);
-  }
+  // state persists via globalThis reference; no file I/O needed
 }
 
 function ensureTable(name: string) {
@@ -136,11 +104,18 @@ function evalWhere(sql: string, row: Record<string, unknown>, params: unknown[])
   const conds = clause.split(/\s+AND\s+/i);
   let pi = 0;
   for (const c of conds) {
-    const eq = c.match(/`?(\w+)`?\s*=\s*\??/);
-    if (!eq) continue;
-    const col = eq[1];
+    const colMatch = c.match(/(?:\w+\s*\(?\s*)?`?(\w+)`?\s*\)?\s*=\s*\??/i);
+    if (!colMatch) continue;
+    const col = colMatch[1];
+    let rowVal = row[col];
     const val = params[pi];
-    if (String(row[col]) !== String(val)) return false;
+    const leftFn = c.match(/^(\w+)\s*\(/i);
+    if (leftFn) {
+      const fn = leftFn[1].toUpperCase();
+      if (fn === "LOWER") rowVal = String(rowVal).toLowerCase();
+      else if (fn === "UPPER") rowVal = String(rowVal).toUpperCase();
+    }
+    if (String(rowVal) !== String(val)) return false;
     pi++;
   }
   return true;
