@@ -1,4 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { ensureSchema } from "./setup";
 
 async function getLocalDB() {
   const g = globalThis as any;
@@ -17,10 +18,10 @@ export async function getDB(): Promise<{ DB: D1Database }> {
   try {
     const { env } = getCloudflareContext();
     const db = (env as any).DB as D1Database | undefined;
-    if (db) return { DB: db };
+    if (db) { await ensureSchema({ DB: db }); return { DB: db }; }
   } catch {}
   const db = process.env.DB as unknown as D1Database | undefined;
-  if (db) return { DB: db };
+  if (db) { await ensureSchema({ DB: db }); return { DB: db }; }
   try {
     const local = await getLocalDB();
     if (local) return { DB: local as unknown as D1Database };
