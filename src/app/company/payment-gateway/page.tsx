@@ -36,6 +36,12 @@ function PasswordInput({ value, onChange, placeholder }: { value: string; onChan
   );
 }
 
+function maskValue(val: string): string {
+  if (!val) return "—";
+  if (val.length <= 6) return val;
+  return val.slice(0, 4) + "••••" + val.slice(-2);
+}
+
 export default function PaymentGatewayPage() {
   const { lang } = useLanguageStore();
   const [testId, setTestId] = useState("");
@@ -46,21 +52,35 @@ export default function PaymentGatewayPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [savedTimestamp, setSavedTimestamp] = useState<string | null>(null);
+  const [hasSavedData, setHasSavedData] = useState(false);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch("/api/company/settings");
+      const data = await res.json() as { settings?: Record<string, string> };
+      if (data.settings) {
+        const sid = data.settings.sslcommerz_test_store_id || "";
+        const spw = data.settings.sslcommerz_test_store_password || "";
+        const lid = data.settings.sslcommerz_live_store_id || "";
+        const lpw = data.settings.sslcommerz_live_store_password || "";
+        const md = (data.settings.sslcommerz_mode as "test" | "live") || "test";
+        setTestId(sid);
+        setTestPassword(spw);
+        setLiveId(lid);
+        setLivePassword(lpw);
+        setMode(md);
+        const anyData = sid || spw || lid || lpw;
+        setHasSavedData(!!anyData);
+        if (anyData) {
+          setSavedTimestamp(new Date().toLocaleString(lang === "bn" ? "bn-BD" : "en-US"));
+        }
+      }
+    } catch {}
+  };
 
   useEffect(() => {
-    fetch("/api/company/settings")
-      .then((r) => r.json() as Promise<{ settings?: Record<string, string> }>)
-      .then((data) => {
-        if (data.settings) {
-          setTestId(data.settings.sslcommerz_test_store_id || "");
-          setTestPassword(data.settings.sslcommerz_test_store_password || "");
-          setLiveId(data.settings.sslcommerz_live_store_id || "");
-          setLivePassword(data.settings.sslcommerz_live_store_password || "");
-          setMode((data.settings.sslcommerz_mode as "test" | "live") || "test");
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    fetchSettings().finally(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
@@ -81,7 +101,10 @@ export default function PaymentGatewayPage() {
       });
       if (res.ok) {
         setSaved(true);
-        setTimeout(() => setSaved(false), 2500);
+        setHasSavedData(true);
+        setSavedTimestamp(new Date().toLocaleString(lang === "bn" ? "bn-BD" : "en-US"));
+        await fetchSettings();
+        setTimeout(() => setSaved(false), 3000);
       }
     } catch {}
     setSaving(false);
@@ -98,13 +121,24 @@ export default function PaymentGatewayPage() {
   return (
     <div className="min-h-screen py-24 px-4 bg-gray-50">
       <div className="max-w-3xl mx-auto">
-        <div className="mb-8 animate-fade-up">
-          <h1 className="text-2xl font-bold text-primary">
-            {lang === "bn" ? "পেমেন্ট গেটওয়ে" : "Payment Gateway"}
-          </h1>
-          <p className="text-sm text-text-secondary mt-1">
-            {lang === "bn" ? "SSLCommerz ক্রেডেন্সিয়াল এবং মোড কনফিগার করুন" : "Configure SSLCommerz credentials and mode"}
-          </p>
+        <div className="mb-8 animate-fade-up flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-primary">
+              {lang === "bn" ? "পেমেন্ট গেটওয়ে" : "Payment Gateway"}
+            </h1>
+            <p className="text-sm text-text-secondary mt-1">
+              {lang === "bn" ? "SSLCommerz ক্রেডেন্সিয়াল এবং মোড কনফিগার করুন" : "Configure SSLCommerz credentials and mode"}
+            </p>
+          </div>
+          {hasSavedData && (
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${saved ? "bg-green-50 text-green-700 border border-green-200" : "bg-green-50 text-green-700 border border-green-200"}`}>
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              {saved
+                ? (lang === "bn" ? "সদ্য সংরক্ষিত" : "Just Saved")
+                : (lang === "bn" ? "সংরক্ষিত" : "Saved")}
+              {savedTimestamp && <> &middot; {savedTimestamp}</>}
+            </span>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -167,6 +201,72 @@ export default function PaymentGatewayPage() {
                 : "Get live credentials from your SSLCommerz merchant account"}
             </p>
           </Card>
+
+          {hasSavedData && (
+            <Card className="border-2 border-green-200 bg-green-50/30">
+              <div className="flex items-center gap-2 mb-5">
+                <span className="text-lg">📋</span>
+                <h3 className="font-bold text-primary">
+                  {lang === "bn" ? "সংরক্ষিত সেটিংস" : "Saved Settings"}
+                </h3>
+                <span className="ml-auto flex items-center gap-1.5 text-xs text-green-700 bg-green-100 px-2.5 py-1 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  {lang === "bn" ? "ডাটাবেজে সংরক্ষিত" : "Saved in Database"}
+                </span>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${mode === "test" ? "bg-yellow-400" : "bg-gray-300"}`} />
+                    <span className="text-sm font-semibold text-primary">
+                      {lang === "bn" ? "টেস্ট মোড" : "Test Mode"}
+                    </span>
+                  </div>
+                  <div className="pl-4 space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-text-secondary">Store ID:</span>
+                      <span className="font-mono text-primary font-medium">{maskValue(testId)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-secondary">Password:</span>
+                      <span className="font-mono text-primary font-medium">{testPassword ? "••••••••" : "—"}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${mode === "live" ? "bg-action" : "bg-gray-300"}`} />
+                    <span className="text-sm font-semibold text-primary">
+                      {lang === "bn" ? "লাইভ মোড" : "Live Mode"}
+                    </span>
+                  </div>
+                  <div className="pl-4 space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-text-secondary">Store ID:</span>
+                      <span className="font-mono text-primary font-medium">{maskValue(liveId)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-secondary">Password:</span>
+                      <span className="font-mono text-primary font-medium">{livePassword ? "••••••••" : "—"}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-green-200 flex items-center gap-2 text-xs text-text-secondary">
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${mode === "test" ? "bg-yellow-100 text-yellow-700" : "bg-action/10 text-action"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${mode === "test" ? "bg-yellow-500" : "bg-action"}`} />
+                  {mode === "test"
+                    ? (lang === "bn" ? "সক্রিয় মোড: টেস্ট (স্যান্ডবক্স)" : "Active: Test (Sandbox)")
+                    : (lang === "bn" ? "সক্রিয় মোড: লাইভ (রিয়েল)" : "Active: Live (Real)")}
+                </span>
+                {savedTimestamp && (
+                  <span className="ml-auto">
+                    {lang === "bn" ? "সর্বশেষ সেভ:" : "Last saved:"} {savedTimestamp}
+                  </span>
+                )}
+              </div>
+            </Card>
+          )}
 
           <div className="flex items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
             <span className="text-lg">ℹ️</span>
