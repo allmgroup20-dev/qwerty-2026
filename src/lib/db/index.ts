@@ -323,6 +323,86 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       ('Rokeya Begum', 'female'), ('Shafiqur Rahman', 'male')
     `).run();
 
+    // Agent module tables (Multi-Agent Research System)
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_agents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id TEXT UNIQUE NOT NULL,
+      name_bn TEXT NOT NULL,
+      name_en TEXT NOT NULL,
+      level INTEGER NOT NULL DEFAULT 1,
+      sector TEXT,
+      parent_agent_id TEXT,
+      status TEXT DEFAULT 'idle',
+      model_id TEXT,
+      provider TEXT DEFAULT 'openrouter',
+      cron_interval INTEGER DEFAULT 360,
+      last_run_at TEXT,
+      next_run_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_agent_tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id TEXT NOT NULL,
+      task_type TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      input_data TEXT,
+      output_data TEXT,
+      started_at TEXT,
+      completed_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_agent_submissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      from_agent_id TEXT NOT NULL,
+      to_agent_id TEXT NOT NULL,
+      submission_type TEXT DEFAULT 'research',
+      title_bn TEXT,
+      content TEXT,
+      status TEXT DEFAULT 'pending',
+      reviewed_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_agent_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id TEXT NOT NULL,
+      title_bn TEXT,
+      summary_bn TEXT,
+      findings TEXT,
+      recommendations TEXT,
+      metrics TEXT,
+      submitted_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_agent_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      detail_bn TEXT,
+      metadata TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    // Seed default agents (8 sector + 4 domain + 1 senior)
+    await env.DB.prepare(`INSERT OR IGNORE INTO ai_agents (agent_id, name_bn, name_en, level, sector, parent_agent_id, cron_interval) VALUES
+      -- Level 3: Senior Agent
+      ('agent_senior', 'প্রধান এজেন্ট', 'Senior Agent', 3, NULL, NULL, 1440),
+      -- Level 2: Domain Agents
+      ('agent_sales', 'সেলস এজেন্ট', 'Sales Agent', 2, NULL, 'agent_senior', 720),
+      ('agent_product', 'পণ্য এজেন্ট', 'Product Agent', 2, NULL, 'agent_senior', 720),
+      ('agent_operations', 'অপারেশন এজেন্ট', 'Operations Agent', 2, NULL, 'agent_senior', 720),
+      ('agent_analytics', 'বিশ্লেষণ এজেন্ট', 'Analytics Agent', 2, NULL, 'agent_senior', 720),
+      -- Level 1: Sector Agents (report to Sales Agent)
+      ('agent_student', 'শিক্ষার্থী এজেন্ট', 'Student Agent', 1, 'student', 'agent_sales', 360),
+      ('agent_homemaker', 'গৃহিণী এজেন্ট', 'Homemaker Agent', 1, 'homemaker', 'agent_sales', 360),
+      ('agent_job_holder', 'চাকরিজীবী এজেন্ট', 'Job Holder Agent', 1, 'job_holder', 'agent_sales', 360),
+      ('agent_business', 'ব্যবসায়ী এজেন্ট', 'Business Agent', 1, 'business_owner', 'agent_sales', 360),
+      ('agent_freelancer', 'ফ্রিল্যান্সার এজেন্ট', 'Freelancer Agent', 1, 'freelancer', 'agent_sales', 360),
+      ('agent_unemployed', 'বেকার এজেন্ট', 'Unemployed Agent', 1, 'unemployed', 'agent_sales', 360),
+      ('agent_rural', 'গ্রামীণ এজেন্ট', 'Rural Agent', 1, 'rural', 'agent_sales', 360),
+      ('agent_urban', 'শহুরে এজেন্ট', 'Urban Agent', 1, 'urban_educated', 'agent_sales', 360)
+    `).run();
+
     // WhatsApp module tables
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS wa_contacts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -175,6 +175,70 @@ export const aiLog = sqliteTable("ai_log", {
   createdAt: text("created_at"),
 });
 
+// Agent tables (Multi-Agent Research System)
+export const aiAgents = sqliteTable("ai_agents", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  agentId: text("agent_id").unique().notNull(),
+  nameBn: text("name_bn").notNull(),
+  nameEn: text("name_en").notNull(),
+  level: integer("level").default(1),
+  sector: text("sector"),
+  parentAgentId: text("parent_agent_id"),
+  status: text("status").default("idle"),
+  modelId: text("model_id"),
+  provider: text("provider").default("openrouter"),
+  cronInterval: integer("cron_interval").default(360),
+  lastRunAt: text("last_run_at"),
+  nextRunAt: text("next_run_at"),
+  createdAt: text("created_at"),
+  updatedAt: text("updated_at"),
+});
+
+export const aiAgentTasks = sqliteTable("ai_agent_tasks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  agentId: text("agent_id").notNull(),
+  taskType: text("task_type").notNull(),
+  status: text("status").default("pending"),
+  inputData: text("input_data"),
+  outputData: text("output_data"),
+  startedAt: text("started_at"),
+  completedAt: text("completed_at"),
+  createdAt: text("created_at"),
+});
+
+export const aiAgentSubmissions = sqliteTable("ai_agent_submissions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  fromAgentId: text("from_agent_id").notNull(),
+  toAgentId: text("to_agent_id").notNull(),
+  submissionType: text("submission_type").default("research"),
+  titleBn: text("title_bn"),
+  content: text("content"),
+  status: text("status").default("pending"),
+  reviewedAt: text("reviewed_at"),
+  createdAt: text("created_at"),
+});
+
+export const aiAgentReports = sqliteTable("ai_agent_reports", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  agentId: text("agent_id").notNull(),
+  titleBn: text("title_bn"),
+  summaryBn: text("summary_bn"),
+  findings: text("findings"),
+  recommendations: text("recommendations"),
+  metrics: text("metrics"),
+  submittedAt: text("submitted_at"),
+  createdAt: text("created_at"),
+});
+
+export const aiAgentLogs = sqliteTable("ai_agent_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  agentId: text("agent_id").notNull(),
+  action: text("action").notNull(),
+  detailBn: text("detail_bn"),
+  metadata: text("metadata"),
+  createdAt: text("created_at"),
+});
+
 export const waContacts = sqliteTable("wa_contacts", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   phone: text("phone").unique().notNull(),

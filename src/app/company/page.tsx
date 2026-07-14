@@ -1,8 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card, StatCard } from "@/components/ui/Card";
+
+interface AgentStats {
+  total: number; active: number; error: number;
+  totalReports: number; totalSubmissions: number;
+}
 
 const adminLinks = [
   { href: "/company/members", en: "All Members", bn: "সকল সদস্য", icon: "👥", color: "bg-blue-50 text-blue-600" },
@@ -14,6 +20,7 @@ const adminLinks = [
   { href: "/company/translations", en: "Translations", bn: "অনুবাদ", icon: "🌐", color: "bg-indigo-50 text-indigo-600" },
   { href: "/company/test-mode", en: "Test Mode", bn: "টেস্ট মোড", icon: "🧪", color: "bg-orange-50 text-orange-600" },
   { href: "/company/updates", en: "Updates", bn: "আপডেট", icon: "🔄", color: "bg-teal-50 text-teal-600" },
+  { href: "/company/ai-agents", en: "AI Agents", bn: "এআই এজেন্ট", icon: "🧠", color: "bg-indigo-50 text-indigo-600" },
   { href: "/company/ai-settings", en: "AI Settings", bn: "এআই সেটিংস", icon: "🤖", color: "bg-indigo-50 text-indigo-600" },
   { href: "/company/ai-insights", en: "AI Insights", bn: "এআই ইনসাইটস", icon: "📊", color: "bg-violet-50 text-violet-600" },
   { href: "/company/whatsapp", en: "WhatsApp", bn: "হোয়াটসঅ্যাপ", icon: "💬", color: "bg-green-50 text-green-600" },
@@ -24,6 +31,14 @@ const adminLinks = [
 
 export default function CompanyDashboard() {
   const { lang } = useLanguageStore();
+  const [agentStats, setAgentStats] = useState<AgentStats | null>(null);
+
+  useEffect(() => {
+    fetch("/api/ai/agents/stats")
+      .then((r) => r.json())
+      .then((data) => setAgentStats(data as AgentStats))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen py-24 px-4 bg-gray-50">
@@ -43,6 +58,27 @@ export default function CompanyDashboard() {
           <StatCard label={lang === "bn" ? "মোট অর্ডার" : "Total Orders"} value="45,291" color="text-secondary-dark" />
           <StatCard label={lang === "bn" ? "মোট রাজস্ব" : "Total Revenue"} value="৳2.4Cr" color="text-accent" />
         </div>
+
+        {agentStats && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+            <div className="card p-4 text-center">
+              <div className="text-lg font-bold text-primary">{agentStats.total}</div>
+              <div className="text-xs text-text-secondary">{lang === "bn" ? "এআই এজেন্ট" : "AI Agents"}</div>
+            </div>
+            <div className="card p-4 text-center">
+              <div className="text-lg font-bold text-green-600">{agentStats.active}</div>
+              <div className="text-xs text-text-secondary">{lang === "bn" ? "সক্রিয়" : "Active"}</div>
+            </div>
+            <div className="card p-4 text-center">
+              <div className="text-lg font-bold text-purple-600">{agentStats.totalReports}</div>
+              <div className="text-xs text-text-secondary">{lang === "bn" ? "রিপোর্ট" : "Reports"}</div>
+            </div>
+            <div className="card p-4 text-center">
+              <div className="text-lg font-bold text-blue-600">{agentStats.totalSubmissions}</div>
+              <div className="text-xs text-text-secondary">{lang === "bn" ? "সাবমিশন" : "Submissions"}</div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {adminLinks.map((link) => (
