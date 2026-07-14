@@ -161,16 +161,24 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       ('Jobayer Group', '52d1d87c3b2027f3f2660015ddf6463e97430b4e60099217143ac75a45646aa1', 'Jobayer Group', 'superadmin')
     `).run();
 
-    // Migrate ai_api_keys to add provider column
+    // Migrate ai_api_keys to remove UNIQUE on key_slot (unlimited keys)
     try {
-      await env.DB.prepare("ALTER TABLE ai_api_keys ADD COLUMN provider TEXT DEFAULT 'openrouter'").run();
+      const existing = await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='ai_api_keys_v2'").all();
+      if (!existing.results || !existing.results.length) {
+        await env.DB.prepare(`CREATE TABLE ai_api_keys_v2 (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          key_value TEXT NOT NULL,
+          provider TEXT DEFAULT 'openrouter',
+          is_active INTEGER DEFAULT 1,
+          created_at TEXT DEFAULT (datetime('now'))
+        )`).run();
+        await env.DB.prepare("INSERT INTO ai_api_keys_v2 (key_value, provider, is_active, created_at) SELECT COALESCE(key_value, ''), COALESCE(provider, 'openrouter'), COALESCE(is_active, 1), COALESCE(created_at, datetime('now')) FROM ai_api_keys").run();
+        await env.DB.prepare("ALTER TABLE ai_api_keys RENAME TO ai_api_keys_old").run();
+        await env.DB.prepare("ALTER TABLE ai_api_keys_v2 RENAME TO ai_api_keys").run();
+        await env.DB.prepare("DROP TABLE IF EXISTS ai_api_keys_old").run();
+      }
     } catch {
-      // column already exists
-    }
-    try {
-      await env.DB.prepare("ALTER TABLE ai_api_keys ADD COLUMN label TEXT DEFAULT ''").run();
-    } catch {
-      // column already exists
+      // migration already done or no old table
     }
 
     // AI module tables
@@ -185,8 +193,8 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     )`).run();
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_api_keys (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      key_slot INTEGER UNIQUE NOT NULL,
       key_value TEXT NOT NULL,
+      provider TEXT DEFAULT 'openrouter',
       is_active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();

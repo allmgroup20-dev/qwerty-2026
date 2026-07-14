@@ -48,8 +48,8 @@ async function getFailoverState(db: D1Database): Promise<FailoverState> {
 
 async function getActiveKeys(db: D1Database, provider?: string): Promise<string[]> {
   const sql = provider
-    ? "SELECT key_value FROM ai_api_keys WHERE is_active = 1 AND provider = ? ORDER BY key_slot ASC"
-    : "SELECT key_value FROM ai_api_keys WHERE is_active = 1 ORDER BY key_slot ASC";
+    ? "SELECT key_value FROM ai_api_keys WHERE is_active = 1 AND provider = ? ORDER BY id ASC"
+    : "SELECT key_value FROM ai_api_keys WHERE is_active = 1 ORDER BY id ASC";
   const params = provider ? [provider] : [];
   const keys = await query<{ key_value: string }>({ DB: db }, sql, params);
   return keys.map((k) => k.key_value);
