@@ -3,12 +3,19 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 const DONE_FLAG = "__dbSchemaSetupDone";
 const DONE_LOCK = "__dbSchemaSetupLock";
 
+let dbCache: { DB: D1Database } | null = null;
+let dbError: Error | null = null;
+
 async function ensureSchema(env: { DB: D1Database }): Promise<void> {
   const g = globalThis as any;
   if (g[DONE_FLAG]) return;
   if (g[DONE_LOCK]) {
-    while (g[DONE_FLAG] === false) await new Promise(r => setTimeout(r, 50));
-    return;
+    let waited = 0;
+    while (g[DONE_FLAG] === false && g[DONE_LOCK] && waited < 100) {
+      await new Promise(r => setTimeout(r, 100));
+      waited++;
+    }
+    if (g[DONE_FLAG]) return;
   }
   g[DONE_LOCK] = true;
   try {
@@ -418,6 +425,9 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     `).run();
 
     g[DONE_FLAG] = true;
+  } catch (e) {
+    g[DONE_FLAG] = false;
+    throw e;
   } finally {
     g[DONE_LOCK] = false;
   }
@@ -437,25 +447,36 @@ async function getLocalDB() {
 }
 
 export async function getDB(): Promise<{ DB: D1Database }> {
-  let db: D1Database | undefined;
+  if (dbCache) return dbCache;
+  if (dbError) throw dbError;
+
   try {
     const ctx = await getCloudflareContext({ async: true });
-    db = (ctx.env as any).DB as D1Database | undefined;
-  } catch (e) {
-    console.error("getCloudflareContext failed:", (e as Error)?.message);
-  }
-  if (db) {
-    console.log("getDB: got D1 from getCloudflareContext, running ensureSchema...");
+    const db = (ctx.env as any).DB as D1Database | undefined;
+    if (!db) {
+      throw new Error("D1 binding 'DB' is undefined in Cloudflare environment");
+    }
     await ensureSchema({ DB: db });
-    return { DB: db };
-  }
-  try {
-    const local = await getLocalDB();
-    if (local) return { DB: local as unknown as D1Database };
+    dbCache = { DB: db };
+    return dbCache;
   } catch (e) {
-    console.warn("Local D1 fallback failed:", (e as Error)?.message);
+    const isDev = typeof process !== "undefined" && process.env.NODE_ENV === "development";
+    if (isDev) {
+      try {
+        const local = await getLocalDB();
+        if (local) {
+          const env = { DB: local as unknown as D1Database };
+          await ensureSchema(env);
+          dbCache = env;
+          return env;
+        }
+      } catch (localErr) {
+        console.warn("Local D1 fallback failed:", (localErr as Error)?.message);
+      }
+    }
+    dbError = e instanceof Error ? e : new Error("Database connection failed");
+    throw dbError;
   }
-  throw new Error("D1 Database not available");
 }
 
 export async function ensureDB(): Promise<D1Database> {

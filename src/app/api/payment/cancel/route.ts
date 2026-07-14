@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.redirect(new URL(`/checkout?payment=cancelled${orderId ? `&order=${orderId}` : ""}`, request.url));
-  } catch {
+  } catch (error) {
+    console.error("Payment cancel error:", error);
     return NextResponse.redirect(new URL("/checkout?payment=error", request.url));
   }
 }

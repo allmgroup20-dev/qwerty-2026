@@ -18,17 +18,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/checkout?payment=error", request.url));
     }
 
+    const env = await getDB();
+
     if (status !== "VALID" && status !== "VALIDATED") {
-      await execute(await getDB(), "UPDATE orders SET order_status = 'failed' WHERE order_id = ?", [orderId]);
+      await execute(env, "UPDATE orders SET order_status = 'failed' WHERE order_id = ?", [orderId]);
       return NextResponse.redirect(new URL(`/checkout?payment=failed&order=${orderId}`, request.url));
     }
 
-    const env = await getDB();
     const service = await SslcommerzService.fromDB(env);
     if (valId) {
       const validation = await service.validatePayment(valId);
       if (!validation.validated) {
-        await execute(await getDB(), "UPDATE orders SET order_status = 'failed' WHERE order_id = ?", [orderId]);
+        await execute(env, "UPDATE orders SET order_status = 'failed' WHERE order_id = ?", [orderId]);
         return NextResponse.redirect(new URL(`/checkout?payment=failed&order=${orderId}`, request.url));
       }
     }
@@ -64,7 +65,9 @@ export async function GET(request: NextRequest) {
           const message = generateWhatsAppTemplate(worker.name, "order");
           await sendWhatsAppMessage({ to: worker.phone, text: message }, apiKey);
         }
-      } catch {}
+      } catch (notifErr) {
+        console.error("WhatsApp notification failed:", notifErr);
+      }
     }
 
     return NextResponse.redirect(new URL("/dashboard/orders?payment=success", request.url));
