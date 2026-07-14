@@ -27,8 +27,8 @@ export default function PlatformLogoGrid() {
             key={i}
             className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-primary/[0.03] to-transparent border border-border hover:border-primary/30 transition-all"
           >
-            <div className="w-10 h-10 rounded-lg bg-white border border-border flex items-center justify-center shrink-0 shadow-sm">
-              <Image src={p.logo} alt={p.name} width={40} height={40} className="object-contain" />
+            <div className="w-10 h-10 rounded-lg bg-white border border-border overflow-hidden relative flex items-center justify-center shrink-0 shadow-sm">
+              <Image src={p.logo} alt={lang === "bn" ? p.nameBn : p.name} width={40} height={40} className="object-contain" />
             </div>
             <span className="text-sm font-bold text-text">
               {lang === "bn" ? p.nameBn : p.name}
