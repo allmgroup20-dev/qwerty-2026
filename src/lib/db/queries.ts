@@ -1,6 +1,5 @@
 export async function query<T>(env: { DB: D1Database }, query: string, params?: unknown[]): Promise<T[]> {
-  const stmt = env.DB.prepare(query);
-  if (params) stmt.bind(...params);
+  const stmt = params ? env.DB.prepare(query).bind(...params) : env.DB.prepare(query);
   const result = await stmt.all();
   return result.results as T[];
 }
@@ -11,16 +10,13 @@ export async function queryFirst<T>(env: { DB: D1Database }, sql: string, params
 }
 
 export async function execute(env: { DB: D1Database }, query: string, params?: unknown[]): Promise<D1Result> {
-  const stmt = env.DB.prepare(query);
-  if (params) stmt.bind(...params);
+  const stmt = params ? env.DB.prepare(query).bind(...params) : env.DB.prepare(query);
   return stmt.run();
 }
 
 export async function batch(env: { DB: D1Database }, queries: { sql: string; params?: unknown[] }[]) {
-  const stmts = queries.map((q) => {
-    const stmt = env.DB.prepare(q.sql);
-    if (q.params) stmt.bind(...q.params);
-    return stmt;
-  });
+  const stmts = queries.map((q) =>
+    q.params ? env.DB.prepare(q.sql).bind(...q.params) : env.DB.prepare(q.sql)
+  );
   return env.DB.batch(stmts);
 }
