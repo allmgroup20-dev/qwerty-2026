@@ -1,3 +1,5 @@
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+
 async function getLocalDB() {
   const g = globalThis as any;
   if (!g.__localD1Instance) {
@@ -12,6 +14,11 @@ async function getLocalDB() {
 }
 
 export async function getDB(): Promise<{ DB: D1Database }> {
+  try {
+    const { env } = getCloudflareContext();
+    const db = (env as any).DB as D1Database | undefined;
+    if (db) return { DB: db };
+  } catch {}
   const db = process.env.DB as unknown as D1Database | undefined;
   if (db) return { DB: db };
   const local = await getLocalDB();
