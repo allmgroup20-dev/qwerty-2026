@@ -27,9 +27,11 @@ export async function POST(request: NextRequest) {
 
     for (const entry of entries) {
       await execute(env,
-        `INSERT INTO company_settings (setting_key, setting_value, setting_type, updated_at)
-         VALUES (?, ?, 'text', datetime('now'))
-         ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = datetime('now')`,
+        "DELETE FROM company_settings WHERE setting_key = ?",
+        [entry.key]
+      );
+      await execute(env,
+        "INSERT INTO company_settings (setting_key, setting_value, setting_type, updated_at) VALUES (?, ?, 'text', datetime('now'))",
         [entry.key, entry.value]
       );
     }
