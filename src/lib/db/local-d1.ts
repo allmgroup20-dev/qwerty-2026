@@ -81,6 +81,23 @@ function seedState() {
     }
   }
 
+  ensureTable("company_settings");
+  const settingDefaults = [
+    { setting_key: "sslcommerz_test_store_id", setting_value: "" },
+    { setting_key: "sslcommerz_test_store_password", setting_value: "" },
+    { setting_key: "sslcommerz_live_store_id", setting_value: "" },
+    { setting_key: "sslcommerz_live_store_password", setting_value: "" },
+    { setting_key: "sslcommerz_mode", setting_value: "test" },
+  ];
+  for (const s of settingDefaults) {
+    const exists = state.company_settings!.rows.some((r) => r.setting_key === s.setting_key);
+    if (!exists) {
+      const row: Record<string, unknown> = { id: state.company_settings!.nextId, ...s };
+      state.company_settings!.rows.push(row);
+      state.company_settings!.nextId++;
+    }
+  }
+
   save();
 }
 

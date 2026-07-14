@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL(`/checkout?payment=failed&order=${orderId}`, request.url));
     }
 
-    const service = new SslcommerzService();
+    const env = await getDB();
+    const service = await SslcommerzService.fromDB(env);
     if (valId) {
       const validation = await service.validatePayment(valId);
       if (!validation.validated) {
@@ -32,7 +33,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const env = await getDB();
     const existing = await queryFirst<{ payment_status: string; worker_id: string; total_amount: number; currency: string }>(
       env, "SELECT payment_status, worker_id, total_amount, currency FROM orders WHERE order_id = ?", [orderId]
     );

@@ -40,6 +40,31 @@ export class SslcommerzService {
     this.isLive = isLive !== undefined ? isLive : process.env.SSLCOMMERZ_IS_LIVE === "true";
   }
 
+  static async fromDB(env: { DB: D1Database }): Promise<SslcommerzService> {
+    const { queryFirst } = await import("@/lib/db/queries");
+
+    const getSetting = async (key: string): Promise<string> => {
+      const row = await queryFirst<{ setting_value: string }>(
+        env, "SELECT setting_value FROM company_settings WHERE setting_key = ?", [key]
+      );
+      return row?.setting_value || "";
+    };
+
+    const [testId, testPass, liveId, livePass, mode] = await Promise.all([
+      getSetting("sslcommerz_test_store_id"),
+      getSetting("sslcommerz_test_store_password"),
+      getSetting("sslcommerz_live_store_id"),
+      getSetting("sslcommerz_live_store_password"),
+      getSetting("sslcommerz_mode"),
+    ]);
+
+    const isLive = mode === "live";
+    const storeId = isLive ? liveId : testId;
+    const storePassword = isLive ? livePass : testPass;
+
+    return new SslcommerzService(storeId || undefined, storePassword || undefined, isLive);
+  }
+
   private getBaseUrl(): string {
     return this.isLive
       ? "https://secure.sslcommerz.com"

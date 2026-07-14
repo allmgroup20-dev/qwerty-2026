@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     const env = await getDB();
+    const service = await SslcommerzService.fromDB(env);
     const orderId = `ORD${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     await execute(env,
@@ -33,7 +34,6 @@ export async function POST(request: NextRequest) {
       [orderId, workerId, productId || null, productName || null, quantity || 1, totalAmount, currency || "BDT", shippingAddress || null]
     );
 
-    const service = new SslcommerzService();
     const gatewayUrl = await service.initPayment({
       total_amount: totalAmount,
       currency: currency || "BDT",

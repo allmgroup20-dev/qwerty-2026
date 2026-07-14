@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       params[key] = value.toString();
     }
 
-    const service = new SslcommerzService();
+    const env = await getDB();
+    const service = await SslcommerzService.fromDB(env);
     if (!service.validateIPNResponse(params)) {
       return NextResponse.json({ status: "FAILED", reason: "IPN validation failed" }, { status: 400 });
     }
@@ -37,7 +38,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const env = await getDB();
     const order = await queryFirst<{ payment_status: string; worker_id: string; total_amount: number; currency: string }>(
       env, "SELECT payment_status, worker_id, total_amount, currency FROM orders WHERE order_id = ?", [orderId]
     );
