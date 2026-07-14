@@ -32,8 +32,13 @@ function RegisterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const data = await res.json() as { error?: string };
+      const data = await res.json() as { error?: string; token?: string; workerId?: string; name?: string };
       if (!res.ok) throw new Error(data.error || "Registration failed");
+      if (data.token) {
+        localStorage.setItem("worker_token", data.token);
+        localStorage.setItem("worker_id", data.workerId || "");
+        localStorage.setItem("worker_name", data.name || "");
+      }
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

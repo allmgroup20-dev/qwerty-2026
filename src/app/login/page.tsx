@@ -24,8 +24,13 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(activeTab === "worker" ? { phone, password } : { username: phone, password }),
       });
-      const data = await res.json() as { error?: string };
+      const data = await res.json() as { error?: string; token?: string; workerId?: string; name?: string };
       if (!res.ok) throw new Error(data.error || "Login failed");
+      if (activeTab === "worker" && data.token) {
+        localStorage.setItem("worker_token", data.token);
+        localStorage.setItem("worker_id", data.workerId || "");
+        localStorage.setItem("worker_name", data.name || "");
+      }
       window.location.href = activeTab === "worker" ? "/dashboard" : "/company";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

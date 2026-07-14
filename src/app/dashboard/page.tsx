@@ -7,19 +7,51 @@ import { formatCurrency, formatDate, maskPhone } from "@/lib/utils";
 import { Card, StatCard } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
-const mockWorker = {
-  workerId: "JGRH1234",
-  name: "Rahim Molla",
-  phone: "01712345678",
-  balance: 12500,
-  totalEarned: 87500,
-  totalTeamMembers: 45,
-  level: 3,
-  joinDate: "2025-12-01",
-};
-
 export default function WorkerDashboard() {
   const { lang } = useLanguageStore();
+  const [worker, setWorker] = useState<{
+    workerId: string; name: string; phone: string; balance: number;
+    totalEarned: number; totalTeamMembers: number; level: number; joinDate: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const workerId = localStorage.getItem("worker_id");
+    if (!workerId) {
+      setLoading(false);
+      return;
+    }
+    fetch(`/api/workers/profile?workerId=${workerId}`)
+      .then((r) => r.json() as Promise<{ workerId?: string; name?: string; phone?: string; balance?: number; totalEarned?: number; totalTeamMembers?: number; level?: number; joinDate?: string }>)
+      .then((data) => {
+        if (data.workerId) setWorker(data as any);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen py-24 px-4 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-action border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!worker) {
+    return (
+      <div className="min-h-screen py-24 px-4">
+        <div className="max-w-md mx-auto text-center">
+          <Card>
+            <h2 className="text-xl font-bold text-primary mb-4">
+              {lang === "bn" ? "লগইন প্রয়োজন" : "Login Required"}
+            </h2>
+            <Link href="/login"><Button className="w-full">{lang === "bn" ? "লগইন করুন" : "Login"}</Button></Link>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-24 px-4">
@@ -27,10 +59,10 @@ export default function WorkerDashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-fade-up">
           <div>
             <h1 className="text-2xl font-bold text-primary">
-              {lang === "bn" ? "স্বাগতম" : "Welcome"}, {mockWorker.name}
+              {lang === "bn" ? "স্বাগতম" : "Welcome"}, {worker.name}
             </h1>
             <p className="text-sm text-text-secondary mt-1">
-              {lang === "bn" ? "সদস্য আইডি" : "Member ID"}: {mockWorker.workerId}
+              {lang === "bn" ? "সদস্য আইডি" : "Member ID"}: {worker.workerId}
             </p>
           </div>
           <Link href="/company/login" className="text-sm text-text-secondary hover:text-primary underline">
@@ -39,26 +71,10 @@ export default function WorkerDashboard() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard
-            label={lang === "bn" ? "ব্যালেন্স" : "Balance"}
-            value={formatCurrency(mockWorker.balance)}
-            color="text-action"
-          />
-          <StatCard
-            label={lang === "bn" ? "মোট আয়" : "Total Earnings"}
-            value={formatCurrency(mockWorker.totalEarned)}
-            color="text-secondary-dark"
-          />
-          <StatCard
-            label={lang === "bn" ? "টিম মেম্বার" : "Team Members"}
-            value={mockWorker.totalTeamMembers.toString()}
-            color="text-primary"
-          />
-          <StatCard
-            label={lang === "bn" ? "লেভেল" : "Level"}
-            value={`Level ${mockWorker.level}`}
-            color="text-accent"
-          />
+          <StatCard label={lang === "bn" ? "ব্যালেন্স" : "Balance"} value={formatCurrency(worker.balance)} color="text-action" />
+          <StatCard label={lang === "bn" ? "মোট আয়" : "Total Earnings"} value={formatCurrency(worker.totalEarned)} color="text-secondary-dark" />
+          <StatCard label={lang === "bn" ? "টিম মেম্বার" : "Team Members"} value={worker.totalTeamMembers.toString()} color="text-primary" />
+          <StatCard label={lang === "bn" ? "লেভেল" : "Level"} value={`Level ${worker.level}`} color="text-accent" />
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -73,7 +89,7 @@ export default function WorkerDashboard() {
             </div>
             <div>
               <p className="font-semibold text-primary text-sm">{lang === "bn" ? "আমার টিম" : "My Team"}</p>
-              <p className="text-xs text-text-secondary">{mockWorker.totalTeamMembers} {lang === "bn" ? "মেম্বার" : "Members"}</p>
+              <p className="text-xs text-text-secondary">{worker.totalTeamMembers} {lang === "bn" ? "মেম্বার" : "Members"}</p>
             </div>
           </Link>
 
@@ -124,11 +140,11 @@ export default function WorkerDashboard() {
             <div className="flex gap-2">
               <input
                 readOnly
-                value={`https://jobayer-group.com/register?ref=${mockWorker.workerId}`}
+                value={`https://jobayer-group.com/register?ref=${worker.workerId}`}
                 className="input-field text-xs flex-1"
               />
               <button
-                onClick={() => navigator.clipboard.writeText(`https://jobayer-group.com/register?ref=${mockWorker.workerId}`)}
+                onClick={() => navigator.clipboard.writeText(`https://jobayer-group.com/register?ref=${worker.workerId}`)}
                 className="btn-primary text-xs !px-4 !py-2.5"
               >
                 {lang === "bn" ? "কপি" : "Copy"}
@@ -139,8 +155,23 @@ export default function WorkerDashboard() {
           <Card>
             <h3 className="font-bold text-primary mb-4">{lang === "bn" ? "দ্রুত উইথড্র" : "Quick Withdraw"}</h3>
             <div className="flex gap-2">
-              <input type="number" placeholder={lang === "bn" ? "পরিমাণ" : "Amount"} className="input-field flex-1" />
-              <button className="btn-primary text-xs !px-4 !py-2.5">
+              <input id="withdrawAmount" type="number" placeholder={lang === "bn" ? "পরিমাণ" : "Amount"} className="input-field flex-1" />
+              <button onClick={async () => {
+                const amount = parseFloat((document.getElementById("withdrawAmount") as HTMLInputElement)?.value || "0");
+                if (!amount || amount <= 0) return alert(lang === "bn" ? "সঠিক পরিমাণ দিন" : "Enter valid amount");
+                if (amount > worker.balance) return alert(lang === "bn" ? "পর্যাপ্ত ব্যালেন্স নেই" : "Insufficient balance");
+                const res = await fetch("/api/withdrawals", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ workerId: worker.workerId, amount }),
+                });
+                const data = await res.json() as { error?: string };
+                if (res.ok) {
+                  alert(lang === "bn" ? "উইথড্রয়াল অনুরোধ জমা দেওয়া হয়েছে" : "Withdrawal request submitted");
+                } else {
+                  alert(data.error || "Failed");
+                }
+              }} className="btn-primary text-xs !px-4 !py-2.5">
                 {lang === "bn" ? "উইথড্র" : "Withdraw"}
               </button>
             </div>

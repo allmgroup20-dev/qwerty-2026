@@ -1,26 +1,112 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useLanguageStore, useCartStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils";
+import toast from "react-hot-toast";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const { lang } = useLanguageStore();
   const { items, total, clearCart } = useCartStore();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("bkash");
   const [form, setForm] = useState({ name: "", phone: "", address: "" });
+  const [workerId, setWorkerId] = useState<string | null>(null);
+  const [workerName, setWorkerName] = useState("");
+
+  useEffect(() => {
+    const wid = localStorage.getItem("worker_id");
+    const wname = localStorage.getItem("worker_name");
+    if (wid) {
+      setWorkerId(wid);
+      setWorkerName(wname || "");
+      setForm((f) => ({ ...f, name: wname || f.name }));
+    }
+    const paymentStatus = searchParams.get("payment");
+    if (paymentStatus === "success") {
+      toast.success(lang === "bn" ? "পেমেন্ট সফল হয়েছে!" : "Payment successful!");
+    } else if (paymentStatus === "failed") {
+      toast.error(lang === "bn" ? "পেমেন্ট ব্যর্থ হয়েছে" : "Payment failed");
+    } else if (paymentStatus === "cancelled") {
+      toast(lang === "bn" ? "পেমেন্ট বাতিল করা হয়েছে" : "Payment cancelled");
+    } else if (paymentStatus === "error") {
+      toast.error(lang === "bn" ? "পেমেন্ট এ সমস্যা হয়েছে" : "Payment error occurred");
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!workerId) {
+      toast.error(lang === "bn" ? "দয়া করে লগইন করুন" : "Please login first");
+      router.push("/login");
+      return;
+    }
+    if (!form.name || !form.phone || !form.address) {
+      toast.error(lang === "bn" ? "সব তথ্য পূরণ করুন" : "Fill all fields");
+      return;
+    }
+    if (items.length === 0) {
+      toast.error(lang === "bn" ? "কার্ট খালি" : "Cart is empty");
+      return;
+    }
+
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 2000));
-    clearCart();
-    alert(lang === "bn" ? "অর্ডার সফল হয়েছে!" : "Order placed successfully!");
-    setLoading(false);
+    try {
+      const totalAmount = items.reduce((s, i) => s + i.price * i.quantity, 0);
+      const firstItem = items[0];
+      const res = await fetch("/api/payment/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workerId,
+          productId: firstItem.productId,
+          productName: items.map((i) => i.name).join(", "),
+          quantity: items.reduce((s, i) => s + i.quantity, 0),
+          totalAmount,
+          currency: firstItem.currency || "BDT",
+          shippingAddress: form.address,
+          cusName: form.name,
+          cusPhone: form.phone,
+          cusEmail: "",
+        }),
+      });
+
+      const data = await res.json() as { gatewayUrl?: string; error?: string };
+      if (!res.ok) throw new Error(data.error || "Payment init failed");
+
+      clearCart();
+      window.location.href = data.gatewayUrl!;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (!workerId) {
+    return (
+      <div className="min-h-screen py-24 px-4">
+        <div className="max-w-md mx-auto text-center">
+          <Card>
+            <h2 className="text-xl font-bold text-primary mb-4">
+              {lang === "bn" ? "লগইন প্রয়োজন" : "Login Required"}
+            </h2>
+            <p className="text-text-secondary mb-6">
+              {lang === "bn" ? "অর্ডার করার জন্য লগইন করুন" : "Please login to place an order"}
+            </p>
+            <Link href="/login">
+              <Button className="w-full">{lang === "bn" ? "লগইন করুন" : "Login"}</Button>
+            </Link>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-24 px-4">
@@ -32,25 +118,22 @@ export default function CheckoutPage() {
             <Card>
               <h3 className="font-bold text-primary mb-4">{lang === "bn" ? "শিপিং তথ্য" : "Shipping Info"}</h3>
               <div className="space-y-3">
-                <input type="text" placeholder={lang === "bn" ? "আপনার নাম" : "Your Name"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" />
-                <input type="tel" placeholder={lang === "bn" ? "ফোন নম্বর" : "Phone Number"} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-field" />
-                <textarea placeholder={lang === "bn" ? "ঠিকানা" : "Address"} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field min-h-[80px]" />
+                <input type="text" placeholder={lang === "bn" ? "আপনার নাম" : "Your Name"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" required />
+                <input type="tel" placeholder={lang === "bn" ? "ফোন নম্বর" : "Phone Number"} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-field" required />
+                <textarea placeholder={lang === "bn" ? "ঠিকানা" : "Address"} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field min-h-[80px]" required />
               </div>
             </Card>
 
             <Card>
               <h3 className="font-bold text-primary mb-4">{lang === "bn" ? "পেমেন্ট মেথড" : "Payment Method"}</h3>
-              <div className="space-y-2">
-                {[
-                  { id: "bkash", en: "bKash", bn: "বিকাশ" },
-                  { id: "nagad", en: "Nagad", bn: "নগদ" },
-                  { id: "sslcommerz", en: "SSLCommerz", bn: "এসএসএলকমার্জ" },
-                ].map((method) => (
-                  <label key={method.id} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === method.id ? "border-action bg-action/5" : "border-border"}`}>
-                    <input type="radio" name="payment" value={method.id} checked={paymentMethod === method.id} onChange={() => setPaymentMethod(method.id)} className="accent-action" />
-                    <span className="font-medium text-sm text-primary">{lang === "bn" ? method.bn : method.en}</span>
-                  </label>
-                ))}
+              <div className="p-3 rounded-xl border-2 border-action bg-action/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-action flex items-center justify-center text-white text-xs font-bold">SSL</div>
+                  <span className="font-medium text-sm text-primary">SSLCommerz</span>
+                </div>
+                <p className="text-xs text-text-secondary mt-2 ml-11">
+                  {lang === "bn" ? "ক্রেডিট/ডেবিট কার্ড, মোবাইল ব্যাংকিং, ইন্টারনেট ব্যাংকিং" : "Credit/Debit Card, Mobile Banking, Internet Banking"}
+                </p>
               </div>
             </Card>
           </div>
@@ -76,7 +159,7 @@ export default function CheckoutPage() {
                     <span className="font-bold text-lg text-action">{formatCurrency(items.reduce((s, i) => s + i.price * i.quantity, 0))}</span>
                   </div>
                   <Button onClick={handleSubmit} loading={loading} className="w-full !py-4">
-                    {lang === "bn" ? "অর্ডার নিশ্চিত করুন" : "Place Order"}
+                    {lang === "bn" ? "SSLCommerz দিয়ে পেমেন্ট করুন" : "Pay with SSLCommerz"}
                   </Button>
                 </>
               )}
@@ -85,5 +168,13 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-action border-t-transparent rounded-full" /></div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }

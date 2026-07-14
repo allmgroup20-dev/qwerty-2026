@@ -9,5 +9,6 @@ interface CloudflareEnv {
   OPENROUTER_API_KEY: string;
   WHATSAPP_API_KEY: string;
   SSLCOMMERZ_STORE_ID: string;
-  SSLCOMMERZ_STORE_PASS: string;
+  SSLCOMMERZ_STORE_PASSWORD: string;
+  SSLCOMMERZ_IS_LIVE: string;
 }
