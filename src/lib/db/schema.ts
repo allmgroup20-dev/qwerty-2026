@@ -456,3 +456,23 @@ export const aiModelFailoverState = sqliteTable("ai_model_failover_state", {
   lastResetDate: text("last_reset_date"),
   updatedAt: text("updated_at"),
 });
+
+export const aiLeads = sqliteTable("ai_leads", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  phone: text("phone").unique().notNull(),
+  name: text("name"),
+  status: text("status").default("new"),
+  priorityScore: integer("priority_score").default(0),
+  source: text("source").default("whatsapp"),
+  genderGuess: text("gender_guess"),
+  ageGroupGuess: text("age_group_guess"),
+  sector: text("sector"),
+  language: text("language").default("bn"),
+  painPoints: text("pain_points"),
+  interests: text("interests"),
+  totalChats: integer("total_chats").default(0),
+  lastChatAt: text("last_chat_at"),
+  notes: text("notes"),
+  createdAt: text("created_at"),
+  updatedAt: text("updated_at"),
+});

@@ -514,6 +514,27 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
 
+    // AI Leads table
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_leads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT UNIQUE NOT NULL,
+      name TEXT,
+      status TEXT DEFAULT 'new',
+      priority_score INTEGER DEFAULT 0,
+      source TEXT DEFAULT 'whatsapp',
+      gender_guess TEXT,
+      age_group_guess TEXT,
+      sector TEXT,
+      language TEXT DEFAULT 'bn',
+      pain_points TEXT,
+      interests TEXT,
+      total_chats INTEGER DEFAULT 0,
+      last_chat_at TEXT,
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
     // Seed default templates
     await env.DB.prepare(`INSERT OR IGNORE INTO wa_templates (name, content, category) VALUES
       ('welcome', 'Assalamu Alaikum! Jobayer Group Career-এ আপনাকে স্বাগতম।', 'onboarding'),

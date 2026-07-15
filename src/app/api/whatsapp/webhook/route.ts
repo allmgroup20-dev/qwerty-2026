@@ -11,11 +11,18 @@ import {
   analyzePainPoints,
   analyzeInterests,
   detectLanguage,
+  detectMood,
+  detectDialect,
+  detectReligion,
   getOrCreateProfile,
   updateProfileFromChat,
   updateProfileScore,
   saveMessage,
   findSkill,
+  isWorkerPhone,
+  getWorkerByPhone,
+  getOrCreateLead,
+  updateLeadStatus,
 } from "@/lib/ai";
 
 function parseIncomingMessage(body: any): { phone: string; text: string; name?: string } | null {
@@ -54,20 +61,33 @@ export async function POST(request: NextRequest) {
       [phone, text]
     );
 
+    // Update or create contact
     if (name) {
       await createContact(phone, { name, source: "whatsapp_inbound" });
     } else {
       await createContact(phone, { source: "whatsapp_inbound" });
     }
 
+    // Detect role: is this a worker or a customer?
+    const isWorker = await isWorkerPhone(phone);
+    const role = isWorker ? "worker" : "customer";
+
+    // Get or create lead record
+    await getOrCreateLead(phone);
+
+    // Detect language, mood, dialect, religion
     const profile = await getOrCreateProfile(phone);
     const persona = getPersona(phone);
     const lang = detectLanguage(text);
+    const mood = detectMood(text);
+    const dialect = detectDialect(text);
+    const religion = detectReligion(text);
     const painPoints = analyzePainPoints(text);
     const interests = analyzeInterests(text);
 
     await updateProfileFromChat(phone, text);
 
+    // Priority scoring
     const score = calculatePriorityScore({
       gender_guess: profile?.gender_guess,
       age_group_guess: profile?.age_group_guess,
@@ -77,6 +97,18 @@ export async function POST(request: NextRequest) {
       await updateProfileScore(phone, score);
     }
 
+    // Track funnel stage based on conversation count
+    const totalMessages = (profile?.total_chats || 0) + 1;
+    let funnelStage: string | undefined;
+    if (role === "customer") {
+      if (totalMessages <= 4) funnelStage = "1-4";
+      else if (totalMessages <= 6) funnelStage = "5-6";
+      else if (totalMessages <= 8) funnelStage = "7-8";
+      else if (totalMessages <= 10) funnelStage = "9-10";
+      else funnelStage = "11-12";
+    }
+
+    // Check skill cache first
     let reply: string | null = null;
     const cachedSkill = await findSkill(text);
     if (cachedSkill) {
@@ -85,13 +117,18 @@ export async function POST(request: NextRequest) {
 
     if (!reply) {
       const systemPrompt = await buildSystemPrompt({
-        role: "customer",
+        role,
         persona,
         profile,
         painPoints,
         interests,
         language: lang,
         phone,
+        mood,
+        dialect,
+        religion,
+        funnelStage,
+        isWorker,
       });
 
       const result = await callAI({
@@ -105,6 +142,7 @@ export async function POST(request: NextRequest) {
       reply = result.text;
     }
 
+    // Save conversation
     await saveMessage(phone, "user", text, {
       personaName: persona.name,
       personaGender: persona.gender,
@@ -119,6 +157,9 @@ export async function POST(request: NextRequest) {
       language: lang,
     });
 
+    // Update lead status
+    await updateLeadStatus(phone, "replied");
+
     const fromBrowser = body.fromBrowser === true;
 
     if (!fromBrowser) {
@@ -132,12 +173,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // For browser connector: return reply so browser can send directly
     await updateContactStatus(phone, "replied", reply);
     return NextResponse.json({
       received: true,
       replied: true,
       phone, reply,
+      mood, dialect, role,
     });
   } catch (error) {
     console.error("WhatsApp webhook error:", error);
