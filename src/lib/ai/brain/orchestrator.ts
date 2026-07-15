@@ -1,7 +1,7 @@
 import { callAI } from "../router";
 import { executeAgent, buildAgentPrompt } from "./executor";
 import { DEPARTMENTS, getAgentsByDepartment, findAgent } from "./registry";
-import type { Intent, DepartmentId, MessageCtx, BrainResult, AgentDef } from "./types";
+import type { Intent, DepartmentId, MessageCtx, BrainResult, AgentDef, CrossDeptStep } from "./types";
 
 // ── Intent → Department routing ──
 const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
@@ -22,51 +22,126 @@ const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
   { intent: "general", department: "sales" },
 ];
 
-// ── Sequential chains: department_intent → ordered list of agent IDs ──
+// ── Single-department sequential chains ──
 const CHAINS: Record<string, string[]> = {
-  // Sales
   "sales_purchase": ["lead_scanner", "lead_scorer", "product_matcher", "price_explainer", "trust_objection_handler", "trial_closer", "payment_link_sender", "confirmation_sender"],
   "sales_price_inquiry": ["lead_scanner", "lead_classifier", "price_explainer", "price_objection_handler", "discount_closer", "installment_closer"],
   "sales_product_inquiry": ["lead_scanner", "lead_classifier", "product_matcher", "benefit_highlighter", "comparison_builder", "social_proof_injector", "urgency_creator"],
   "sales_referral": ["referral_explainer", "social_proof_injector", "referral_closer"],
   "sales_general": ["lead_scanner", "followup_scheduler", "re_engagement_trigger"],
-
-  // Member Success
   "member_success_registration": ["registration_guide", "welcome_pack_sender", "first_goal_setter", "profile_completer", "tree_placer"],
   "member_success_training": ["skill_gap_analyzer", "personalized_training_plan", "course_recommender", "quiz_generator", "progress_tracker", "certification_issuer"],
   "member_success_commission_inquiry": ["commission_calculator", "earning_reporter", "payout_optimizer"],
   "member_success_motivation": ["daily_motivation_sender", "achievement_celebrator", "competition_creator"],
   "member_success_general": ["query_resolver", "policy_explainer", "escalation_handler"],
-
-  // Customer Experience
   "customer_experience_greeting": ["greeting_personalizer", "rapport_builder"],
   "customer_experience_farewell": ["greeting_personalizer"],
   "customer_experience_support": ["faq_responder", "order_status_checker", "payment_issue_resolver", "delivery_tracker", "return_exchange_handler", "refund_processor"],
   "customer_experience_complaint": ["complaint_listener", "root_cause_finder", "solution_crafter", "satisfaction_restorer"],
   "customer_experience_feedback": ["feedback_collector", "sentiment_analyzer", "improvement_suggester", "nps_calculator"],
-
-  // Operations
   "operations_withdrawal": ["withdrawal_validator", "withdrawal_approver", "payment_sender", "withdrawal_notifier"],
   "operations_order_status": ["order_creator", "order_verifier", "invoice_generator", "order_notifier"],
   "operations_payment": ["sslcommerz_initiator", "ipn_validator", "payment_status_checker", "refund_initiator", "fraud_detector"],
   "operations_general": ["order_status_checker", "payment_status_checker"],
-
-  // Business Intelligence
   "business_intelligence_research": ["pain_point_miner", "opportunity_detector", "competitor_tracker", "industry_researcher"],
   "business_intelligence_analytics": ["sales_analyst", "member_growth_analyst", "conversion_funnel_analyst", "predictive_modeler"],
   "business_intelligence_report": ["report_compiler", "swot_analyzer", "knowledge_base_updater"],
-
-  // Psychology
   "psychology_complaint": ["mood_detector", "empathy_expresser", "frustration_calmer", "trust_builder", "conflict_resolver"],
   "psychology_motivation": ["mood_detector", "confidence_booster", "excitement_amplifier", "future_pacing_agent", "goal_achievement_coach"],
   "psychology_objection": ["personality_classifier", "comm_style_identifier", "rapport_builder", "reframing_agent", "reciprocity_trigger", "authority_builder", "social_proof_amplifier"],
   "psychology_general": ["mood_detector", "rapport_builder", "empathy_expresser"],
-
-  // Platform Admin
   "platform_admin_settings": ["commission_config_validator", "settings_backup", "test_mode_manager"],
   "platform_admin_translation": ["translation_manager", "content_localizer"],
   "platform_admin_security": ["suspicious_activity_detector", "login_monitor", "permission_checker"],
   "platform_admin_update": ["db_health_monitor", "api_availability_checker", "performance_monitor", "error_log_analyzer", "update_manager"],
+};
+
+// ══════════════════════════════════════════════════════════════
+// CROSS-DEPARTMENT CHAINS — agents from multiple depts collaborate
+// ══════════════════════════════════════════════════════════════
+const CROSS_DEPT_CHAINS: Record<string, CrossDeptStep[]> = {
+  // Full customer journey: from greeting → profiling → sales → ops → member success
+  new_customer_full: [
+    { department: "customer_experience", agentId: "greeting_personalizer" },
+    { department: "psychology", agentId: "mood_detector" },
+    { department: "psychology", agentId: "personality_classifier" },
+    { department: "psychology", agentId: "comm_style_identifier" },
+    { department: "psychology", agentId: "religion_detector" },
+    { department: "psychology", agentId: "dialect_identifier" },
+    { department: "customer_experience", agentId: "tone_adjuster" },
+    { department: "psychology", agentId: "rapport_builder" },
+    { department: "sales", agentId: "lead_scanner" },
+    { department: "psychology", agentId: "trust_builder" },
+    { department: "psychology", agentId: "reciprocity_trigger" },
+    { department: "sales", agentId: "product_matcher" },
+    { department: "sales", agentId: "price_explainer" },
+    { department: "psychology", agentId: "reframing_agent" },
+    { department: "psychology", agentId: "future_pacing_agent" },
+    { department: "sales", agentId: "trust_objection_handler" },
+    { department: "psychology", agentId: "social_proof_amplifier" },
+    { department: "sales", agentId: "trial_closer" },
+    { department: "sales", agentId: "payment_link_sender" },
+    { department: "operations", agentId: "order_creator" },
+    { department: "operations", agentId: "order_verifier" },
+    { department: "member_success", agentId: "welcome_pack_sender" },
+    { department: "member_success", agentId: "first_goal_setter" },
+    { department: "member_success", agentId: "achievement_celebrator" },
+    { department: "business_intelligence", agentId: "conversation_miner" },
+    { department: "business_intelligence", agentId: "skill_auto_learner" },
+    { department: "customer_experience", agentId: "feedback_collector" },
+  ],
+
+  // Complaint resolution: psychology → CX → operations → member success
+  complaint_full: [
+    { department: "psychology", agentId: "mood_detector" },
+    { department: "psychology", agentId: "empathy_expresser" },
+    { department: "psychology", agentId: "frustration_calmer" },
+    { department: "customer_experience", agentId: "complaint_listener" },
+    { department: "customer_experience", agentId: "root_cause_finder" },
+    { department: "operations", agentId: "order_status_checker" },
+    { department: "operations", agentId: "payment_issue_resolver" },
+    { department: "customer_experience", agentId: "solution_crafter" },
+    { department: "psychology", agentId: "trust_builder" },
+    { department: "customer_experience", agentId: "satisfaction_restorer" },
+    { department: "member_success", agentId: "satisfaction_restorer" },
+    { department: "business_intelligence", agentId: "pain_point_miner" },
+  ],
+
+  // New member onboarding: member success → psychology → BI
+  new_member_onboarding: [
+    { department: "member_success", agentId: "registration_guide" },
+    { department: "member_success", agentId: "welcome_pack_sender" },
+    { department: "member_success", agentId: "first_goal_setter" },
+    { department: "psychology", agentId: "confidence_booster" },
+    { department: "psychology", agentId: "goal_achievement_coach" },
+    { department: "psychology", agentId: "community_builder" },
+    { department: "member_success", agentId: "training_assigner" },
+    { department: "member_success", agentId: "skill_gap_analyzer" },
+    { department: "member_success", agentId: "personalized_training_plan" },
+    { department: "business_intelligence", agentId: "skill_auto_learner" },
+  ],
+
+  // Performance review: BI → member success → psychology
+  performance_review: [
+    { department: "business_intelligence", agentId: "sales_analyst" },
+    { department: "business_intelligence", agentId: "member_growth_analyst" },
+    { department: "member_success", agentId: "sales_tracker" },
+    { department: "member_success", agentId: "kpi_reporter" },
+    { department: "member_success", agentId: "top_performer_identifier" },
+    { department: "member_success", agentId: "underperformer_detector" },
+    { department: "psychology", agentId: "confidence_booster" },
+    { department: "psychology", agentId: "mindset_shifter" },
+    { department: "psychology", agentId: "goal_achievement_coach" },
+    { department: "business_intelligence", agentId: "report_compiler" },
+  ],
+};
+
+// ── Intent triggers for cross-dept chains ──
+const CROSS_DEPT_TRIGGERS: Record<string, (intent: Intent, ctx: MessageCtx) => boolean> = {
+  new_customer_full: (intent) => ["product_inquiry", "price_inquiry", "purchase", "greeting", "general"].includes(intent),
+  complaint_full: (intent) => intent === "complaint",
+  new_member_onboarding: (intent) => intent === "registration",
+  performance_review: (intent) => ["commission_inquiry", "training", "general"].includes(intent),
 };
 
 const DEPT_INTENT_PROMPTS: Record<DepartmentId, string> = {
@@ -80,15 +155,15 @@ const DEPT_INTENT_PROMPTS: Record<DepartmentId, string> = {
 };
 
 async function detectIntent(text: string, ctx: MessageCtx, fallbackDept: DepartmentId): Promise<{ intent: Intent; department: DepartmentId }> {
-  const departmentsToCheck: DepartmentId[] = ["sales", "psychology", "customer_experience", "member_success", "operations"];
+  const depts: DepartmentId[] = ["sales", "psychology", "customer_experience", "member_success", "operations"];
 
-  for (const deptId of departmentsToCheck) {
+  for (const deptId of depts) {
     try {
       const result = await callAI(
         {
           messages: [
             { role: "system", content: DEPT_INTENT_PROMPTS[deptId] },
-            { role: "user", content: `Message: "${text}"\nCustomer role: ${ctx.role}\nLanguage: ${ctx.language}\nMood: ${ctx.mood}\nReturn only the intent word.` },
+            { role: "user", content: `Message: "${text}"\nRole: ${ctx.role}\nLanguage: ${ctx.language}\nMood: ${ctx.mood}\nReturn only the intent word.` },
           ],
         },
         50, "gemma-4-26b", "openrouter"
@@ -98,7 +173,6 @@ async function detectIntent(text: string, ctx: MessageCtx, fallbackDept: Departm
       if (route) return { intent, department: route.department };
     } catch {}
   }
-
   return { intent: "general", department: fallbackDept };
 }
 
@@ -111,25 +185,51 @@ function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string): Re
     mood: ctx.mood,
     dialect: ctx.dialect || "standard Bengali",
     religion: ctx.religion || "not specified",
-    funnelStage: ctx.funnelStage || "general",
     totalChats: String(ctx.totalChats),
     painPoints: ctx.painPoints?.join(", ") || "not identified",
     interests: ctx.interests?.join(", ") || "not identified",
-    isWorker: String(ctx.isWorker),
-    context: `Previous chat count: ${ctx.totalChats}. Mood: ${ctx.mood}.` +
-      (ctx.dialect ? ` Dialect: ${ctx.dialect}.` : "") +
-      (ctx.religion ? ` Religion: ${ctx.religion}.` : "") +
-      (ctx.funnelStage ? ` Stage: ${ctx.funnelStage}.` : ""),
+    context: `Chats: ${ctx.totalChats}. Mood: ${ctx.mood}.` + (ctx.dialect ? ` Dialect: ${ctx.dialect}.` : "") + (ctx.religion ? ` Religion: ${ctx.religion}.` : ""),
     previousOutput: chainOutput || "",
   };
 }
 
-function getChainKey(department: DepartmentId, intent: Intent): string {
+function getSingleChainKey(department: DepartmentId, intent: Intent): string {
   const key = `${department}_${intent}`;
   if (CHAINS[key]) return key;
   const fallback = `${department}_general`;
   if (CHAINS[fallback]) return fallback;
-  return `${department}_${intent}`;
+  return key;
+}
+
+function selectCrossDeptChain(intent: Intent, ctx: MessageCtx): CrossDeptStep[] | null {
+  // Check if user volume is high enough (totalChats > 0 means returning user → skip full chain)
+  if (ctx.totalChats > 2) return null;
+
+  // Check complaint
+  if (intent === "complaint") return CROSS_DEPT_CHAINS.complaint_full;
+  if (intent === "registration") return CROSS_DEPT_CHAINS.new_member_onboarding;
+  if (["product_inquiry", "price_inquiry", "purchase", "greeting"].includes(intent)) {
+    if (ctx.isWorker) return CROSS_DEPT_CHAINS.performance_review;
+    return CROSS_DEPT_CHAINS.new_customer_full;
+  }
+  return null;
+}
+
+function selectSingleDeptAgents(department: DepartmentId, intent: Intent, ctx: MessageCtx): AgentDef[] {
+  const chainKey = getSingleChainKey(department, intent);
+  const agentIds = CHAINS[chainKey];
+  if (agentIds && agentIds.length > 0) {
+    return agentIds.map((id) => findAgent(id)?.agent).filter(Boolean) as AgentDef[];
+  }
+  const allAgents = getAgentsByDepartment(department);
+  const candidates = allAgents.filter((a) => {
+    try {
+      const condition = a.when.replace("{{intent}}", `'${intent}'`).replace("{{role}}", `'${ctx.role}'`);
+      return new Function("intent", "role", `return ${condition}`)(intent, ctx.role);
+    } catch { return true; }
+  });
+  candidates.sort((a, b) => b.priority - a.priority);
+  return candidates.slice(0, 3);
 }
 
 export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
@@ -138,71 +238,87 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
 
   const { intent, department } = await detectIntent(ctx.text, ctx, fallbackDept);
 
-  const chainKey = getChainKey(department, intent);
-  const agentIds = CHAINS[chainKey] || [];
+  // ── Try cross-department chain first ──
+  const crossDeptSteps = selectCrossDeptChain(intent, ctx);
+  const isCrossDept = crossDeptSteps !== null && crossDeptSteps.length > 0;
 
-  // If no chain defined, fall back to priority-based agent selection
-  let selectedAgents: AgentDef[];
-  if (agentIds.length === 0) {
-    const allDeptAgents = getAgentsByDepartment(department);
-    selectedAgents = allDeptAgents.filter((a) => {
-      try {
-        const condition = a.when.replace("{{intent}}", `'${intent}'`).replace("{{role}}", `'${ctx.role}'`);
-        return new Function("intent", "role", `return ${condition}`)(intent, ctx.role);
-      } catch { return true; }
-    });
-    selectedAgents.sort((a, b) => b.priority - a.priority);
-    selectedAgents = selectedAgents.slice(0, 3);
-  } else {
-    selectedAgents = agentIds.map((id) => findAgent(id)?.agent).filter(Boolean) as AgentDef[];
-  }
-
-  if (selectedAgents.length === 0) {
-    const fallbackResult = await callAI(
-      { messages: [{ role: "system", content: `You are a helpful Jobayer Group Career assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}.` }, { role: "user", content: ctx.text }] },
-      400, "gemma-4-26b", "openrouter"
-    );
-    return {
-      text: fallbackResult.text, model: fallbackResult.model, tokens: fallbackResult.tokens,
-      agentsUsed: ["fallback"], department, intent, ms: Date.now() - start,
-    };
-  }
-
-  // ── Sequential chain execution ──
   const agentsUsed: string[] = [];
+  const departmentsUsed: DepartmentId[] = [];
   let chainContext = "";
-  let mainModel = selectedAgents[0]?.id || "gemma-4-26b";
 
-  for (const agent of selectedAgents) {
-    try {
-      const contextVars = buildContext(ctx, intent, chainContext);
-      const agentPrompt = buildAgentPrompt(agent, contextVars);
-      const output = await executeAgent(agent, agentPrompt, ctx.text);
-
-      chainContext += `\n[${agent.name}]\n${output.text}`;
-      agentsUsed.push(agent.id);
-    } catch {
-      chainContext += `\n[${agent.name}]: (unavailable)`;
+  if (isCrossDept && crossDeptSteps) {
+    // Execute cross-department chain
+    for (const step of crossDeptSteps) {
+      const agentData = findAgent(step.agentId);
+      if (!agentData) {
+        chainContext += `\n[${step.agentId}]: (not found)`;
+        continue;
+      }
+      const agent = agentData.agent;
+      try {
+        const contextVars = buildContext(ctx, intent, chainContext);
+        const agentPrompt = buildAgentPrompt(agent, contextVars);
+        const output = await executeAgent(agent, agentPrompt, ctx.text);
+        chainContext += `\n[${agent.name} (${agentData.department})]\n${output.text}`;
+        agentsUsed.push(agent.id);
+        if (!departmentsUsed.includes(agentData.department)) {
+          departmentsUsed.push(agentData.department);
+        }
+      } catch {
+        chainContext += `\n[${agent.name}]: (unavailable)`;
+      }
     }
+  } else {
+    // Single-department chain
+    const selectedAgents = selectSingleDeptAgents(department, intent, ctx);
+
+    if (selectedAgents.length === 0) {
+      const fb = await callAI(
+        { messages: [{ role: "system", content: `You are a helpful Jobayer Group assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}.` }, { role: "user", content: ctx.text }] },
+        400, "gemma-4-26b", "openrouter"
+      );
+      return {
+        text: fb.text, model: fb.model, tokens: fb.tokens,
+        agentsUsed: ["fallback"], departmentsUsed: [department], department, intent, ms: Date.now() - start,
+      };
+    }
+
+    for (const agent of selectedAgents) {
+      try {
+        const contextVars = buildContext(ctx, intent, chainContext);
+        const agentPrompt = buildAgentPrompt(agent, contextVars);
+        const output = await executeAgent(agent, agentPrompt, ctx.text);
+        chainContext += `\n[${agent.name}]\n${output.text}`;
+        agentsUsed.push(agent.id);
+      } catch {
+        chainContext += `\n[${agent.name}]: (unavailable)`;
+      }
+    }
+    departmentsUsed.push(department);
   }
 
-  // ── Final response composition ──
-  const dept = DEPARTMENTS[department];
-  const compositionPrompt = `You are the ${dept.name} lead at Jobayer Group Career.
-Department: ${dept.nameBn}
-Role: ${dept.description}
+  const primaryDept = department;
+  const finalDept = DEPARTMENTS[primaryDept];
+
+  // ── Final composition ──
+  const deptList = [...new Set(departmentsUsed)];
+  const deptNames = deptList.map((d) => DEPARTMENTS[d]?.name).filter(Boolean).join(", ");
+
+  const compositionPrompt = `You are a lead orchestrator at Jobayer Group Career.
+Departments involved: ${deptNames}
+Primary department: ${finalDept?.name} (${finalDept?.nameBn})
+Chain type: ${isCrossDept ? "cross-department collaboration" : "single-department"}
 
 ## Context
 ${Object.entries(buildContext(ctx, intent)).map(([k, v]) => `${k}: ${v}`).join("\n")}
 
-## Chain Output
+## Agent Chain Output
 ${chainContext}
 
 ## Your Task
-Compose a final response to the customer's message in ${ctx.language === "bn" ? "Bengali" : "English"}.
-Use the chain outputs above. Be natural, warm, and helpful.
-If there are multiple outputs, weave them into one coherent response.
-Keep it under 400 words. If complaint → be empathetic first. If purchase → guide to next step.`;
+Compose a final natural response to the customer in ${ctx.language === "bn" ? "Bengali" : "English"}.
+Weave the agent outputs into one coherent, warm, helpful message.
+Keep under 400 words. If complaint → empathetic first. If purchase → guide to next step.`;
 
   try {
     const result = await callAI(
@@ -212,17 +328,18 @@ Keep it under 400 words. If complaint → be empathetic first. If purchase → g
 
     return {
       text: result.text, model: result.model, tokens: result.tokens,
-      agentsUsed, department, intent, ms: Date.now() - start,
+      agentsUsed, departmentsUsed, department,
+      intent, ms: Date.now() - start, chainType: isCrossDept ? "cross" : "single",
     };
   } catch (e) {
-    const fallbackResult = await callAI(
+    const fb = await callAI(
       { messages: [{ role: "system", content: `You are a helpful Jobayer Group assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}.` }, { role: "user", content: ctx.text }] },
       400, "gemma-4-26b", "openrouter"
     );
-
     return {
-      text: fallbackResult.text, model: fallbackResult.model, tokens: fallbackResult.tokens,
-      agentsUsed, department, intent, ms: Date.now() - start,
+      text: fb.text, model: fb.model, tokens: fb.tokens,
+      agentsUsed, departmentsUsed, department, intent, ms: Date.now() - start,
+      chainType: isCrossDept ? "cross" : "single",
     };
   }
 }

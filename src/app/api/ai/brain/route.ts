@@ -59,9 +59,11 @@ export async function POST(request: NextRequest) {
       model: result.model,
       tokens: result.tokens,
       agentsUsed: result.agentsUsed,
+      departmentsUsed: result.departmentsUsed,
       department: result.department,
       intent: result.intent,
       processingMs: result.ms,
+      chainType: result.chainType,
     });
   } catch (error) {
     console.error("Brain chat error:", error);

@@ -474,10 +474,12 @@ export default function AIHubPage() {
                 </div>
                 {testResult && (
                   <div className="mt-4 bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+                    <div className="flex items-center gap-2"><span className="font-medium text-primary">{lang === "bn" ? "চেইন:" : "Chain:"}</span><span className={`px-2 py-0.5 text-xs font-mono rounded ${testResult.chainType === "cross" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>{testResult.chainType}</span></div>
                     <div className="flex items-center gap-2"><span className="font-medium text-primary">{lang === "bn" ? "ডিপার্টমেন্ট:" : "Department:"}</span><span>{testResult.department}</span></div>
+                    <div className="flex items-center gap-2"><span className="font-medium text-primary">{lang === "bn" ? "ডিপার্টমেন্ট (প্রক্রিয়াকৃত):" : "Depts Used:"}</span><span className="text-xs">{testResult.departmentsUsed?.join(" → ")}</span></div>
                     <div className="flex items-center gap-2"><span className="font-medium text-primary">{lang === "bn" ? "ইনটেন্ট:" : "Intent:"}</span><span>{testResult.intent}</span></div>
                     <div className="flex items-center gap-2"><span className="font-medium text-primary">{lang === "bn" ? "মডেল:" : "Model:"}</span><span className="text-xs font-mono bg-gray-200 px-2 py-0.5 rounded">{testResult.model}</span></div>
-                    <div className="flex items-center gap-2"><span className="font-medium text-primary">{lang === "bn" ? "এজেন্ট:" : "Agents:"}</span><span>{testResult.agentsUsed?.join(", ")}</span></div>
+                    <div className="flex items-center gap-2"><span className="font-medium text-primary">{lang === "bn" ? "এজেন্ট:" : "Agents:"}</span><span className="text-xs">{testResult.agentsUsed?.join(" → ")}</span></div>
                     <div className="flex items-start gap-2"><span className="font-medium text-primary shrink-0">{lang === "bn" ? "রিপ্লাই:" : "Reply:"}</span><span className="text-text-secondary">{testResult.reply}</span></div>
                     <div className="flex items-center gap-2 text-xs text-text-secondary"><span>{testResult.tokens} tokens</span><span>·</span><span>{testResult.processingMs}ms</span></div>
                   </div>

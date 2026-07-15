@@ -64,14 +64,21 @@ export interface MessageCtx {
   isWorker: boolean;
 }
 
+export interface CrossDeptStep {
+  department: DepartmentId;
+  agentId: string;
+}
+
 export interface BrainResult {
   text: string;
   model: string;
   tokens: number;
   agentsUsed: string[];
+  departmentsUsed: DepartmentId[];
   department: DepartmentId;
   intent: Intent;
   ms: number;
+  chainType?: "single" | "cross";
 }
 
 export interface AgentOutput {
