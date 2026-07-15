@@ -48,7 +48,7 @@ export default function LeadsPage() {
       url.searchParams.set("limit", String(perPage));
       url.searchParams.set("offset", String(page * perPage));
       const res = await fetch(url.toString());
-      const data = await res.json();
+      const data: { leads?: Lead[] } = await res.json();
       if (data.leads) setLeads(data.leads);
       else setLeads([]);
     } catch { setLeads([]); }
