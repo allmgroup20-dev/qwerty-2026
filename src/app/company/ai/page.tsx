@@ -10,13 +10,13 @@ import AgentDetailDrawer from "@/components/agents/AgentDetailDrawer";
 import GlobalModelSelector from "@/components/agents/GlobalModelSelector";
 import type { Agent, AgentTreeNode, AgentReport, AgentSubmission, AgentLog, AgentStats, GlobalAgentConfig } from "@/lib/ai/agents";
 
-type TabId = "dashboard" | "settings" | "brain" | "agents" | "insights" | "skills";
+type TabId = "dashboard" | "settings" | "brain" | "employees" | "insights" | "skills";
 
 const TABS: { id: TabId; icon: string; en: string; bn: string }[] = [
   { id: "dashboard", icon: "📊", en: "Dashboard", bn: "ড্যাশবোর্ড" },
   { id: "settings", icon: "⚙️", en: "Settings", bn: "সেটিংস" },
   { id: "brain", icon: "🧬", en: "Brain", bn: "মস্তিষ্ক" },
-  { id: "agents", icon: "🧠", en: "Agents", bn: "এজেন্ট" },
+  { id: "employees", icon: "👥", en: "Employees", bn: "কর্মচারী" },
   { id: "insights", icon: "📊", en: "Insights", bn: "ইনসাইটস" },
   { id: "skills", icon: "📈", en: "Skills", bn: "স্কিল" },
 ];
@@ -101,6 +101,10 @@ export default function AIHubPage() {
   const [testResults, setTestResults] = useState<any>(null);
   const [testSuiteLoading, setTestSuiteLoading] = useState(false);
   const [queueStats, setQueueStats] = useState<any>(null);
+  const [employeesData, setEmployeesData] = useState<any>(null);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [showEmployeeChain, setShowEmployeeChain] = useState<string | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [tuningData, setTuningData] = useState<any>(null);
   const [tuningLoading, setTuningLoading] = useState(false);
   const [tuningAgentId, setTuningAgentId] = useState("");
@@ -117,6 +121,18 @@ export default function AIHubPage() {
     } catch {}
     setTuningLoading(false);
   };
+
+  const loadEmployees = async () => {
+    setEmployeesLoading(true);
+    try {
+      const res = await fetch("/api/ai/brain/employees");
+      const d = await res.json();
+      setEmployeesData(d);
+    } catch {}
+    setEmployeesLoading(false);
+  };
+
+  useEffect(() => { if (activeTab === "employees") loadEmployees(); }, [activeTab]);
 
   const analyzeAgentForTuning = async () => {
     if (!tuningAgentId) return;
@@ -430,7 +446,6 @@ export default function AIHubPage() {
     }
   }, [activeTab]);
   useEffect(() => { if (activeTab === "settings" && models.length === 0) loadSettings(); }, [activeTab, models.length]);
-  useEffect(() => { if (activeTab === "agents") loadAgents(); }, [activeTab, loadAgents]);
   useEffect(() => { if (activeTab === "insights") loadInsights(); }, [activeTab]);
   useEffect(() => { if (activeTab === "brain") { loadBrain(); loadQueueStats(); loadFlows(); } }, [activeTab]);
   useEffect(() => { if (activeTab === "skills") loadSkills(); }, [activeTab]);
@@ -1383,54 +1398,177 @@ export default function AIHubPage() {
         </div>
       )}
 
-      {/* ════════════════════════ AGENTS TAB ════════════════════════ */}
-      {activeTab === "agents" && (
+      {/* ════════════════════════ EMPLOYEES TAB ════════════════════════ */}
+      {activeTab === "employees" && (
         <div className="space-y-6">
-          {agentsLoading ? (
+          {employeesLoading ? (
             <div className="space-y-4">
               <div className="h-8 w-48 bg-gray-200 rounded-lg animate-pulse" />
               <div className="h-4 w-72 bg-gray-100 rounded-lg animate-pulse" />
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />)}</div>
+              <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />)}</div>
             </div>
           ) : (
             <>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold text-text">{lang === "bn" ? "🤖 এআই এজেন্ট সিস্টেম" : "🤖 AI Agent System"}</h1>
-                  <p className="text-sm text-text-secondary mt-1">{lang === "bn" ? "মাল্টি-এজেন্ট রিসার্চ সিস্টেম" : "Multi-agent research system"}</p>
+                  <h1 className="text-2xl font-bold text-text">{lang === "bn" ? "👥 প্রিমিয়াম এমপ্লয়ী" : "👥 Premium Employees"}</h1>
+                  <p className="text-sm text-text-secondary mt-1">{lang === "bn" ? "২৩৫ জন এমপ্লয়ী — ৮টি ডিপার্টমেন্ট, ৩৩টি টিম, ২৮টি চেইন" : "235 employees — 8 departments, 33 teams, 28 chains"}</p>
                 </div>
-                <button onClick={runAll} disabled={running === "all"} className="px-5 py-2.5 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50">{running === "all" ? (lang === "bn" ? "⏳ চলছে..." : "⏳ Running...") : (lang === "bn" ? "🔄 সব চালান" : "🔄 Run All")}</button>
+                <button onClick={loadEmployees} className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-xl">{lang === "bn" ? "🔄 রিফ্রেশ" : "🔄 Refresh"}</button>
               </div>
-              {msg && <div className="fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium bg-green-600 text-white animate-slide-up">{msg}</div>}
-              {agentStats && (
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-primary">{agentStats.total}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "মোট এজেন্ট" : "Total Agents"}</div></div>
-                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-green-600">{agentStats.active}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "সক্রিয়" : "Active"}</div></div>
-                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-yellow-600">{agentStats.idle}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "নিষ্ক্রিয়" : "Idle"}</div></div>
-                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-red-600">{agentStats.error}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "ত্রুটি" : "Error"}</div></div>
-                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-purple-600">{agentStats.totalReports}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "রিপোর্ট" : "Reports"}</div></div>
+
+              {employeesData?.stats && (
+                <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-primary">{employeesData.stats.totalDepartments}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "ডিপার্টমেন্ট" : "Departments"}</div></div>
+                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-purple-600">{employeesData.stats.totalAgents}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "এমপ্লয়ী" : "Employees"}</div></div>
+                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-green-600">{employeesData.stats.totalChains}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "চেইন" : "Chains"}</div></div>
+                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-amber-600">{employeesData.stats.totalCrossDeptChains}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "ক্রস-চেইন" : "Cross Chains"}</div></div>
+                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-blue-600">{employeesData.stats.totalDynamicEmployees}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "ডাইনামিক" : "Dynamic"}</div></div>
+                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-red-600">{employeesData.departments?.find((d: any) => d.id === "negativity_detection") ? "⚠️" : "✅"}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "নেগেটিভিটি" : "Negativity"}</div></div>
                 </div>
               )}
-              {globalConfig && <GlobalModelSelector config={globalConfig} onUpdate={updateGlobal} lang={lang} />}
-              <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
-                {[{ id: "dashboard" as const, icon: "🏠", en: "Dashboard", bn: "ড্যাশবোর্ড" }, { id: "agents" as const, icon: "👥", en: "Agents", bn: "এজেন্ট" }, { id: "activity" as const, icon: "📋", en: "Activity", bn: "কার্যকলাপ" }, { id: "config" as const, icon: "⚙️", en: "Config", bn: "কনফিগারেশন" }].map((tab) => (
-                  <button key={tab.id} onClick={() => setAgentsTab(tab.id)} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${agentsTab === tab.id ? "bg-white text-primary shadow-sm" : "text-text-secondary hover:text-text"}`}><span>{tab.icon}</span><span>{lang === "bn" ? tab.bn : tab.en}</span></button>
-                ))}
+
+              {/* ── Department Tree ── */}
+              <div className="bg-white rounded-2xl border border-border p-6">
+                <h2 className="text-base font-bold text-primary mb-4">{lang === "bn" ? "🏢 ডিপার্টমেন্ট ও টিম" : "🏢 Departments & Teams"}</h2>
+                <div className="space-y-3">
+                  {employeesData?.departments?.map((dept: any) => (
+                    <details key={dept.id} className="group">
+                      <summary className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                        <span className="text-lg">{dept.icon}</span>
+                        <span className="font-semibold text-primary text-sm">{lang === "bn" ? dept.nameBn : dept.name}</span>
+                        <span className="text-xs text-text-secondary">({dept.teams?.length || 0} {lang === "bn" ? "টি টিম" : "teams"})</span>
+                      </summary>
+                      <div className="ml-8 mt-2 space-y-2">
+                        {dept.teams?.map((team: any) => (
+                          <details key={team.id} className="group">
+                            <summary className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm transition-colors">
+                              <span className="font-medium text-text-secondary">{lang === "bn" ? team.nameBn : team.name}</span>
+                              <span className="text-xs text-text-secondary">({team.agents?.length || 0})</span>
+                            </summary>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2 ml-4">
+                              {team.agents?.map((agent: any) => (
+                                <div key={agent.id} onClick={() => setSelectedEmployee(selectedEmployee?.id === agent.id ? null : agent)} className={`p-3 rounded-xl border cursor-pointer transition-all text-xs ${selectedEmployee?.id === agent.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"}`}>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="font-medium text-primary">{lang === "bn" ? agent.nameBn : agent.name}</span>
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${agent.tier === 1 ? "bg-purple-100 text-purple-700" : agent.tier === 2 ? "bg-blue-100 text-blue-700" : agent.tier === 3 ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}>T{agent.tier}</span>
+                                  </div>
+                                  <p className="text-text-secondary truncate">{lang === "bn" ? agent.descriptionBn || agent.description : agent.description}</p>
+                                  <div className="flex items-center gap-2 mt-1.5">
+                                    <span className="text-text-secondary">#{agent.id}</span>
+                                    <span className="text-text-secondary">·</span>
+                                    <span className="text-text-secondary">{lang === "bn" ? "প্রাইরিটি" : "Priority"}: {agent.priority}</span>
+                                  </div>
+                                  {selectedEmployee?.id === agent.id && (
+                                    <div className="mt-2 pt-2 border-t border-border space-y-1">
+                                      <p className="text-text-secondary">{lang === "bn" ? "মডেল" : "Model"}: {agent.primaryModel}</p>
+                                      <p className="text-text-secondary">{lang === "bn" ? "শর্ত" : "When"}: <code className="text-[10px] bg-gray-100 px-1 rounded">{agent.when}</code></p>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        ))}
+                      </div>
+                    </details>
+                  ))}
+                </div>
               </div>
-              {agentsTab === "dashboard" && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2"><h2 className="text-base font-semibold text-text mb-3">{lang === "bn" ? "🏗️ এজেন্ট ট্রি" : "🏗️ Agent Tree"}</h2><AgentTree tree={tree} onAgentClick={openDrawer} /></div>
-                  <div><h2 className="text-base font-semibold text-text mb-3">{lang === "bn" ? "📋 সর্বশেষ কার্যকলাপ" : "📋 Latest Activity"}</h2><ActivityLog logs={logs.slice(0, 10)} /></div>
+
+              {/* ── Chains View ── */}
+              <div className="bg-white rounded-2xl border border-border p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-bold text-primary">{lang === "bn" ? "🔗 চেইন কমান্ড" : "🔗 Chain Commands"}</h2>
+                  <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
+                    <button onClick={() => setShowEmployeeChain("chains")} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${showEmployeeChain !== "cross" ? "bg-white text-primary shadow-sm" : "text-text-secondary"}`}>{lang === "bn" ? "সিঙ্গেল" : "Single"}</button>
+                    <button onClick={() => setShowEmployeeChain("cross")} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${showEmployeeChain === "cross" ? "bg-white text-primary shadow-sm" : "text-text-secondary"}`}>{lang === "bn" ? "ক্রস" : "Cross"}</button>
+                  </div>
+                </div>
+                {showEmployeeChain !== "cross" ? (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {employeesData?.chains?.map((chain: any) => (
+                      <details key={chain.key} className="group">
+                        <summary className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer text-sm transition-colors">
+                          <span className="w-2 h-2 rounded-full bg-primary" />
+                          <span className="font-medium text-primary">{chain.key}</span>
+                          <span className="text-xs text-text-secondary">({chain.stepCount} {lang === "bn" ? "টি স্টেপ" : "steps"})</span>
+                        </summary>
+                        <div className="ml-6 mt-2 space-y-1">
+                          {chain.agents.map((agentId: string, idx: number) => (
+                            <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 text-xs">
+                              <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">{idx + 1}</span>
+                              <span className="font-medium text-primary">{agentId}</span>
+                              {employeesData?.departments?.flatMap((d: any) => d.teams).flatMap((t: any) => t.agents).find((a: any) => a.id === agentId) && (
+                                <span className="text-text-secondary">
+                                  — {lang === "bn" ? employeesData.departments.flatMap((d: any) => d.teams).flatMap((t: any) => t.agents).find((a: any) => a.id === agentId).name : employeesData.departments.flatMap((d: any) => d.teams).flatMap((t: any) => t.agents).find((a: any) => a.id === agentId).name}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {employeesData?.crossDeptChains?.map((chain: any) => (
+                      <details key={chain.key} className="group">
+                        <summary className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer text-sm transition-colors">
+                          <span className="w-2 h-2 rounded-full bg-purple-500" />
+                          <span className="font-medium text-purple-700">{chain.key}</span>
+                          <span className="text-xs text-text-secondary">({chain.stepCount} {lang === "bn" ? "টি স্টেপ" : "steps"})</span>
+                        </summary>
+                        <div className="ml-6 mt-2 space-y-1">
+                          {chain.steps.map((step: any, idx: number) => (
+                            <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-purple-50 text-xs">
+                              <span className="w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center text-[10px] font-bold">{idx + 1}</span>
+                              <span className="font-medium text-purple-700">{step.agentId}</span>
+                              <span className="text-text-secondary">({step.department})</span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Dynamic Employees ── */}
+              {employeesData?.dynamicEmployees?.length > 0 && (
+                <div className="bg-white rounded-2xl border border-border p-6">
+                  <h2 className="text-base font-bold text-primary mb-4">{lang === "bn" ? "🧬 ডাইনামিক এমপ্লয়ী" : "🧬 Dynamic Employees"}</h2>
+                  <div className="space-y-2">
+                    {employeesData.dynamicEmployees.map((emp: any) => (
+                      <div key={emp.employeeId} className="flex items-center justify-between p-3 rounded-xl bg-green-50 text-sm">
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium text-primary">{emp.name}</span>
+                          <span className="text-xs text-text-secondary">({emp.employeeId})</span>
+                          <span className="text-xs text-text-secondary">{lang === "bn" ? "প্যারেন্ট" : "Parent"}: {emp.parentEmployeeId}</span>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${emp.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{emp.status}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-              {agentsTab === "agents" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                  {agents.map((agent) => <AgentCard key={agent.agent_id} agent={agent} onRun={() => runAgent(agent.agent_id)} onViewDetail={() => openDrawer(agent.agent_id)} onConfig={() => { setSelectedAgent(agent); setAgentsTab("config"); }} />)}
+
+              {/* ── Negativity Detection Summary ── */}
+              {employeesData?.departments?.find((d: any) => d.id === "negativity_detection") && (
+                <div className="bg-white rounded-2xl border border-amber-200 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-xl">⚠️</span>
+                    <h2 className="text-base font-bold text-amber-700">{lang === "bn" ? "নেতিবাচকতা সনাক্তকরণ ও সংবেদনশীলতা" : "Negativity Detection & Sensitivity"}</h2>
+                  </div>
+                  <p className="text-sm text-amber-600 mb-3">{lang === "bn" ? "বাংলাদেশী প্রেক্ষাপটে নেতিবাচক ট্রিগার শব্দ ও সংবেদনশীল বিষয় সনাক্ত করে এবং অন্যান্য ডিপার্টমেন্টকে নিরাপদ শব্দচয়নের পরামর্শ দেয়" : "Detects negative trigger words in Bangladeshi context and advises other departments on safe wording"}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <div className="p-2 rounded-lg bg-amber-50 text-center"><div className="font-bold text-amber-700">৪</div><div className="text-amber-600">{lang === "bn" ? "টি টিম" : "Teams"}</div></div>
+                    <div className="p-2 rounded-lg bg-amber-50 text-center"><div className="font-bold text-amber-700">৮</div><div className="text-amber-600">{lang === "bn" ? "জন এমপ্লয়ী" : "Employees"}</div></div>
+                    <div className="p-2 rounded-lg bg-amber-50 text-center"><div className="font-bold text-amber-700">{lang === "bn" ? "MLM, টাকা, সদস্য" : "MLM, Money, Recruitment"}</div><div className="text-amber-600">{lang === "bn" ? "ট্রিগার ক্যাটাগরি" : "Trigger Categories"}</div></div>
+                    <div className="p-2 rounded-lg bg-amber-50 text-center"><div className="font-bold text-amber-700">{lang === "bn" ? "প্রতি কনভারসেশনে" : "Every Conversation"}</div><div className="text-amber-600">{lang === "bn" ? "অটো-স্ক্যান" : "Auto-scan"}</div></div>
+                  </div>
                 </div>
               )}
-              {agentsTab === "activity" && <ActivityLog logs={logs} showFilters />}
-              {agentsTab === "config" && <ConfigPanel agents={agents} onUpdate={updateAgentConfig} lang={lang} />}
-              <AgentDetailDrawer open={drawerOpen} agent={selectedAgent} report={selectedReport} submissions={agentSubmissions} logs={agentLogs} onClose={closeDrawer} onRun={runAgent} lang={lang} />
             </>
           )}
         </div>

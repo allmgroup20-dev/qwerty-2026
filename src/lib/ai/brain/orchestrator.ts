@@ -23,10 +23,18 @@ const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
   { intent: "training", department: "member_success" },
   { intent: "motivation", department: "psychology" },
   { intent: "general", department: "sales" },
+  // Negativity detection runs alongside every intent via the negativity_scan chain
 ];
 
+// ── Negativity detection chains (run alongside every intent) ──
+export const NEGATIVITY_CHAINS: Record<string, string[]> = {
+  negativity_scan: ["mlm_trigger_detector", "recruitment_trigger_detector", "money_trigger_detector", "sentiment_negativity_scanner", "trust_barrier_identifier"],
+  negativity_advisory: ["safe_wording_advisor", "cultural_sensitivity_checker"],
+  negativity_knowledge: ["negativity_insight_miner"],
+};
+
 // ── Single-department sequential chains ──
-const CHAINS: Record<string, string[]> = {
+export const CHAINS: Record<string, string[]> = {
   "sales_purchase": ["lead_scanner", "lead_scorer", "product_matcher", "price_explainer", "trust_objection_handler", "trial_closer", "payment_link_sender", "confirmation_sender"],
   "sales_price_inquiry": ["lead_scanner", "lead_classifier", "price_explainer", "price_objection_handler", "discount_closer", "installment_closer"],
   "sales_product_inquiry": ["lead_scanner", "lead_classifier", "product_matcher", "benefit_highlighter", "comparison_builder", "social_proof_injector", "urgency_creator"],
@@ -62,7 +70,7 @@ const CHAINS: Record<string, string[]> = {
 // ══════════════════════════════════════════════════════════════
 // CROSS-DEPARTMENT CHAINS — agents from multiple depts collaborate
 // ══════════════════════════════════════════════════════════════
-const CROSS_DEPT_CHAINS: Record<string, CrossDeptStep[]> = {
+export const CROSS_DEPT_CHAINS: Record<string, CrossDeptStep[]> = {
   // Full customer journey: from greeting → profiling → sales → ops → member success
   new_customer_full: [
     { department: "customer_experience", agentId: "greeting_personalizer" },
@@ -155,6 +163,7 @@ const DEPT_INTENT_PROMPTS: Record<DepartmentId, string> = {
   business_intelligence: "Classify the intent. Choose ONE: research (market/competitor info), analytics (data/stats), report (wants report), general, unknown.",
   psychology: "Classify the intent. Choose ONE: complaint (angry/frustrated/scam fear), motivation (needs encouragement/demotivated), objection (hesitant/doubting), general, unknown.",
   platform_admin: "Classify the intent. Choose ONE: settings (configuration), translation (language/traslation), security (login/access), update (version/update), general, unknown.",
+  negativity_detection: "Classify the intent. Choose ONE: negativity_scan (always run alongside other intents), general, unknown.",
 };
 
 async function detectIntent(text: string, ctx: MessageCtx, fallbackDept: DepartmentId): Promise<{ intent: Intent; department: DepartmentId }> {
@@ -323,6 +332,74 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
       }
     }
     departmentsUsed.push(department);
+  }
+
+  // ── Negativity Detection Scan (runs alongside every conversation) ──
+  let negativityFindings = "";
+  try {
+    const negAgentIds = NEGATIVITY_CHAINS.negativity_scan;
+    for (const agentId of negAgentIds) {
+      const agentData = findAgent(agentId);
+      if (!agentData || agentData.department !== "negativity_detection") continue;
+      const agent = agentData.agent;
+      try {
+        const contextVars = buildContext(ctx, intent, chainContext, memories);
+        const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
+        const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
+        const output = await executeAgent(agent, agentPrompt, ctx.text);
+        if (output.text && !output.text.includes("[Service temporarily unavailable")) {
+          negativityFindings += `\n[${agent.name}]: ${output.text}`;
+          agentsUsed.push(agent.id);
+          if (!departmentsUsed.includes("negativity_detection")) departmentsUsed.push("negativity_detection");
+          if (db) {
+            setMemory(db, ctx.phone, agent.id, `last_${agent.id}`, output.text.slice(0, 500), "agent_output", 1, 1440).catch(() => {});
+          }
+        }
+      } catch {}
+    }
+  } catch {}
+
+  // ── If negativity triggers found, run advisory agents ──
+  let advisoryNotes = "";
+  if (negativityFindings.length > 0) {
+    try {
+      const advisoryIds = NEGATIVITY_CHAINS.negativity_advisory;
+      for (const agentId of advisoryIds) {
+        const agentData = findAgent(agentId);
+        if (!agentData) continue;
+        const agent = agentData.agent;
+        try {
+          const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, memories), previousOutput: chainContext, negativityFindings };
+          const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
+          const agentPrompt = buildAgentPrompt(agent, ctxWithFindings, promptOverride || undefined);
+          const output = await executeAgent(agent, agentPrompt, ctx.text);
+          if (output.text && !output.text.includes("[Service temporarily unavailable")) {
+            advisoryNotes += `\n[${agent.name}]: ${output.text}`;
+            agentsUsed.push(agent.id);
+            if (!departmentsUsed.includes("negativity_detection")) departmentsUsed.push("negativity_detection");
+          }
+        } catch {}
+      }
+    } catch {}
+  }
+
+  // ── Accumulate knowledge ──
+  if (negativityFindings.length > 0 && db) {
+    try {
+      const kbAgentId = "negativity_insight_miner";
+      const kbData = findAgent(kbAgentId);
+      if (kbData) {
+        const agent = kbData.agent;
+        const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, memories), previousOutput: chainContext, negativityFindings };
+        const promptOverride = await getActivePromptOverride(db, agent.id).catch(() => null);
+        const agentPrompt = buildAgentPrompt(agent, ctxWithFindings, promptOverride || undefined);
+        const output = await executeAgent(agent, agentPrompt, ctx.text);
+        if (output.text && !output.text.includes("[Service temporarily unavailable")) {
+          // Store insight in memory
+          setMemory(db, ctx.phone, kbAgentId, `insight_${Date.now()}`, output.text.slice(0, 1000), "negativity_insight", 1, 43200).catch(() => {});
+        }
+      }
+    } catch {}
   }
 
   const primaryDept = department;
