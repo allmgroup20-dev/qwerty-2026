@@ -49,15 +49,15 @@ const FREE_MODEL_ORDER: Record<string, string[]> = {
     "nvidia/nemotron-nano-9b-v2:free",
     "tencent/hy3:free",
   ],
-  // OpenCode Zen free models
+  // OpenCode Zen free models — verified via live API testing (July 2026)
+  // Ordered by reliability; models 2-5 need ~500 tokens, deepseek needs ~2000
   opencode: [
-    "deepseek-v4-flash-free",
-    "mimo-v2.5-free",
-    "nemotron-3-ultra-free",
-    "nemotron-3-super-free",
-    "minimax-m2.5-free",
-    "ring-2.6-1t-free",
-    "big-pickle",
+    "nemotron-3-ultra-free",       // ✅ Best: normal content, fast, any token count
+    "mimo-v2.5-free",              // ✅ Verified: works with 500+ tokens
+    "north-mini-code-free",        // ✅ Verified: works with 500+ tokens
+    "big-pickle",                  // ✅ Verified: works with 500+ tokens
+    "hy3-free",                    // ✅ Verified: works with 500+ tokens
+    "deepseek-v4-flash-free",      // ✅ Verified: works but needs 2000+ tokens (reasoning model)
   ],
 };
 
@@ -143,11 +143,12 @@ async function tryModel(
     }
 
     const data = await res.json() as {
-      choices?: { message: { content: string } }[];
+      choices?: { message: { content: string | null; reasoning_content?: string; reasoning?: string } }[];
       usage?: { total_tokens: number };
     };
-    const text = data.choices?.[0]?.message?.content;
-    if (!text) return null;
+    const msg = data.choices?.[0]?.message;
+    let text = msg?.content || msg?.reasoning || msg?.reasoning_content || "";
+    if (text.length === 0) return null;
     return { text, tokens: data.usage?.total_tokens || 0 };
   } catch (e) {
     console.error(`[${provider}] ${modelId} error:`, (e as Error)?.message);
@@ -161,12 +162,10 @@ async function tryModel(
 //   API Key 1 (OpenRouter)
 //     → Model 1 (openrouter/free)
 //     → Model 2 (llama-3.3-70b)
-//     → Model 3 (hermes-3-405b)
-//     → ... all OpenRouter models
+//     → ... all OpenRouter free models
 //   API Key 2 (OpenCode)
-//     → Model 1 (deepseek-v4-flash-free)
-//     → Model 2 (gemini-3.5-flash)
-//     → ... all OpenCode models
+//     → Model 1 (nemotron-3-ultra-free)
+//     → ... all OpenCode free models
 //   API Key 3+ (if more keys added)
 //     → ... same pattern
 //   If ALL exhausted → Error
