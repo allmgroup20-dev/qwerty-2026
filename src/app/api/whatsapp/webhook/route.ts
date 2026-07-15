@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     const parsed = parseIncomingMessage(body);
     if (!parsed) {
-      return NextResponse.json({ error: "Unrecognized message format" }, { status: 400 });
+      return NextResponse.json({ received: false });
     }
 
     const { phone, text, name } = parsed;
@@ -155,7 +155,11 @@ export async function POST(request: NextRequest) {
 
     if (!fromBrowser) {
       const sendResult = await sendMessage(phone, reply);
-      await updateContactStatus(phone, "replied", reply);
+      if (!sendResult.success) {
+        console.error(`[WhatsApp Webhook] Reply send failed for ${phone}: ${sendResult.error}`);
+      } else {
+        await updateContactStatus(phone, "replied", reply);
+      }
       return NextResponse.json({
         received: true,
         replied: sendResult.success,
@@ -184,9 +188,11 @@ export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("hub.verify_token");
   const challenge = request.nextUrl.searchParams.get("hub.challenge");
 
-  if (mode === "subscribe" && token === process.env.WHATSAPP_VERIFY_TOKEN) {
-    return new NextResponse(challenge, { status: 200 });
+  if (mode === "subscribe") {
+    if (token === process.env.WHATSAPP_VERIFY_TOKEN) {
+      return new NextResponse(challenge, { status: 200 });
+    }
+    console.error(`[WhatsApp Webhook] Verify token mismatch: received "${token}", expected "${process.env.WHATSAPP_VERIFY_TOKEN}"`);
   }
-
   return NextResponse.json({ error: "Verification failed" }, { status: 403 });
 }

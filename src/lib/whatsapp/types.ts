@@ -1,3 +1,17 @@
+export interface WhatsAppAccountRow {
+  id: number;
+  account_id: string;
+  phone?: string;
+  provider: "meta" | "bridge" | "web" | "log";
+  status: string;
+  daily_limit: number;
+  daily_sent: number;
+  total_sent: number;
+  config?: string;
+  session_data?: string | null;
+  last_used_at?: string;
+}
+
 export interface WhatsAppAccount {
   accountId: string;
   phone?: string;
@@ -8,6 +22,20 @@ export interface WhatsAppAccount {
   totalSent: number;
   config?: Record<string, string>;
   sessionData?: string | null;
+}
+
+export function mapRowToAccount(row: WhatsAppAccountRow): WhatsAppAccount {
+  return {
+    accountId: row.account_id,
+    phone: row.phone,
+    provider: row.provider,
+    status: row.status,
+    dailyLimit: row.daily_limit,
+    dailySent: row.daily_sent,
+    totalSent: row.total_sent,
+    config: row.config ? JSON.parse(row.config) : undefined,
+    sessionData: row.session_data,
+  };
 }
 
 export interface SendResult {

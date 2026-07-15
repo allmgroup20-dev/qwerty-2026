@@ -1,14 +1,15 @@
 import { execute, queryFirst } from "@/lib/db/queries";
 import { ensureDB } from "@/lib/db";
-import type { SendResult, WhatsAppAccount } from "./types";
+import type { SendResult, WhatsAppAccount, WhatsAppAccountRow } from "./types";
+import { mapRowToAccount } from "./types";
 
 async function getActiveAccount(): Promise<WhatsAppAccount | null> {
   const db = await ensureDB();
-  const account = await queryFirst<WhatsAppAccount>(
+  const row = await queryFirst<WhatsAppAccountRow>(
     { DB: db },
     "SELECT * FROM wa_accounts WHERE status = 'connected' ORDER BY daily_sent ASC LIMIT 1"
   );
-  return account;
+  return row ? mapRowToAccount(row) : null;
 }
 
 export async function sendMessage(
@@ -70,6 +71,7 @@ async function sendViaMeta(
     const phoneId = config.phone_id || process.env.WHATSAPP_PHONE_ID;
 
     if (!token || !phoneId) {
+      console.error(`[sendViaMeta] Missing config: token=${!!token}, phoneId=${!!phoneId}`);
       return { success: false, error: "Meta API not configured (WHATSAPP_META_TOKEN / WHATSAPP_PHONE_ID)" };
     }
 
@@ -89,6 +91,7 @@ async function sendViaMeta(
 
     if (!res.ok) {
       const err = await res.text();
+      console.error(`[sendViaMeta] Meta API error (${res.status}): ${err.slice(0, 300)}`);
       return { success: false, error: `Meta API error: ${err}` };
     }
 
@@ -107,6 +110,7 @@ async function sendViaMeta(
 
     return { success: true, messageId: data.messages?.[0]?.id };
   } catch (e) {
+    console.error(`[sendViaMeta] Failed to send to ${to}:`, (e as Error).message);
     return { success: false, error: (e as Error).message };
   }
 }
@@ -131,6 +135,7 @@ async function sendViaWeb(
     );
     return { success: true };
   } catch (e) {
+    console.error(`[sendViaWeb] Failed for ${to}:`, (e as Error).message);
     return { success: false, error: (e as Error).message };
   }
 }
@@ -145,6 +150,7 @@ async function sendViaBridge(
     const bridgeUrl = config.bridge_url || process.env.WHATSAPP_BRIDGE_URL;
 
     if (!bridgeUrl) {
+      console.error(`[sendViaBridge] Bridge URL not configured for account ${account.accountId}`);
       return { success: false, error: "Bridge URL not configured" };
     }
 
@@ -154,7 +160,11 @@ async function sendViaBridge(
       body: JSON.stringify({ to, text, accountId: account.accountId }),
     });
 
-    if (!res.ok) return { success: false, error: "Bridge send failed" };
+    if (!res.ok) {
+      const err = await res.text().catch(() => "");
+      console.error(`[sendViaBridge] Bridge error (${res.status}): ${err.slice(0, 300)}`);
+      return { success: false, error: "Bridge send failed" };
+    }
 
     const db = await ensureDB();
     await execute(
@@ -170,6 +180,7 @@ async function sendViaBridge(
 
     return { success: true };
   } catch (e) {
+    console.error(`[sendViaBridge] Failed for ${to}:`, (e as Error).message);
     return { success: false, error: (e as Error).message };
   }
 }
