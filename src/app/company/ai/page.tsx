@@ -77,6 +77,9 @@ export default function AIHubPage() {
     try { return JSON.parse(localStorage.getItem("brainDisabledAgents") || "[]"); } catch { return []; }
   });
   const [showAdmin, setShowAdmin] = useState(false);
+  const [testResults, setTestResults] = useState<any>(null);
+  const [testSuiteLoading, setTestSuiteLoading] = useState(false);
+  const [queueStats, setQueueStats] = useState<any>(null);
 
   const toggleAgent = (agentId: string) => {
     setDisabledAgents(prev => {
@@ -169,6 +172,24 @@ export default function AIHubPage() {
     setTestLoading(false);
   };
 
+  const runTestSuite = async () => {
+    setTestSuiteLoading(true);
+    setTestResults(null);
+    try {
+      const res = await fetch("/api/ai/brain/test");
+      setTestResults(await res.json());
+    } catch {}
+    setTestSuiteLoading(false);
+  };
+
+  const loadQueueStats = async () => {
+    try {
+      const res = await fetch("/api/ai/brain/log");
+      const data: any = await res.json();
+      setQueueStats(data.stats);
+    } catch {}
+  };
+
   const loadSkills = async () => {
     setSkillsLoading(true);
     try {
@@ -182,7 +203,7 @@ export default function AIHubPage() {
   useEffect(() => { if (activeTab === "settings" && models.length === 0) loadSettings(); }, [activeTab, models.length]);
   useEffect(() => { if (activeTab === "agents") loadAgents(); }, [activeTab, loadAgents]);
   useEffect(() => { if (activeTab === "insights") loadInsights(); }, [activeTab]);
-  useEffect(() => { if (activeTab === "brain") loadBrain(); }, [activeTab]);
+  useEffect(() => { if (activeTab === "brain") { loadBrain(); loadQueueStats(); } }, [activeTab]);
   useEffect(() => { if (activeTab === "skills") loadSkills(); }, [activeTab]);
 
   // ─── Settings Handlers ─────────────────────────────────
@@ -507,6 +528,50 @@ export default function AIHubPage() {
                     <div className="flex items-center gap-2 text-xs text-text-secondary"><span>{testResult.tokens} tokens</span><span>·</span><span>{testResult.processingMs}ms</span></div>
                   </div>
                 )}
+              </div>
+
+              {/* ──────── Brain Test Suite ──────── */}
+              <div className="bg-white rounded-2xl border border-border p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-bold text-primary">{lang === "bn" ? "🧪 অটোমেটেড টেস্ট স্যুট" : "🧪 Automated Test Suite"}</h2>
+                  <button onClick={runTestSuite} disabled={testSuiteLoading} className="px-4 py-2 text-xs font-medium bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50">{testSuiteLoading ? "..." : (lang === "bn" ? "🔬 টেস্ট চালান" : "🔬 Run Tests")}</button>
+                </div>
+                <p className="text-sm text-text-secondary mb-4">{lang === "bn" ? "১০টি প্রি-ডিফাইন্ড সিনারিও — গ্রিটিং, প্রাইস, কমপ্লেইন্ট, রেজিস্ট্রেশন, উইথড্রয়াল, ট্রেনিং, কমিশন, সাপোর্ট" : "10 predefined scenarios — greeting, price, complaint, registration, withdrawal, training, commission, support"}</p>
+                {testResults && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="font-semibold text-primary">{lang === "bn" ? "পাস রেট:" : "Pass Rate:"} <span className="text-green-600">{testResults.passRate}</span></span>
+                      <span className="text-green-600">✓ {testResults.passed}</span>
+                      <span className="text-red-600">✗ {testResults.failed}</span>
+                      <span className="text-text-secondary">/ {testResults.total}</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                      {testResults.results?.map((r: any, i: number) => (
+                        <div key={i} className={`text-xs p-2 rounded-lg ${r.passed ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+                          <div className="flex items-center justify-between"><span className="font-medium">{r.label}</span><span className={`px-1 py-0.5 text-[10px] rounded ${r.passed ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>{r.passed ? "PASS" : "FAIL"}</span></div>
+                          <div className="text-text-secondary mt-0.5">{r.intent} → {r.department}</div>
+                          {!r.passed && r.expectedIntent && <div className="text-red-600">Expected: {r.expectedIntent} / {r.expectedDept}</div>}
+                          {r.error && <div className="text-red-600">{r.error}</div>}
+                          <div className="text-text-secondary">{r.ms}ms · {r.agentsCount} agents · {r.chainType}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ──────── Brain Queue Stats ──────── */}
+              <div className="bg-white rounded-2xl border border-border p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-bold text-primary">{lang === "bn" ? "📊 পারফরম্যান্স ও ক্যাশ" : "📊 Performance & Cache"}</h2>
+                  <button onClick={loadQueueStats} className="text-xs text-primary underline">{lang === "bn" ? "রিফ্রেশ" : "Refresh"}</button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-gray-50 rounded-xl p-3 text-center"><div className="text-lg font-bold text-primary">{queueStats?.total || 0}</div><div className="text-[10px] text-text-secondary">{lang === "bn" ? "মোট রিকোয়েস্ট (৭ দিন)" : "Total (7d)"}</div></div>
+                  <div className="bg-gray-50 rounded-xl p-3 text-center"><div className="text-lg font-bold text-green-600">{queueStats?.successful || 0}</div><div className="text-[10px] text-text-secondary">{lang === "bn" ? "সফল" : "Successful"}</div></div>
+                  <div className="bg-gray-50 rounded-xl p-3 text-center"><div className="text-lg font-bold text-amber-600">{queueStats?.avg_processing_ms ? Math.round(queueStats.avg_processing_ms) : 0}ms</div><div className="text-[10px] text-text-secondary">{lang === "bn" ? "গড় সময়" : "Avg Time"}</div></div>
+                  <div className="bg-gray-50 rounded-xl p-3 text-center"><div className="text-lg font-bold text-purple-600">{queueStats?.total_tokens || 0}</div><div className="text-[10px] text-text-secondary">{lang === "bn" ? "মোট টোকেন" : "Total Tokens"}</div></div>
+                </div>
               </div>
 
               {/* ──────── Brain Admin Controls ──────── */}

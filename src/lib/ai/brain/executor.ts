@@ -71,15 +71,29 @@ export async function executeAgent(
     }
   }
 
-  // Fallback: try openrouter/free (catch-all)
-  try {
-    const result = await callAI({ messages }, 300, "openrouter/free", "openrouter");
-    return { agentId: agent.id, text: result.text, model: result.model, tokens: result.tokens };
-  } catch (e) {
-    lastError = `openrouter/free also failed: ${(e as Error).message}`;
+  // Fallback chain: try 3 catch-all endpoints
+  const fallbacks = [
+    { model: "openrouter/free", provider: "openrouter" },
+    { model: "google/gemma-4-26b-a4b-it:free", provider: "openrouter" },
+    { model: "opencode/free", provider: "opencode" },
+  ];
+
+  for (const fb of fallbacks) {
+    try {
+      const result = await callAI({ messages }, 500, fb.model, fb.provider);
+      return { agentId: agent.id, text: result.text, model: result.model, tokens: result.tokens };
+    } catch (e) {
+      lastError += ` | ${fb.model} failed: ${(e as Error).message}`;
+    }
   }
 
-  throw new Error(`All free models exhausted for agent ${agent.id}: ${lastError}`);
+  // Last resort: return a graceful error message instead of throwing
+  return {
+    agentId: agent.id,
+    text: `[Service temporarily unavailable for ${agent.name}. Please try again later.]`,
+    model: "fallback",
+    tokens: 0,
+  };
 }
 
 export function buildAgentPrompt(agent: AgentDef, ctx: Record<string, any>): string {

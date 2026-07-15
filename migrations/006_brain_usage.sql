@@ -42,3 +42,19 @@ CREATE TABLE IF NOT EXISTS brain_senior_reviews (
 
 CREATE INDEX IF NOT EXISTS idx_senior_review_created ON brain_senior_reviews(created_at);
 CREATE INDEX IF NOT EXISTS idx_senior_review_score ON brain_senior_reviews(agent_senior_score);
+
+-- Brain request queue for high-traffic handling
+CREATE TABLE IF NOT EXISTS brain_queue (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  phone TEXT NOT NULL,
+  text TEXT NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK(status IN ('pending','processing','done','failed')),
+  priority INTEGER DEFAULT 0,
+  retries INTEGER DEFAULT 0,
+  error_message TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  processed_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_brain_queue_status ON brain_queue(status);
+CREATE INDEX IF NOT EXISTS idx_brain_queue_priority ON brain_queue(priority, created_at);

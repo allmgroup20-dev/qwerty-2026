@@ -9,6 +9,7 @@ import {
 import type { MessageCtx } from "@/lib/ai/brain/types";
 import { execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
+import { getCached, setCache } from "@/lib/ai/brain/cache";
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,7 +54,31 @@ export async function POST(request: NextRequest) {
       isWorker,
     };
 
-    const result = await processMessage(ctx);
+    // ── Check cache — skip processing if cached ──
+    const cached = getCached(text, lang, mood);
+    let result: Awaited<ReturnType<typeof processMessage>>;
+
+    if (cached && cached.response.length > 10) {
+      result = {
+        text: cached.response,
+        model: cached.model,
+        tokens: cached.tokens,
+        agentsUsed: cached.agentsUsed,
+        departmentsUsed: cached.departmentsUsed as any,
+        department: cached.department as any,
+        intent: cached.intent as any,
+        ms: 0,
+        chainType: cached.chainType as any,
+      };
+    } else {
+      result = await processMessage(ctx);
+      setCache(text, lang, mood, {
+        response: result.text, model: result.model, tokens: result.tokens,
+        agentsUsed: result.agentsUsed, departmentsUsed: result.departmentsUsed,
+        department: result.department, intent: result.intent,
+        chainType: result.chainType || "single",
+      });
+    }
 
     // ── Log usage to D1 ──
     try {
