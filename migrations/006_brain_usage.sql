@@ -58,3 +58,9 @@ CREATE TABLE IF NOT EXISTS brain_queue (
 
 CREATE INDEX IF NOT EXISTS idx_brain_queue_status ON brain_queue(status);
 CREATE INDEX IF NOT EXISTS idx_brain_queue_priority ON brain_queue(priority, created_at);
+
+-- Query optimization indexes
+CREATE INDEX IF NOT EXISTS idx_brain_usage_success ON brain_usage(success, created_at);
+CREATE INDEX IF NOT EXISTS idx_brain_usage_model ON brain_usage(model_used);
+CREATE INDEX IF NOT EXISTS idx_brain_usage_daily ON brain_usage(created_at) WHERE created_at > datetime('now', '-30 days');
+CREATE INDEX IF NOT EXISTS idx_brain_usage_phone_recent ON brain_usage(phone, created_at);
