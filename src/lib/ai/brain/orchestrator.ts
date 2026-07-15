@@ -2,6 +2,8 @@ import { callAI } from "../router";
 import { executeAgent, buildAgentPrompt } from "./executor";
 import { DEPARTMENTS, getAgentsByDepartment, findAgent } from "./registry";
 import type { Intent, DepartmentId, MessageCtx, BrainResult, AgentDef, CrossDeptStep, AgentSeniorReview } from "./types";
+import { getMemory, setMemory, buildMemoryContext } from "./memory";
+import { getDB } from "@/lib/db";
 
 // ── Intent → Department routing ──
 const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
@@ -181,7 +183,8 @@ function cleanJsonResponse(text: string): string {
   return jsonMatch ? jsonMatch[0] : text;
 }
 
-function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string): Record<string, any> {
+function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, memories?: any[]): Record<string, any> {
+  const memoryStr = memories ? buildMemoryContext(memories) : "";
   return {
     language: ctx.language === "bn" ? "Bengali" : ctx.language === "en" ? "English" : "Bengali with English mix",
     customerName: ctx.name || "Valued Customer",
@@ -193,7 +196,8 @@ function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string): Re
     totalChats: String(ctx.totalChats),
     painPoints: ctx.painPoints?.join(", ") || "not identified",
     interests: ctx.interests?.join(", ") || "not identified",
-    context: `Chats: ${ctx.totalChats}. Mood: ${ctx.mood}.` + (ctx.dialect ? ` Dialect: ${ctx.dialect}.` : "") + (ctx.religion ? ` Religion: ${ctx.religion}.` : ""),
+    userMemory: memoryStr,
+    context: `Chats: ${ctx.totalChats}. Mood: ${ctx.mood}.` + (ctx.dialect ? ` Dialect: ${ctx.dialect}.` : "") + (ctx.religion ? ` Religion: ${ctx.religion}.` : "") + memoryStr,
     previousOutput: chainOutput || "",
   };
 }
@@ -243,6 +247,14 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
 
   const { intent, department } = await detectIntent(ctx.text, ctx, fallbackDept);
 
+  // ── Load persistent memory for this user ──
+  let db: any;
+  let memories: any[] = [];
+  try {
+    db = await getDB();
+    memories = await getMemory(db, ctx.phone);
+  } catch {}
+
   // ── Try cross-department chain first ──
   const crossDeptSteps = selectCrossDeptChain(intent, ctx);
   const isCrossDept = crossDeptSteps !== null && crossDeptSteps.length > 0;
@@ -261,13 +273,17 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
       }
       const agent = agentData.agent;
       try {
-        const contextVars = buildContext(ctx, intent, chainContext);
+        const contextVars = buildContext(ctx, intent, chainContext, memories);
         const agentPrompt = buildAgentPrompt(agent, contextVars);
         const output = await executeAgent(agent, agentPrompt, ctx.text);
         chainContext += `\n[${agent.name} (${agentData.department})]\n${output.text}`;
         agentsUsed.push(agent.id);
         if (!departmentsUsed.includes(agentData.department)) {
           departmentsUsed.push(agentData.department);
+        }
+        // Write agent output to memory
+        if (db) {
+          setMemory(db, ctx.phone, agent.id, `last_${agent.id}`, output.text.slice(0, 500), "agent_output", 1, 1440).catch(() => {});
         }
       } catch {
         chainContext += `\n[${agent.name}]: (unavailable)`;
@@ -290,11 +306,15 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
 
     for (const agent of selectedAgents) {
       try {
-        const contextVars = buildContext(ctx, intent, chainContext);
+        const contextVars = buildContext(ctx, intent, chainContext, memories);
         const agentPrompt = buildAgentPrompt(agent, contextVars);
         const output = await executeAgent(agent, agentPrompt, ctx.text);
         chainContext += `\n[${agent.name}]\n${output.text}`;
         agentsUsed.push(agent.id);
+        // Write agent output to memory
+        if (db) {
+          setMemory(db, ctx.phone, agent.id, `last_${agent.id}`, output.text.slice(0, 500), "agent_output", 1, 1440).catch(() => {});
+        }
       } catch {
         chainContext += `\n[${agent.name}]: (unavailable)`;
       }
@@ -398,6 +418,20 @@ Keep under 400 words. If complaint → empathetic first. If purchase → guide t
     }
   } catch {
     // Agent Senior unavailable — proceed with composed response
+  }
+
+  // ── Persist memory for future sessions ──
+  if (db) {
+    setMemory(db, ctx.phone, "_meta", "last_intent", intent, "session", 2, 1440).catch(() => {});
+    setMemory(db, ctx.phone, "_meta", "last_department", department, "session", 2, 1440).catch(() => {});
+    setMemory(db, ctx.phone, "_meta", "last_mood", ctx.mood, "session", 1, 1440).catch(() => {});
+    setMemory(db, ctx.phone, "_meta", "last_response", finalText.slice(0, 500), "session", 1, 1440).catch(() => {});
+    if (ctx.name) {
+      setMemory(db, ctx.phone, "_meta", "customer_name", ctx.name, "profile", 5, 43200).catch(() => {});
+    }
+    if (ctx.dialect) {
+      setMemory(db, ctx.phone, "_meta", "dialect", ctx.dialect, "profile", 3, 43200).catch(() => {});
+    }
   }
 
   return {

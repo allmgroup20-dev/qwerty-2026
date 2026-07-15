@@ -70,9 +70,15 @@ export default function AIHubPage() {
   const [brainLoading, setBrainLoading] = useState(true);
   const [expandedDept, setExpandedDept] = useState<string | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [brainSubTab, setBrainSubTab] = useState<"explorer" | "playground" | "memory" | "schedule">("explorer");
   const [testMsg, setTestMsg] = useState("");
   const [testResult, setTestResult] = useState<any>(null);
   const [testLoading, setTestLoading] = useState(false);
+  const [memoryData, setMemoryData] = useState<any[]>([]);
+  const [memoryPhone, setMemoryPhone] = useState("");
+  const [memoryLoading, setMemoryLoading] = useState(false);
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [disabledAgents, setDisabledAgents] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
     try { return JSON.parse(localStorage.getItem("brainDisabledAgents") || "[]"); } catch { return []; }
@@ -189,6 +195,28 @@ export default function AIHubPage() {
     setTestLoading(false);
   };
 
+  const loadMemory = async (phone: string) => {
+    if (!phone.trim()) return;
+    setMemoryLoading(true);
+    try {
+      const res = await fetch(`/api/ai/brain/memory?phone=${encodeURIComponent(phone)}`);
+      const d: any = await res.json();
+      setMemoryData(d.memories || []);
+    } catch {}
+    setMemoryLoading(false);
+  };
+
+  const loadSchedules = async (phone?: string) => {
+    setSchedulesLoading(true);
+    try {
+      const q = phone ? `?phone=${encodeURIComponent(phone)}` : "";
+      const res = await fetch(`/api/ai/brain/schedule${q}`);
+      const d: any = await res.json();
+      setSchedules(d.schedules || []);
+    } catch {}
+    setSchedulesLoading(false);
+  };
+
   const runTestSuite = async () => {
     setTestSuiteLoading(true);
     setTestResults(null);
@@ -202,8 +230,8 @@ export default function AIHubPage() {
   const loadQueueStats = async () => {
     try {
       const res = await fetch("/api/ai/brain/log");
-      const data: any = await res.json();
-      setQueueStats(data.stats);
+      const d: any = await res.json();
+      setQueueStats(d.stats);
     } catch {}
   };
 
@@ -577,6 +605,21 @@ export default function AIHubPage() {
             <p className="text-sm text-text-secondary mt-1">{lang === "bn" ? "সকল ডিপার্টমেন্ট, টিম ও এজেন্ট এক নজরে" : "All departments, teams & agents at a glance"}</p>
           </div>
 
+          {/* ── Brain Sub-tabs ── */}
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
+            {([
+              { id: "explorer" as const, icon: "🔍", en: "Explorer", bn: "এক্সপ্লোরার" },
+              { id: "playground" as const, icon: "🧪", en: "Test", bn: "টেস্ট" },
+              { id: "memory" as const, icon: "🧠", en: "Memory", bn: "মেমোরি" },
+              { id: "schedule" as const, icon: "⏰", en: "Schedule", bn: "শিডিউল" },
+            ]).map(tab => (
+              <button key={tab.id} onClick={() => setBrainSubTab(tab.id)} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${brainSubTab === tab.id ? "bg-white text-primary shadow-sm" : "text-text-secondary hover:text-text"}`}>
+                <span>{tab.icon}</span><span>{lang === "bn" ? tab.bn : tab.en}</span>
+              </button>
+            ))}
+          </div>
+
+          {brainSubTab === "explorer" && (<>
           {brainLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />)}
@@ -764,9 +807,78 @@ export default function AIHubPage() {
                 )}
               </div>
             </>
-          ) : (
+          ) : null}
+
+          {/* ── Memory Section ── */}
+          {(brainSubTab as string) === "memory" && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-border p-6">
+                <h2 className="text-lg font-bold text-primary mb-2">{lang === "bn" ? "🧠 এজেন্ট মেমোরি" : "🧠 Agent Memory"}</h2>
+                <p className="text-sm text-text-secondary mb-4">{lang === "bn" ? "প্রতি ফোন নম্বরের জন্য এজেন্টদের মেমোরি — পছন্দ, ইতিহাস, প্রোফাইল" : "Persistent memory per phone — preferences, history, profile"}</p>
+                <div className="flex gap-3 mb-4">
+                  <input value={memoryPhone} onChange={e => setMemoryPhone(e.target.value)} placeholder={lang === "bn" ? "ফোন নম্বর দিন" : "Enter phone number"} className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-gray-50 text-sm text-primary font-mono" />
+                  <button onClick={() => loadMemory(memoryPhone)} disabled={memoryLoading || !memoryPhone.trim()} className="px-5 py-2.5 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50">{memoryLoading ? "..." : "🔍 Load"}</button>
+                </div>
+                {memoryData.length > 0 ? (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {memoryData.map((mem: any, i: number) => (
+                      <div key={i} className="flex items-start justify-between p-3 bg-gray-50 rounded-xl text-xs">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-medium text-[10px]">{mem.category}</span>
+                            <span className="font-medium text-primary truncate">{mem.key}</span>
+                            <span className="text-text-secondary">· {mem.agent_id || "_meta"}</span>
+                          </div>
+                          <div className="text-text-secondary break-words">{mem.value}</div>
+                        </div>
+                        <button onClick={async () => { await fetch(`/api/ai/brain/memory?phone=${encodeURIComponent(memoryPhone)}&agent_id=${mem.agent_id}&key=${mem.key}`, { method: "DELETE" }); loadMemory(memoryPhone); }} className="ml-2 px-2 py-1 text-[10px] text-red-500 hover:bg-red-50 rounded-lg shrink-0">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                ) : memoryPhone ? (
+                  <div className="text-xs text-text-secondary py-6 text-center">{lang === "bn" ? "কোনো মেমোরি পাওয়া যায়নি" : "No memory found"}</div>
+                ) : null}
+              </div>
+            </div>
+          )}
+
+          {/* ── Schedule Section ── */}
+          {(brainSubTab as string) === "schedule" && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-border p-6">
+                <h2 className="text-lg font-bold text-primary mb-2">{lang === "bn" ? "⏰ এজেন্ট শিডিউল" : "⏰ Agent Schedule"}</h2>
+                <p className="text-sm text-text-secondary mb-4">{lang === "bn" ? "অটোমেটিক এজেন্ট টাস্ক — ডেইলি রিপোর্ট, ফলো-আপ, রিমাইন্ডার" : "Automated agent tasks — daily reports, follow-ups, reminders"}</p>
+                <div className="flex gap-3 mb-4">
+                  <input value={memoryPhone} onChange={e => { setMemoryPhone(e.target.value); }} placeholder={lang === "bn" ? "ফোন নম্বর" : "Phone"} className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-gray-50 text-sm text-primary font-mono" />
+                  <button onClick={() => loadSchedules(memoryPhone)} disabled={schedulesLoading} className="px-5 py-2.5 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50">{schedulesLoading ? "..." : "📋 List"}</button>
+                </div>
+                {schedules.length > 0 ? (
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                    {schedules.map((s: any) => (
+                      <div key={s.id} className="p-3 bg-gray-50 rounded-xl text-xs">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-primary">{s.agent_id} · {s.task_type}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${s.enabled ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"}`}>{s.enabled ? "Active" : "Paused"}</span>
+                        </div>
+                        <div className="text-text-secondary">Cron: <code className="font-mono bg-gray-200 px-1 rounded">{s.cron_expression}</code></div>
+                        <div className="text-text-secondary">Next: {s.next_run_at || "—"}</div>
+                        <div className="text-text-secondary">Last: {s.last_run_at || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-xs text-text-secondary py-6 text-center">
+                    {lang === "bn" ? "কোনো শিডিউল নেই। আপনার প্রথম শিডিউল তৈরি করুন।" : "No schedules yet. Create your first schedule."}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!brainData && (brainSubTab as string) !== "memory" && (brainSubTab as string) !== "schedule" && (
             <div className="text-sm text-text-secondary py-12 text-center">{lang === "bn" ? "ব্রেইন ডাটা লোড করতে ব্যর্থ" : "Failed to load brain data"}</div>
           )}
+          </>)}
         </div>
       )}
 
