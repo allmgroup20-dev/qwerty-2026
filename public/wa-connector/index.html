@@ -8,7 +8,7 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a2e; min-height: 100vh; }
-.container { max-width: 520px; margin: 0 auto; padding: 24px 16px; }
+.container { max-width: 560px; margin: 0 auto; padding: 24px 16px; }
 .header { text-align: center; margin-bottom: 24px; }
 .header h1 { font-size: 22px; font-weight: 700; }
 .header p { font-size: 13px; color: #666; margin-top: 4px; }
@@ -28,6 +28,7 @@ body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a2e; mi
 .status-connected { background: #e8f5e9; color: #2e7d32; }
 .status-disconnected { background: #ffebee; color: #c62828; }
 .status-connecting { background: #fff8e1; color: #f57f17; }
+.status-error { background: #ffebee; color: #c62828; }
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
 .stat-box { background: #f8f9fa; border-radius: 12px; padding: 16px; text-align: center; }
 .stat-box .value { font-size: 24px; font-weight: 700; color: #1a1a2e; }
@@ -51,12 +52,17 @@ body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a2e; mi
 .gap-3 { gap: 12px; }
 .mt-4 { margin-top: 16px; }
 .mt-3 { margin-top: 12px; }
+.mt-2 { margin-top: 8px; }
 .mb-2 { margin-bottom: 8px; }
 .text-center { text-align: center; }
 .text-sm { font-size: 13px; }
 .text-xs { font-size: 11px; }
 .text-gray { color: #888; }
+.text-green { color: #2e7d32; }
+.text-red { color: #c62828; }
 .w-full { width: 100%; }
+.input { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; }
+.input:focus { border-color: #00a884; box-shadow: 0 0 0 2px rgba(0,168,132,0.1); }
 @media (max-width: 400px) { .qr-box img, .qr-box .placeholder { width: 220px; height: 220px; } }
 </style>
 </head>
@@ -64,19 +70,31 @@ body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a2e; mi
 <div class="container">
   <div class="header">
     <h1>🔗 WhatsApp Connector</h1>
-    <p>Connect your WhatsApp to send/receive messages from the app</p>
+    <p>Run <code style="background:#eee;padding:2px 6px;border-radius:4px;font-size:12px;">node wa-relay.mjs</code> locally, then connect below</p>
+  </div>
+
+  <!-- Relay Config -->
+  <div class="card" id="configCard">
+    <h2 style="font-size:14px;font-weight:600;margin-bottom:10px;">⚙️ Relay Connection</h2>
+    <div class="flex gap-2">
+      <input class="input" id="relayUrl" type="text" value="http://localhost:3001" placeholder="http://localhost:3001" />
+      <button class="btn btn-secondary" onclick="connectRelay()" style="white-space:nowrap;">Connect</button>
+    </div>
+    <p class="text-xs text-gray mt-2">
+      Make sure <code style="background:#eee;padding:1px 4px;border-radius:3px;">wa-relay.mjs</code> is running on your machine.
+    </p>
   </div>
 
   <!-- Status Card -->
-  <div class="card" id="statusCard">
+  <div class="card hidden" id="statusCard">
     <div class="flex items-center justify-between mb-2">
       <h2 style="font-size:15px;font-weight:600;">Connection</h2>
       <span class="status-badge status-disconnected" id="statusBadge">⚪ Disconnected</span>
     </div>
     <p class="text-sm text-gray" id="statusDetail">Click "Connect" to start</p>
     <div class="flex gap-2 mt-3">
-      <button class="btn btn-primary w-full" id="connectBtn" onclick="startConnection()">📱 Connect</button>
-      <button class="btn btn-danger hidden" id="disconnectBtn" onclick="disconnect()">⏹ Disconnect</button>
+      <button class="btn btn-primary w-full" id="connectBtn" onclick="startRelay()">📱 Connect WhatsApp</button>
+      <button class="btn btn-danger hidden" id="disconnectBtn" onclick="stopRelay()">⏹ Disconnect</button>
     </div>
   </div>
 
@@ -87,7 +105,7 @@ body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a2e; mi
       <div class="stat-box"><div class="value" id="receivedCount">0</div><div class="label">Received</div></div>
     </div>
     <div class="stats-grid" style="margin-top:4px;">
-      <div class="stat-box"><div class="value" id="pendingCount">0</div><div class="label">Pending</div></div>
+      <div class="stat-box"><div class="value" id="pendingCount">0</div><div class="label">Pending (server)</div></div>
       <div class="stat-box"><div class="value" id="uptimeDisplay">0s</div><div class="label">Uptime</div></div>
     </div>
   </div>
@@ -104,13 +122,14 @@ body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a2e; mi
   </div>
 
   <!-- Steps -->
-  <div class="card" id="stepsCard">
+  <div class="card">
     <h2 style="font-size:14px;font-weight:600;margin-bottom:12px;">📋 How to connect</h2>
-    <div class="step"><div class="num">1</div><div class="text">Click <strong>"Connect"</strong> below</div></div>
-    <div class="step"><div class="num">2</div><div class="text">Scan the QR code with your phone</div></div>
-    <div class="step"><div class="num">3</div><div class="text">Done! Messages will flow automatically</div></div>
+    <div class="step"><div class="num">1</div><div class="text">Open terminal in the project folder</div></div>
+    <div class="step"><div class="num">2</div><div class="text">Run <code style="background:#eee;padding:2px 5px;border-radius:3px;font-size:12px;">node wa-relay.mjs</code></div></div>
+    <div class="step"><div class="num">3</div><div class="text">Enter relay URL (default <code style="background:#eee;padding:2px 5px;border-radius:3px;font-size:12px;">http://localhost:3001</code>)</div></div>
+    <div class="step"><div class="num">4</div><div class="text">Click Connect → Scan QR → Done!</div></div>
     <p class="text-xs text-gray mt-3" style="line-height:1.5;">
-      💡 Keep this tab open. If closed, reconnect after opening. All pending messages are saved on the server.
+      💡 Keep the relay terminal and this tab open. Close both when done. Session is saved to <code style="background:#eee;padding:1px 4px;border-radius:3px;">wa-session.json</code>.
     </p>
   </div>
 
@@ -121,77 +140,28 @@ body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a2e; mi
       <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="document.getElementById('logBox').innerHTML=''">Clear</button>
     </div>
     <div class="log-box" id="logBox">
-      <div class="log-entry info">🔵 Ready. Click Connect to start.</div>
+      <div class="log-entry info">🔵 Set relay URL and click Connect.</div>
     </div>
   </div>
 </div>
 
-<script type="module">
-// ====== IndexedDB Session Store ======
-const DB_NAME = 'wa_connector_db';
-const STORE_NAME = 'sessions';
-const SESSION_KEY = 'baileys_auth';
-
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(STORE_NAME);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function saveSession(data) {
-  try {
-    const db = await openDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.objectStore(STORE_NAME).put(data, SESSION_KEY);
-    await new Promise(r => tx.oncomplete = r);
-    // Also backup to server
-    const accountId = localStorage.getItem('wa_account_id') || 'web_main';
-    const base64 = btoa(JSON.stringify(data));
-    await fetch('/api/whatsapp/accounts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'save_session', accountId, sessionData: base64 })
-    }).catch(() => {});
-  } catch (e) { console.error('Session save error:', e); }
-}
-
-async function loadSession() {
-  try {
-    const db = await openDB();
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const data = await new Promise(r => {
-      const req = tx.objectStore(STORE_NAME).get(SESSION_KEY);
-      req.onsuccess = () => r(req.result);
-      req.onerror = () => r(null);
-    });
-    if (data) return data;
-    // Try server backup
-    const accountId = localStorage.getItem('wa_account_id') || 'web_main';
-    const res = await fetch('/api/whatsapp/accounts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_session', accountId })
-    });
-    const result = await res.json();
-    if (result.sessionData) {
-      const parsed = JSON.parse(atob(result.sessionData));
-      await saveSession(parsed);
-      return parsed;
-    }
-  } catch (e) { console.error('Session load error:', e); }
-  return null;
-}
+<script>
+// ====== State ======
+let relayBase = "http://localhost:3001";
+let pollTimer = null;
+let pollInterval = null;
+let statusPollInterval = null;
+let startTime = null;
+let sentCount = 0;
+let receivedCount = 0;
 
 // ====== UI Helpers ======
 function $(id) { return document.getElementById(id); }
 
-function log(msg, type = 'info') {
-  const box = $('logBox');
+function log(msg, type = "info") {
+  const box = $("logBox");
   const time = new Date().toLocaleTimeString();
-  const div = document.createElement('div');
+  const div = document.createElement("div");
   div.className = `log-entry ${type}`;
   div.textContent = `${time} ${msg}`;
   box.appendChild(div);
@@ -199,287 +169,196 @@ function log(msg, type = 'info') {
 }
 
 function setStatus(status, detail) {
-  const badge = $('statusBadge');
-  const detailEl = $('statusDetail');
-  if (status === 'connected') {
-    badge.className = 'status-badge status-connected';
-    badge.innerHTML = '🟢 Connected';
-    $('connectBtn').classList.add('hidden');
-    $('disconnectBtn').classList.remove('hidden');
-    $('statsCard').classList.remove('hidden');
-  } else if (status === 'connecting') {
-    badge.className = 'status-badge status-connecting';
-    badge.innerHTML = '🟡 Connecting...';
+  const badge = $("statusBadge");
+  const detailEl = $("statusDetail");
+  if (status === "connected") {
+    badge.className = "status-badge status-connected";
+    badge.innerHTML = "🟢 Connected";
+    $("connectBtn").classList.add("hidden");
+    $("disconnectBtn").classList.remove("hidden");
+    $("statsCard").classList.remove("hidden");
+    $("qrCard").classList.add("hidden");
+  } else if (status === "connecting") {
+    badge.className = "status-badge status-connecting";
+    badge.innerHTML = "🟡 Connecting...";
+  } else if (status === "error") {
+    badge.className = "status-badge status-error";
+    badge.innerHTML = "🔴 Error";
   } else {
-    badge.className = 'status-badge status-disconnected';
-    badge.innerHTML = '⚪ Disconnected';
-    $('connectBtn').classList.remove('hidden');
-    $('disconnectBtn').classList.add('hidden');
+    badge.className = "status-badge status-disconnected";
+    badge.innerHTML = "⚪ Disconnected";
+    $("connectBtn").classList.remove("hidden");
+    $("disconnectBtn").classList.add("hidden");
   }
   if (detail) detailEl.textContent = detail;
 }
 
-// ====== Baileys Connection ======
-let sock = null;
-let startTime = null;
-let sentCount = 0;
-let receivedCount = 0;
-let pollingInterval = null;
-let reconnectTimer = null;
-let reconnectAttempts = 0;
-
-async function loadBaileys() {
-  if (window.Baileys) return window.Baileys;
-  log('🔄 Loading WhatsApp library...', 'info');
-  try {
-    // Try to load from CDN
-    const mod = await import('https://esm.sh/@whiskeysockets/baileys@6.7.0');
-    window.Baileys = mod;
-    log('✅ WhatsApp library loaded', 'success');
-    return mod;
-  } catch (e) {
-    log(`❌ CDN load failed: ${e.message}`, 'error');
-    // Try alternative CDN
-    try {
-      const mod = await import('https://cdn.jsdelivr.net/npm/@whiskeysockets/baileys/lib/index.js');
-      window.Baileys = mod;
-      log('✅ WhatsApp library loaded (jsdelivr)', 'success');
-      return mod;
-    } catch (e2) {
-      log(`❌ All CDNs failed: ${e2.message}`, 'error');
-      throw e2;
-    }
-  }
+async function relayFetch(path, options = {}) {
+  return fetch(`${relayBase}${path}`, {
+    ...options,
+    headers: { "Content-Type": "application/json", ...options.headers },
+  });
 }
 
-// Make startConnection globally accessible
-window.startConnection = async function() {
+// ====== Relay Connection ======
+window.connectRelay = async function() {
+  const url = $("relayUrl").value.trim().replace(/\/+$/, "");
+  if (!url) { log("❌ Please enter a relay URL", "error"); return; }
+  relayBase = url;
+  localStorage.setItem("wa_relay_url", relayBase);
+
   try {
-    const Baileys = await loadBaileys();
-    const { makeWASocket, DisconnectReason, fetchLatestBaileysVersion } = Baileys;
-    
-    setStatus('connecting', 'Initializing...');
-    log('🔄 Initializing WhatsApp connection...', 'info');
-    $('qrCard').classList.remove('hidden');
-    $('qrImage').classList.add('hidden');
-    $('qrPlaceholder').classList.remove('hidden');
-    $('qrPlaceholder').textContent = '🔄 Generating QR code...';
-
-    const { version } = await fetchLatestBaileysVersion();
-    log(`📱 Using protocol v${version.join('.')}`, 'info');
-
-    // Load saved session
-    const savedCreds = await loadSession();
-
-    const { state, saveCreds } = savedCreds 
-      ? { state: { creds: savedCreds.creds, keys: savedCreds.keys }, saveCreds: () => {} }
-      : { state: null, saveCreds: () => {} };
-
-    sock = makeWASocket({
-      version,
-      auth: state ? {
-        creds: state.creds,
-        keys: state.keys,
-      } : undefined,
-      logger: console,
-      printQRInTerminal: false,
-      browser: ['Jobayer Group', 'Chrome', ''],
-      syncFullHistory: false,
-    });
-
-    // Handle QR code
-    sock.ev.on('qr', (qr) => {
-      log('📱 QR code generated — scan with phone', 'info');
-      $('qrPlaceholder').classList.add('hidden');
-      $('qrImage').classList.remove('hidden');
-      $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`;
-      reconnectAttempts = 0;
-    });
-
-    // Handle connection updates
-    sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
-      if (connection === 'open') {
-        log('✅ WhatsApp connected!', 'success');
-        setStatus('connected', 'Ready to send/receive messages');
-        $('qrCard').classList.add('hidden');
-        startTime = Date.now();
-        reconnectAttempts = 0;
-
-        // Save session
-        const creds = sock?.authState?.creds;
-        const keys = sock?.authState?.keys;
-        if (creds) {
-          await saveSession({ creds, keys: keys ? await exportKeys(keys) : {} });
-        }
-
-        // Start polling
-        startPolling();
-        updateUptime();
-      }
-
-      if (connection === 'close') {
-        const statusCode = lastDisconnect?.error?.output?.statusCode || DisconnectReason.loggedOut;
-        log(`🔌 Disconnected (code: ${statusCode})`, statusCode === DisconnectReason.loggedOut ? 'error' : 'info');
-        
-        if (statusCode === DisconnectReason.loggedOut) {
-          setStatus('disconnected', 'Logged out. Reconnect to scan QR again.');
-          await saveSession(null);
-          disconnect();
-        } else {
-          setStatus('disconnected', `Reconnecting in ${Math.min(30, Math.pow(2, reconnectAttempts))}s...`);
-          scheduleReconnect();
-        }
-      }
-    });
-
-    // Handle incoming messages
-    sock.ev.on('messages.upsert', async ({ messages }) => {
-      for (const msg of messages) {
-        if (msg.key?.fromMe) continue;
-        const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-        const phone = msg.key?.remoteJid?.replace('@s.whatsapp.net', '') || '';
-        if (!text || !phone) continue;
-        
-        receivedCount++;
-        $('receivedCount').textContent = receivedCount;
-        log(`📩 From ${phone}: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`, 'info');
-
-        // Send to webhook for AI reply
-        try {
-          const res = await fetch('/api/whatsapp/webhook', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone, text, name: '', fromBrowser: true })
-          });
-          const data = await res.json();
-          if (data.reply && sock) {
-            await sock.sendMessage(msg.key.remoteJid, { text: data.reply });
-            sentCount++;
-            $('sentCount').textContent = sentCount;
-            log(`📤 Reply sent: ${data.reply.substring(0, 50)}${data.reply.length > 50 ? '...' : ''}`, 'success');
-          }
-        } catch (e) {
-          log(`❌ Webhook error: ${e.message}`, 'error');
-        }
-      }
-    });
-
-    // Handle credits update (for session save)
-    sock.ev.on('creds.update', async () => {
-      try {
-        const creds = sock?.authState?.creds;
-        const keys = sock?.authState?.keys;
-        if (creds) {
-          await saveSession({ creds, keys: keys ? await exportKeys(keys) : {} });
-        }
-      } catch (e) { /* ignore */ }
-    });
-
+    const res = await relayFetch("/status");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    log(`✅ Connected to relay at ${relayBase}`, "success");
+    $("configCard").classList.add("hidden");
+    $("statusCard").classList.remove("hidden");
+    updateFromStatus(data);
+    startPolling();
   } catch (e) {
-    log(`❌ Connection failed: ${e.message}`, 'error');
-    setStatus('disconnected', `Error: ${e.message}`);
+    log(`❌ Cannot reach relay: ${e.message}`, "error");
   }
 };
 
-async function exportKeys(keys) {
+function updateFromStatus(data) {
+  if (data.status === "connected") {
+    setStatus("connected", "Ready to send/receive messages");
+    sentCount = data.sentCount || 0;
+    receivedCount = data.receivedCount || 0;
+    startTime = data.uptime > 0 ? Date.now() - data.uptime * 1000 : null;
+  } else if (data.status === "connecting") {
+    setStatus("connecting", "Connecting...");
+  } else if (data.status === "error") {
+    setStatus("error", data.error || "Unknown error");
+  } else {
+    setStatus("disconnected", data.error || "Click Connect to start");
+  }
+
+  $("sentCount").textContent = sentCount;
+  $("receivedCount").textContent = receivedCount;
+
+  // QR
+  if (data.qr) {
+    $("qrCard").classList.remove("hidden");
+    $("qrPlaceholder").classList.add("hidden");
+    $("qrImage").classList.remove("hidden");
+    $("qrImage").src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data.qr)}`;
+  } else if (data.status !== "connected" && data.status !== "connecting") {
+    $("qrCard").classList.add("hidden");
+  }
+}
+
+// ====== Actions ======
+window.startRelay = async function() {
   try {
-    const exported = {};
-    for (const [key, value] of Object.entries(keys)) {
-      if (value instanceof Map) {
-        exported[key] = Array.from(value.entries());
-      } else {
-        exported[key] = value;
-      }
-    }
-    return exported;
-  } catch { return {}; }
-}
+    setStatus("connecting", "Starting...");
+    log("🔄 Starting WhatsApp connection...", "info");
+    await relayFetch("/start", { method: "POST" });
+    log("✅ Connection request sent", "success");
+  } catch (e) {
+    log(`❌ Start failed: ${e.message}`, "error");
+    setStatus("disconnected", `Error: ${e.message}`);
+  }
+};
 
-function scheduleReconnect() {
-  if (reconnectTimer) clearTimeout(reconnectTimer);
-  const delay = Math.min(30, Math.pow(2, reconnectAttempts)) * 1000;
-  reconnectAttempts++;
-  reconnectTimer = setTimeout(async () => {
-    if (!sock) {
-      await window.startConnection();
-    } else {
-      try { await sock.connect(); } catch { /* retry in next cycle */ }
-    }
-  }, delay);
-}
+window.stopRelay = async function() {
+  try {
+    await relayFetch("/stop", { method: "POST" });
+    log("⏹ Disconnected", "info");
+    setStatus("disconnected", "Disconnected by user");
+  } catch (e) {
+    log(`❌ Stop failed: ${e.message}`, "error");
+  }
+};
 
+// ====== Polling ======
 function startPolling() {
-  if (pollingInterval) clearInterval(pollingInterval);
-  pollingInterval = setInterval(async () => {
-    if (!sock) return;
+  if (pollInterval) clearInterval(pollInterval);
+  if (statusPollInterval) clearInterval(statusPollInterval);
+
+  pollInterval = setInterval(async () => {
     try {
-      const accountId = localStorage.getItem('wa_account_id') || 'web_main';
-      const res = await fetch(`/api/whatsapp/queue?account_id=${accountId}`);
+      const res = await relayFetch("/status");
+      if (!res.ok) return;
       const data = await res.json();
-      const pending = data.pending || [];
-      $('pendingCount').textContent = pending.length;
+      updateFromStatus(data);
 
-      for (const msg of pending) {
-        try {
-          const phone = msg.to || msg.to_phone;
-          const text = msg.text || msg.text_content;
-          if (!phone || !text) continue;
-
-          const jid = phone.includes('@s.whatsapp.net') ? phone : `${phone}@s.whatsapp.net`;
-          await sock.sendMessage(jid, { text });
-          
-          // Mark as sent
-          await fetch('/api/whatsapp/queue', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'mark_sent', id: msg.id })
-          });
-
-          sentCount++;
-          $('sentCount').textContent = sentCount;
-          log(`📤 Sent to ${phone}: ${text.substring(0, 40)}${text.length > 40 ? '...' : ''}`, 'success');
-        } catch (e) {
-          log(`❌ Send failed: ${e.message}`, 'error');
-        }
+      if (data.status === "connected") {
+        startTime = data.uptime > 0 ? Date.now() - data.uptime * 1000 : startTime;
+        await pollPendingMessages();
       }
-    } catch (e) { /* ignore polling errors */ }
-  }, 5000);
-}
+    } catch {}
+  }, 2000);
 
-function updateUptime() {
-  setInterval(() => {
+  statusPollInterval = setInterval(() => {
     if (startTime) {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      const hours = Math.floor(elapsed / 3600);
-      const mins = Math.floor((elapsed % 3600) / 60);
-      const secs = elapsed % 60;
-      $('uptimeDisplay').textContent = hours > 0 ? `${hours}h ${mins}m` : mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+      const h = Math.floor(elapsed / 3600);
+      const m = Math.floor((elapsed % 3600) / 60);
+      const s = elapsed % 60;
+      $("uptimeDisplay").textContent = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
     }
   }, 1000);
 }
 
-// ====== Disconnect ======
-window.disconnect = function() {
-  if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
-  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-  if (sock) { try { sock.end(); } catch {} sock = null; }
-  startTime = null;
-  setStatus('disconnected', 'Disconnected by user');
-  $('statsCard').classList.add('hidden');
-  $('qrCard').classList.add('hidden');
-  log('⏹ Disconnected', 'info');
-  reconnectAttempts = 0;
-};
+async function pollPendingMessages() {
+  try {
+    const accountId = localStorage.getItem("wa_account_id") || "web_main";
+    const res = await fetch(`/api/whatsapp/queue?account_id=${accountId}`);
+    const data = await res.json();
+    const pending = data.pending || [];
+    $("pendingCount").textContent = pending.length;
 
-// ====== Auto-reconnect on page load ======
+    for (const msg of pending) {
+      try {
+        const phone = msg.to || msg.to_phone;
+        const text = msg.text || msg.text_content;
+        if (!phone || !text) continue;
+
+        const jid = phone.includes("@s.whatsapp.net") ? phone : `${phone}@s.whatsapp.net`;
+        const sendRes = await relayFetch("/send", {
+          method: "POST",
+          body: JSON.stringify({ jid, text }),
+        });
+
+        if (sendRes.ok) {
+          await fetch("/api/whatsapp/queue", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "mark_sent", id: msg.id }),
+          });
+          sentCount++;
+          $("sentCount").textContent = sentCount;
+          log(`📤 Sent to ${phone}`, "success");
+        }
+      } catch (e) {
+        log(`❌ Send failed: ${e.message}`, "error");
+      }
+    }
+  } catch {}
+}
+
+// ====== Auto-connect on page load ======
 (async function() {
-  const savedCreds = await loadSession();
-  if (savedCreds) {
-    log('🔵 Saved session found — auto-connecting...', 'info');
-    setTimeout(() => window.startConnection(), 500);
+  const savedUrl = localStorage.getItem("wa_relay_url");
+  if (savedUrl) {
+    $("relayUrl").value = savedUrl;
+    // Try connecting automatically
+    relayBase = savedUrl;
+    try {
+      const res = await relayFetch("/status");
+      if (res.ok) {
+        const data = await res.json();
+        log(`✅ Auto-connected to relay at ${savedUrl}`, "success");
+        $("configCard").classList.add("hidden");
+        $("statusCard").classList.remove("hidden");
+        updateFromStatus(data);
+        startPolling();
+      }
+    } catch {}
   }
 })();
-
 </script>
 </body>
 </html>
