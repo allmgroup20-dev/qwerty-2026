@@ -1,0 +1,517 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useLanguageStore } from "@/lib/store";
+import AgentTree from "@/components/agents/AgentTree";
+import AgentCard from "@/components/agents/AgentCard";
+import ActivityLog from "@/components/agents/ActivityLog";
+import ConfigPanel from "@/components/agents/ConfigPanel";
+import AgentDetailDrawer from "@/components/agents/AgentDetailDrawer";
+import GlobalModelSelector from "@/components/agents/GlobalModelSelector";
+import type { Agent, AgentTreeNode, AgentReport, AgentSubmission, AgentLog, AgentStats, GlobalAgentConfig } from "@/lib/ai/agents";
+
+type TabId = "settings" | "agents" | "insights" | "skills";
+
+const TABS: { id: TabId; icon: string; en: string; bn: string }[] = [
+  { id: "settings", icon: "⚙️", en: "Settings", bn: "সেটিংস" },
+  { id: "agents", icon: "🧠", en: "Agents", bn: "এজেন্ট" },
+  { id: "insights", icon: "📊", en: "Insights", bn: "ইনসাইটস" },
+  { id: "skills", icon: "📈", en: "Skills", bn: "স্কিল" },
+];
+
+// ─── Interfaces ──────────────────────────────────────────
+interface Model { model_id: string; name: string; tier: number; is_active: number; provider: string; exhausted: boolean; }
+interface ApiKey { id: number; key_value: string; provider: string; is_active: boolean; created_at: string; }
+interface FailoverState { exhausted_models: string; total_responses: number; today_responses: number; }
+interface AIStats { responses: { total: number; today: number }; models: { active: number; total: number }; keys: { active: number }; conversations: number; profiles: number; skills: number; painPointFrequency: Record<string, number>; }
+interface AgentStatsData { total: number; active: number; idle: number; error: number; totalReports: number; totalSubmissions: number; }
+interface SeniorReport { summary_bn: string; recommendations: string; submitted_at: string; }
+interface ConsolidationResult { faqs: number; shortcuts: number; }
+
+export default function AIHubPage() {
+  const { lang } = useLanguageStore();
+  const [activeTab, setActiveTab] = useState<TabId>("settings");
+
+  // ─── Settings State ────────────────────────────────────
+  const [models, setModels] = useState<Model[]>([]);
+  const [state, setState] = useState<FailoverState | null>(null);
+  const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [newKeyValue, setNewKeyValue] = useState("");
+  const [newKeyProvider, setNewKeyProvider] = useState<"openrouter" | "opencode">("openrouter");
+  const [msg, setMsg] = useState("");
+
+  // ─── Agents State ──────────────────────────────────────
+  const [tree, setTree] = useState<AgentTreeNode[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agentStats, setAgentStats] = useState<AgentStats | null>(null);
+  const [logs, setLogs] = useState<AgentLog[]>([]);
+  const [reports, setReports] = useState<AgentReport[]>([]);
+  const [globalConfig, setGlobalConfig] = useState<GlobalAgentConfig | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [selectedReport, setSelectedReport] = useState<AgentReport | null>(null);
+  const [agentSubmissions, setAgentSubmissions] = useState<AgentSubmission[]>(null as unknown as AgentSubmission[]);
+  const [agentLogs, setAgentLogs] = useState<AgentLog[]>([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [agentsLoading, setAgentsLoading] = useState(true);
+  const [running, setRunning] = useState<string | null>(null);
+  const [agentsTab, setAgentsTab] = useState<"dashboard" | "agents" | "activity" | "config">("dashboard");
+
+  // ─── Insights State ────────────────────────────────────
+  const [aiStats, setAiStats] = useState<AIStats | null>(null);
+  const [agentStatsData, setAgentStatsData] = useState<AgentStatsData | null>(null);
+  const [seniorReport, setSeniorReport] = useState<SeniorReport | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(true);
+
+  // ─── Skills State ──────────────────────────────────────
+  const [skillsStats, setSkillsStats] = useState<AIStats | null>(null);
+  const [skillsLoading, setSkillsLoading] = useState(true);
+  const [consolidating, setConsolidating] = useState(false);
+  const [consolidationResult, setConsolidationResult] = useState<ConsolidationResult | null>(null);
+
+  // ─── Data Loading ──────────────────────────────────────
+  const loadSettings = async () => {
+    setSettingsLoading(true);
+    try {
+      const res = await fetch("/api/ai/models");
+      const data = await res.json() as { models?: Model[]; failoverState?: FailoverState; keys?: ApiKey[] };
+      if (data.models) setModels(data.models);
+      if (data.failoverState) setState(data.failoverState);
+      if (data.keys) setKeys(data.keys);
+    } catch (e) { console.error(e); }
+    setSettingsLoading(false);
+  };
+
+  const loadAgents = useCallback(async () => {
+    setAgentsLoading(true);
+    try {
+      const [agentsRes, logsRes, reportsRes, configRes] = await Promise.all([
+        fetch("/api/ai/agents"), fetch("/api/ai/agents/logs"),
+        fetch("/api/ai/agents/reports"), fetch("/api/ai/agents/global-config"),
+      ]);
+      const agentsData = await agentsRes.json() as { tree?: AgentTreeNode[]; agents?: Agent[]; stats?: AgentStats };
+      const logsData = await logsRes.json() as { logs?: AgentLog[] };
+      const reportsData = await reportsRes.json() as { reports?: AgentReport[] };
+      const configData = await configRes.json() as { config?: GlobalAgentConfig };
+      setTree(agentsData.tree || []);
+      setAgents(agentsData.agents || []);
+      setAgentStats(agentsData.stats || null);
+      setLogs(logsData.logs || []);
+      setReports(reportsData.reports || []);
+      setGlobalConfig(configData.config || null);
+    } catch (e) { console.error(e); }
+    setAgentsLoading(false);
+  }, []);
+
+  const loadInsights = async () => {
+    setInsightsLoading(true);
+    try {
+      const [statsRes, agentStatsRes, seniorRes] = await Promise.all([
+        fetch("/api/ai/stats"), fetch("/api/ai/agents/stats"),
+        fetch("/api/ai/agents/reports?agent_id=agent_senior"),
+      ]);
+      const statsData: AIStats = await statsRes.json();
+      if (statsData.responses) setAiStats(statsData);
+      setAgentStatsData(await agentStatsRes.json() as AgentStatsData);
+      const r = await seniorRes.json() as { reports?: SeniorReport[] };
+      if (r.reports?.length) setSeniorReport(r.reports[0]);
+    } catch (e) { console.error(e); }
+    setInsightsLoading(false);
+  };
+
+  const loadSkills = async () => {
+    setSkillsLoading(true);
+    try {
+      const res = await fetch("/api/ai/stats");
+      const data: AIStats = await res.json();
+      if (data.responses) setSkillsStats(data);
+    } catch {}
+    setSkillsLoading(false);
+  };
+
+  useEffect(() => { if (activeTab === "settings" && models.length === 0) loadSettings(); }, [activeTab, models.length]);
+  useEffect(() => { if (activeTab === "agents") loadAgents(); }, [activeTab, loadAgents]);
+  useEffect(() => { if (activeTab === "insights") loadInsights(); }, [activeTab]);
+  useEffect(() => { if (activeTab === "skills") loadSkills(); }, [activeTab]);
+
+  // ─── Settings Handlers ─────────────────────────────────
+  const toggleModel = async (modelId: string) => {
+    setMsg("");
+    try {
+      const res = await fetch("/api/ai/models", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "toggle_model", modelId }) });
+      if (res.ok) loadSettings(); else setMsg("Failed to toggle model");
+    } catch { setMsg("Error toggling model"); }
+  };
+
+  const addKey = async () => {
+    if (!newKeyValue.trim()) return;
+    setMsg("");
+    try {
+      const res = await fetch("/api/ai/models", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "add_key", keyValue: newKeyValue.trim(), provider: newKeyProvider }) });
+      if (res.ok) { setNewKeyValue(""); loadSettings(); setMsg(lang === "bn" ? "API কী যোগ করা হয়েছে" : "API key added"); }
+      else { const err = await res.json().catch(() => ({})); setMsg((err as any).error || "Failed to add key"); }
+    } catch { setMsg("Error adding key"); }
+  };
+
+  const deleteKey = async (keyId: number) => {
+    setMsg("");
+    try {
+      const res = await fetch("/api/ai/models", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete_key", keyId }) });
+      if (res.ok) { loadSettings(); setMsg(lang === "bn" ? "কী মুছে ফেলা হয়েছে" : "Key deleted"); } else setMsg("Failed to delete key");
+    } catch { setMsg("Error deleting key"); }
+  };
+
+  const toggleKey = async (keyId: number) => {
+    setMsg("");
+    try { await fetch("/api/ai/models", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "toggle_key", keyId }) }); loadSettings(); }
+    catch { setMsg("Error toggling key"); }
+  };
+
+  const resetFailover = async () => {
+    setMsg("");
+    try { await fetch("/api/ai/models", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reset_failover" }) }); loadSettings(); setMsg(lang === "bn" ? "ফেইলওভার রিসেট করা হয়েছে" : "Failover reset"); }
+    catch { setMsg("Error resetting"); }
+  };
+
+  // ─── Agents Handlers ───────────────────────────────────
+  const showMsg = (text: string, type: "success" | "error" = "success") => {
+    setMsg(text);
+    setTimeout(() => setMsg(""), 3000);
+  };
+
+  const runAgent = async (agentId: string) => {
+    setRunning(agentId);
+    try {
+      const res = await fetch(`/api/ai/agents/${agentId}/run`, { method: "POST" });
+      const data = await res.json() as { success?: boolean; error?: string };
+      if (data.success) { showMsg(lang === "bn" ? `${agentId} চালানো হয়েছে` : `${agentId} executed`); await loadAgents(); await loadAgentDetail(agentId); }
+      else { showMsg(data.error || "Failed", "error"); }
+    } catch { showMsg(lang === "bn" ? "কানেকশন ব্যর্থ" : "Connection failed", "error"); }
+    setRunning(null);
+  };
+
+  const runAll = async () => {
+    setRunning("all");
+    try {
+      const res = await fetch("/api/ai/agents/run-all", { method: "POST" });
+      const data = await res.json() as { results?: unknown[] };
+      showMsg(lang === "bn" ? `${data.results?.length || 0}টি এজেন্ট চালানো হয়েছে` : `${data.results?.length || 0} agents executed`);
+      await loadAgents();
+    } catch { showMsg(lang === "bn" ? "কানেকশন ব্যর্থ" : "Connection failed", "error"); }
+    setRunning(null);
+  };
+
+  const loadAgentDetail = async (agentId: string) => {
+    try {
+      const res = await fetch(`/api/ai/agents/${agentId}`);
+      const data = await res.json() as { agent?: Agent; latestReport?: AgentReport | null; submissions?: AgentSubmission[]; logs?: AgentLog[] };
+      if (data.agent) { setSelectedAgent(data.agent); setSelectedReport(data.latestReport || null); setAgentSubmissions(data.submissions || []); setAgentLogs(data.logs || []); }
+    } catch {}
+  };
+
+  const openDrawer = async (agentId: string) => { await loadAgentDetail(agentId); setDrawerOpen(true); };
+  const closeDrawer = () => { setDrawerOpen(false); setTimeout(() => { setSelectedAgent(null); setSelectedReport(null); setAgentSubmissions(null as unknown as AgentSubmission[]); setAgentLogs([]); }, 300); };
+  const updateAgentConfig = async (agentId: string, config: any) => { try { await fetch(`/api/ai/agents/${agentId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(config) }); await loadAgents(); } catch {} };
+  const updateGlobal = async (config: { mode?: string; provider?: string; model_id?: string }) => {
+    try {
+      const res = await fetch("/api/ai/agents/global-config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(config) });
+      const data = await res.json() as { config?: GlobalAgentConfig };
+      if (data.config) setGlobalConfig(data.config);
+      showMsg(lang === "bn" ? "গ্লোবাল কনফিগ আপডেট হয়েছে" : "Global config updated");
+    } catch { showMsg(lang === "bn" ? "আপডেট ব্যর্থ" : "Update failed", "error"); }
+  };
+
+  // ─── Skills Handlers ───────────────────────────────────
+  const runConsolidation = async () => {
+    setConsolidating(true); setConsolidationResult(null);
+    try {
+      const res = await fetch("/api/ai/skills/consolidate", { method: "POST" });
+      const data: ConsolidationResult & { ok: boolean } = await res.json();
+      if (data.ok) setConsolidationResult(data);
+    } catch {}
+    setConsolidating(false); loadSkills();
+  };
+
+  // ─── Render Helpers ────────────────────────────────────
+  const tierLabels = ["", "Best", "Great", "Good", "Basic", "Free"];
+  const openrouterModels = models.filter((m) => m.provider === "openrouter");
+  const opencodeModels = models.filter((m) => m.provider === "opencode");
+  const orKeys = keys.filter((k) => k.provider === "openrouter");
+  const ocKeys = keys.filter((k) => k.provider === "opencode");
+
+  return (
+    <div className="py-8 px-4 md:px-6 max-w-7xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-primary">{lang === "bn" ? "এআই" : "AI"}</h1>
+        <p className="text-sm text-text-secondary mt-1">{lang === "bn" ? "এআই সেটিংস, এজেন্ট, ইনসাইটস ও স্কিল ম্যানেজমেন্ট" : "AI settings, agents, insights & skill management"}</p>
+      </div>
+
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto mb-6">
+        {TABS.map((tab) => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${activeTab === tab.id ? "bg-white text-primary shadow-sm" : "text-text-secondary hover:text-text"}`}>
+            <span>{tab.icon}</span><span>{lang === "bn" ? tab.bn : tab.en}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ════════════════════════ SETTINGS TAB ════════════════════════ */}
+      {activeTab === "settings" && (
+        <div>
+          {msg && <div className="mb-4 p-3 rounded-xl bg-action/10 text-sm text-action font-medium">{msg}</div>}
+          {settingsLoading ? <div className="text-text-secondary text-sm py-12 text-center">Loading...</div> : (
+            <>
+              <div className="card p-6 mb-6">
+                <h2 className="font-bold text-lg text-primary mb-4">{lang === "bn" ? "API কী যোগ করুন" : "Add API Key"}</h2>
+                <div className="flex gap-2">
+                  <select value={newKeyProvider} onChange={(e) => setNewKeyProvider(e.target.value as "openrouter" | "opencode")} className="px-3 py-2 rounded-xl border border-border bg-white text-sm text-primary">
+                    <option value="openrouter">OpenRouter</option><option value="opencode">OpenCode</option>
+                  </select>
+                  <input type="text" placeholder={lang === "bn" ? "API কী পেস্ট করুন" : "Paste API key"} value={newKeyValue} onChange={(e) => setNewKeyValue(e.target.value)} className="flex-1 px-4 py-2 rounded-xl border border-border bg-white text-sm font-mono text-primary" />
+                  <button onClick={addKey} className="px-6 py-2 gradient-premium text-white text-sm font-medium rounded-xl hover:opacity-90">{lang === "bn" ? "যোগ করুন" : "Add Key"}</button>
+                  <button onClick={resetFailover} className="px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-xl hover:bg-orange-100">{lang === "bn" ? "রিসেট" : "Reset"}</button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div className="card p-6"><div className="text-2xl font-bold text-primary">{state?.total_responses || 0}</div><div className="text-sm text-text-secondary">{lang === "bn" ? "মোট রেসপন্স" : "Total Responses"}</div></div>
+                <div className="card p-6"><div className="text-2xl font-bold text-action">{state?.today_responses || 0}</div><div className="text-sm text-text-secondary">{lang === "bn" ? "আজকের রেসপন্স" : "Today's Responses"}</div></div>
+                <div className="card p-6 flex items-center gap-4">
+                  <div><div className="text-2xl font-bold text-accent">{orKeys.filter(k => k.is_active).length}</div><div className="text-xs text-text-secondary">OR Keys</div></div>
+                  <div className="w-px h-8 bg-border" />
+                  <div><div className="text-2xl font-bold text-purple-600">{ocKeys.filter(k => k.is_active).length}</div><div className="text-xs text-text-secondary">OC Keys</div></div>
+                </div>
+              </div>
+
+              {keys.length > 0 && (
+                <div className="card p-6 mb-6">
+                  <h2 className="font-bold text-lg text-primary mb-4">{lang === "bn" ? "সংরক্ষিত API কী" : "Saved API Keys"} ({keys.length})</h2>
+                  <div className="space-y-2">
+                    {orKeys.map((key) => (
+                      <div key={key.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <span className="text-base">🔑</span>
+                          <code className="text-sm font-mono text-primary truncate">{key.key_value}</code>
+                          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-blue-700 shrink-0">OpenRouter</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-3">
+                          <button onClick={() => toggleKey(key.id)} className={`w-9 h-5 rounded-full relative transition-colors ${key.is_active ? "bg-action" : "bg-gray-300"}`}><div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${key.is_active ? "translate-x-4" : "translate-x-0.5"}`} /></button>
+                          <button onClick={() => deleteKey(key.id)} className="px-2 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100">{lang === "bn" ? "মুছুন" : "Delete"}</button>
+                        </div>
+                      </div>
+                    ))}
+                    {ocKeys.map((key) => (
+                      <div key={key.id} className="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <span className="text-base">🔑</span>
+                          <code className="text-sm font-mono text-primary truncate">{key.key_value}</code>
+                          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-50 text-purple-700 shrink-0">OpenCode</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-3">
+                          <button onClick={() => toggleKey(key.id)} className={`w-9 h-5 rounded-full relative transition-colors ${key.is_active ? "bg-purple-500" : "bg-gray-300"}`}><div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${key.is_active ? "translate-x-4" : "translate-x-0.5"}`} /></button>
+                          <button onClick={() => deleteKey(key.id)} className="px-2 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100">{lang === "bn" ? "মুছুন" : "Delete"}</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="card p-6 mb-6">
+                <h2 className="font-bold text-lg text-primary mb-4">{lang === "bn" ? "OpenRouter মডেল" : "OpenRouter Models"} ({openrouterModels.length})</h2>
+                <div className="space-y-2">
+                  {openrouterModels.map((model) => (
+                    <div key={model.model_id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => toggleModel(model.model_id)} className={`w-10 h-6 rounded-full relative transition-colors ${model.is_active ? "bg-action" : "bg-gray-200"}`}><div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${model.is_active ? "translate-x-5" : "translate-x-1"}`} /></button>
+                        <div><div className="text-sm font-medium text-primary">{model.name}</div><div className="text-xs text-text-secondary">{model.model_id}</div></div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${model.tier <= 1 ? "bg-green-50 text-green-700" : model.tier <= 3 ? "bg-blue-50 text-blue-700" : "bg-gray-50 text-gray-600"}`}>Tier {model.tier} - {tierLabels[model.tier] || "Free"}</span>
+                        {model.exhausted && <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-red-50 text-red-600">{lang === "bn" ? "নিঃশেষ" : "Exhausted"}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="card p-6 border-purple-200">
+                <h2 className="font-bold text-lg text-purple-700 mb-4">{lang === "bn" ? "OpenCode মডেল" : "OpenCode Models"} ({opencodeModels.length})</h2>
+                <p className="text-xs text-text-secondary mb-4">{lang === "bn" ? "এই মডেলগুলো OpenCode Zen API-এর মাধ্যমে চলে। OpenRouter সব মডেল নিঃশেষ হলেই এগুলো ব্যবহার হবে।" : "These models run via OpenCode Zen API. Fallback when OpenRouter models are exhausted."}</p>
+                <div className="space-y-2">
+                  {opencodeModels.map((model) => (
+                    <div key={model.model_id} className="flex items-center justify-between p-3 rounded-xl hover:bg-purple-50">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => toggleModel(model.model_id)} className={`w-10 h-6 rounded-full relative transition-colors ${model.is_active ? "bg-purple-500" : "bg-gray-200"}`}><div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${model.is_active ? "translate-x-5" : "translate-x-1"}`} /></button>
+                        <div><div className="text-sm font-medium text-primary">{model.name}</div><div className="text-xs text-text-secondary">{model.model_id}</div></div>
+                      </div>
+                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-50 text-purple-700">OpenCode</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ════════════════════════ AGENTS TAB ════════════════════════ */}
+      {activeTab === "agents" && (
+        <div className="space-y-6">
+          {agentsLoading ? (
+            <div className="space-y-4">
+              <div className="h-8 w-48 bg-gray-200 rounded-lg animate-pulse" />
+              <div className="h-4 w-72 bg-gray-100 rounded-lg animate-pulse" />
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />)}</div>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-text">{lang === "bn" ? "🤖 এআই এজেন্ট সিস্টেম" : "🤖 AI Agent System"}</h1>
+                  <p className="text-sm text-text-secondary mt-1">{lang === "bn" ? "মাল্টি-এজেন্ট রিসার্চ সিস্টেম" : "Multi-agent research system"}</p>
+                </div>
+                <button onClick={runAll} disabled={running === "all"} className="px-5 py-2.5 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50">{running === "all" ? (lang === "bn" ? "⏳ চলছে..." : "⏳ Running...") : (lang === "bn" ? "🔄 সব চালান" : "🔄 Run All")}</button>
+              </div>
+              {msg && <div className="fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium bg-green-600 text-white animate-slide-up">{msg}</div>}
+              {agentStats && (
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-primary">{agentStats.total}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "মোট এজেন্ট" : "Total Agents"}</div></div>
+                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-green-600">{agentStats.active}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "সক্রিয়" : "Active"}</div></div>
+                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-yellow-600">{agentStats.idle}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "নিষ্ক্রিয়" : "Idle"}</div></div>
+                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-red-600">{agentStats.error}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "ত্রুটি" : "Error"}</div></div>
+                  <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-purple-600">{agentStats.totalReports}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "রিপোর্ট" : "Reports"}</div></div>
+                </div>
+              )}
+              {globalConfig && <GlobalModelSelector config={globalConfig} onUpdate={updateGlobal} lang={lang} />}
+              <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
+                {[{ id: "dashboard" as const, icon: "🏠", en: "Dashboard", bn: "ড্যাশবোর্ড" }, { id: "agents" as const, icon: "👥", en: "Agents", bn: "এজেন্ট" }, { id: "activity" as const, icon: "📋", en: "Activity", bn: "কার্যকলাপ" }, { id: "config" as const, icon: "⚙️", en: "Config", bn: "কনফিগারেশন" }].map((tab) => (
+                  <button key={tab.id} onClick={() => setAgentsTab(tab.id)} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${agentsTab === tab.id ? "bg-white text-primary shadow-sm" : "text-text-secondary hover:text-text"}`}><span>{tab.icon}</span><span>{lang === "bn" ? tab.bn : tab.en}</span></button>
+                ))}
+              </div>
+              {agentsTab === "dashboard" && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2"><h2 className="text-base font-semibold text-text mb-3">{lang === "bn" ? "🏗️ এজেন্ট ট্রি" : "🏗️ Agent Tree"}</h2><AgentTree tree={tree} onAgentClick={openDrawer} /></div>
+                  <div><h2 className="text-base font-semibold text-text mb-3">{lang === "bn" ? "📋 সর্বশেষ কার্যকলাপ" : "📋 Latest Activity"}</h2><ActivityLog logs={logs.slice(0, 10)} /></div>
+                </div>
+              )}
+              {agentsTab === "agents" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {agents.map((agent) => <AgentCard key={agent.agent_id} agent={agent} onRun={() => runAgent(agent.agent_id)} onViewDetail={() => openDrawer(agent.agent_id)} onConfig={() => { setSelectedAgent(agent); setAgentsTab("config"); }} />)}
+                </div>
+              )}
+              {agentsTab === "activity" && <ActivityLog logs={logs} showFilters />}
+              {agentsTab === "config" && <ConfigPanel agents={agents} onUpdate={updateAgentConfig} lang={lang} />}
+              <AgentDetailDrawer open={drawerOpen} agent={selectedAgent} report={selectedReport} submissions={agentSubmissions} logs={agentLogs} onClose={closeDrawer} onRun={runAgent} lang={lang} />
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ════════════════════════ INSIGHTS TAB ════════════════════════ */}
+      {activeTab === "insights" && (
+        <div>
+          {insightsLoading ? <div className="text-text-secondary text-sm py-12 text-center">Loading...</div> : (
+            <>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="card p-5"><div className="text-sm text-text-secondary">{lang === "bn" ? "কনভারসেশন" : "Conversations"}</div><div className="text-2xl font-bold text-primary mt-1">{aiStats?.conversations || 0}</div></div>
+                <div className="card p-5"><div className="text-sm text-text-secondary">{lang === "bn" ? "ফোন প্রোফাইল" : "Phone Profiles"}</div><div className="text-2xl font-bold text-primary mt-1">{aiStats?.profiles || 0}</div></div>
+                <div className="card p-5"><div className="text-sm text-text-secondary">{lang === "bn" ? "ক্যাশড স্কিল" : "Cached Skills"}</div><div className="text-2xl font-bold text-primary mt-1">{aiStats?.skills || 0}</div></div>
+                <div className="card p-5"><div className="text-sm text-text-secondary">{lang === "bn" ? "সক্রিয় মডেল" : "Active Models"}</div><div className="text-2xl font-bold text-primary mt-1">{aiStats?.models.active || 0}/{aiStats?.models.total || 26}</div></div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="card p-6">
+                  <h2 className="font-bold text-base text-primary mb-4">{lang === "bn" ? "পেইন পয়েন্ট ডিস্ট্রিবিউশন" : "Pain Point Distribution"}</h2>
+                  {aiStats?.painPointFrequency && Object.keys(aiStats.painPointFrequency).length > 0 ? (
+                    <div className="space-y-3">
+                      {Object.entries(aiStats.painPointFrequency).sort(([, a], [, b]) => b - a).map(([pain, count]) => {
+                        const maxCount = Math.max(...Object.values(aiStats.painPointFrequency), 1);
+                        return (
+                          <div key={pain}>
+                            <div className="flex justify-between text-sm mb-1"><span className="text-primary font-medium">{pain}</span><span className="text-text-secondary">{count}</span></div>
+                            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full rounded-full bg-primary/60" style={{ width: `${(count / maxCount) * 100}%` }} /></div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : <div className="text-sm text-text-secondary">{lang === "bn" ? "এখনো কোনো ডাটা নেই" : "No data yet"}</div>}
+                </div>
+
+                <div className="card p-6">
+                  <h2 className="font-bold text-base text-primary mb-4">{lang === "bn" ? "রেসপন্স ওভারভিউ" : "Response Overview"}</h2>
+                  <div className="space-y-4">
+                    <div><div className="flex justify-between text-sm mb-1"><span className="text-primary font-medium">{lang === "bn" ? "আজকের রেসপন্স" : "Today's Responses"}</span><span className="text-text-secondary">{aiStats?.responses.today || 0}</span></div><div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div className="h-full rounded-full bg-action" style={{ width: `${Math.min(100, ((aiStats?.responses.today || 0) / 100) * 100)}%` }} /></div></div>
+                    <div><div className="flex justify-between text-sm mb-1"><span className="text-primary font-medium">{lang === "bn" ? "মোট রেসপন্স" : "Total Responses"}</span><span className="text-text-secondary">{aiStats?.responses.total || 0}</span></div><div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, ((aiStats?.responses.total || 0) / 1000) * 100)}%` }} /></div></div>
+                  </div>
+                  <div className="mt-6 pt-6 border-t border-border"><h3 className="font-medium text-sm text-primary mb-3">{lang === "bn" ? "API কী স্ট্যাটাস" : "API Key Status"}</h3><div className="flex items-center gap-2"><div className={`w-3 h-3 rounded-full ${(aiStats?.keys.active || 0) > 0 ? "bg-action" : "bg-red-400"}`} /><span className="text-sm text-text-secondary">{aiStats?.keys.active || 0} {lang === "bn" ? "সক্রিয়" : "Active"}</span></div></div>
+                </div>
+              </div>
+
+              {agentStatsData && (
+                <div className="mt-8">
+                  <h2 className="font-bold text-base text-primary mb-4">{lang === "bn" ? "🧠 এআই এজেন্ট সিস্টেম" : "🧠 AI Agent System"}</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div className="card p-4 text-center"><div className="text-lg font-bold text-primary">{agentStatsData.total}</div><div className="text-xs text-text-secondary">{lang === "bn" ? "মোট এজেন্ট" : "Total Agents"}</div></div>
+                    <div className="card p-4 text-center"><div className="text-lg font-bold text-green-600">{agentStatsData.active}</div><div className="text-xs text-text-secondary">{lang === "bn" ? "সক্রিয়" : "Active"}</div></div>
+                    <div className="card p-4 text-center"><div className="text-lg font-bold text-purple-600">{agentStatsData.totalReports}</div><div className="text-xs text-text-secondary">{lang === "bn" ? "রিপোর্ট" : "Reports"}</div></div>
+                    <div className="card p-4 text-center"><div className="text-lg font-bold text-blue-600">{agentStatsData.totalSubmissions}</div><div className="text-xs text-text-secondary">{lang === "bn" ? "সাবমিশন" : "Submissions"}</div></div>
+                  </div>
+                  {seniorReport && (() => {
+                    let recs: string[] = [];
+                    try { recs = JSON.parse(seniorReport.recommendations || "[]"); } catch {}
+                    return (
+                      <div className="card p-5">
+                        <h3 className="font-semibold text-sm text-primary mb-2">{lang === "bn" ? "👑 সর্বশেষ প্রধান এজেন্ট রিপোর্ট" : "👑 Latest Senior Agent Report"}</h3>
+                        <p className="text-sm text-text-secondary mb-3">{seniorReport.summary_bn}</p>
+                        {recs.length > 0 && <div className="space-y-1.5">{recs.map((r, i) => <div key={i} className="flex items-start gap-2 text-sm text-text-secondary"><span className="text-primary font-medium shrink-0">{i + 1}.</span><span>{r}</span></div>)}</div>}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ════════════════════════ SKILLS TAB ════════════════════════ */}
+      {activeTab === "skills" && (
+        <div>
+          {skillsLoading ? <div className="text-text-secondary text-sm py-12 text-center">Loading...</div> : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div className="card p-4 text-center"><div className="text-xl font-bold text-primary">{skillsStats?.responses.total || 0}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "মোট রেসপন্স" : "Total Responses"}</div></div>
+                <div className="card p-4 text-center"><div className="text-xl font-bold text-green-600">{skillsStats?.responses.today || 0}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "আজকের রেসপন্স" : "Today"}</div></div>
+                <div className="card p-4 text-center"><div className="text-xl font-bold text-amber-600">{skillsStats?.skills || 0}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "স্কিল শিখেছে" : "Skills Learned"}</div></div>
+                <div className="card p-4 text-center"><div className="text-xl font-bold text-indigo-600">{skillsStats?.conversations || 0}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "কনভারসেশন" : "Conversations"}</div></div>
+              </div>
+
+              <div className="grid lg:grid-cols-2 gap-6 mb-6">
+                <div className="card p-5">
+                  <h3 className="font-bold text-primary text-sm mb-3">{lang === "bn" ? "স্কিল কনসলিডেশন" : "Skill Consolidation"}</h3>
+                  <p className="text-xs text-text-secondary mb-4">{lang === "bn" ? "স্বয়ংক্রিয়ভাবে WhatsApp কথোপকথন বিশ্লেষণ করে বারবার আসা প্রশ্নগুলোকে স্কিল হিসেবে সংরক্ষণ করে।" : "Automatically analyzes WhatsApp conversations and saves repeated questions as skills."}</p>
+                  {consolidationResult && <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-3 text-xs text-green-800">{lang === "bn" ? `${consolidationResult.shortcuts}টি শর্টকাট + ${consolidationResult.faqs}টি FAQ তৈরি হয়েছে` : `${consolidationResult.shortcuts} shortcuts + ${consolidationResult.faqs} FAQs created`}</div>}
+                  <button onClick={runConsolidation} disabled={consolidating} className="px-4 py-2 text-xs font-medium bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50">{consolidating ? (lang === "bn" ? "কনসলিডেট হচ্ছে..." : "Consolidating...") : (lang === "bn" ? "🔍 স্কিল কনসলিডেট করুন" : "🔍 Consolidate Skills Now")}</button>
+                </div>
+
+                <div className="card p-5">
+                  <h3 className="font-bold text-primary text-sm mb-3">{lang === "bn" ? "শীর্ষ পেইন পয়েন্ট" : "Top Pain Points"}</h3>
+                  {skillsStats?.painPointFrequency && Object.keys(skillsStats.painPointFrequency).length > 0 ? (
+                    <div className="space-y-2">
+                      {Object.entries(skillsStats.painPointFrequency).sort(([, a], [, b]) => b - a).slice(0, 10).map(([point, count], i, arr) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-primary">{point}</span>
+                          <div className="flex items-center gap-2"><div className="h-1.5 bg-primary/20 rounded-full" style={{ width: `${Math.min(100, (count / arr[0][1]) * 100)}px` }} /><span className="text-xs font-bold text-text-secondary">{count}</span></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="text-xs text-text-secondary">{lang === "bn" ? "কোনো পেইন পয়েন্ট নেই" : "No pain points recorded yet"}</p>}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -20,15 +20,8 @@ const adminLinks = [
   { href: "/company/translations", en: "Translations", bn: "অনুবাদ", icon: "🌐", color: "bg-indigo-50 text-indigo-600" },
   { href: "/company/test-mode", en: "Test Mode", bn: "টেস্ট মোড", icon: "🧪", color: "bg-orange-50 text-orange-600" },
   { href: "/company/updates", en: "Updates", bn: "আপডেট", icon: "🔄", color: "bg-teal-50 text-teal-600" },
-  { href: "/company/ai-agents", en: "AI Agents", bn: "এআই এজেন্ট", icon: "🧠", color: "bg-indigo-50 text-indigo-600" },
-  { href: "/company/ai-settings", en: "AI Settings", bn: "এআই সেটিংস", icon: "🤖", color: "bg-indigo-50 text-indigo-600" },
-  { href: "/company/ai-insights", en: "AI Insights", bn: "এআই ইনসাইটস", icon: "📊", color: "bg-violet-50 text-violet-600" },
-  { href: "/company/whatsapp", en: "WhatsApp", bn: "হোয়াটসঅ্যাপ", icon: "💬", color: "bg-green-50 text-green-600" },
-  { href: "/company/whatsapp-contacts", en: "Contacts", bn: "কন্ট্যাক্ট", icon: "📇", color: "bg-blue-50 text-blue-600" },
-  { href: "/company/whatsapp-campaigns", en: "Campaigns", bn: "ক্যাম্পেইন", icon: "📢", color: "bg-orange-50 text-orange-600" },
-  { href: "/company/whatsapp-numbers", en: "Number Tools", bn: "নাম্বার টুলস", icon: "🔢", color: "bg-purple-50 text-purple-600" },
-  { href: "/company/leads", en: "Leads", bn: "লিডস", icon: "🎯", color: "bg-amber-50 text-amber-600" },
-  { href: "/company/skills", en: "Skills & Analytics", bn: "স্কিল ও অ্যানালিটিক্স", icon: "📈", color: "bg-cyan-50 text-cyan-600" },
+  { href: "/company/whatsapp", en: "WhatsApp Hub", bn: "হোয়াটসঅ্যাপ", icon: "💬", color: "bg-green-50 text-green-600" },
+  { href: "/company/ai", en: "AI Hub", bn: "এআই", icon: "🤖", color: "bg-indigo-50 text-indigo-600" },
 ];
 
 export default function CompanyDashboard() {
