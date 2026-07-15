@@ -4,6 +4,7 @@ import { ensureDB } from "@/lib/db";
 interface AIRequest {
   messages: { role: string; content: string }[];
   maxTokens?: number;
+  temperature?: number;
 }
 
 interface AIResponse {
@@ -115,7 +116,8 @@ async function tryModel(
   provider: string,
   modelId: string,
   messages: { role: string; content: string }[],
-  maxTokens: number
+  maxTokens: number,
+  temperature?: number
 ): Promise<{ text: string; tokens: number } | null> {
   const endpoint = PROVIDER_ENDPOINTS[provider];
   if (!endpoint) return null;
@@ -132,7 +134,7 @@ async function tryModel(
     const res = await fetch(endpoint, {
       method: "POST",
       headers,
-      body: JSON.stringify({ model: modelId, messages, max_tokens: maxTokens }),
+      body: JSON.stringify({ model: modelId, messages, max_tokens: maxTokens, ...(temperature !== undefined && { temperature }) }),
     });
 
     if (res.status === 429 || res.status === 500 || res.status === 503) return null;
@@ -220,7 +222,7 @@ export async function callAI(
       // Skip if this (key, provider, model) combination is exhausted
       if (exhaustedSet.has(modelKey)) continue;
 
-      const result = await tryModel(apiKey, provider, modelId, messages, maxTokens);
+      const result = await tryModel(apiKey, provider, modelId, messages, maxTokens, request.temperature);
       if (result) {
         await recordSuccess(db);
         return {

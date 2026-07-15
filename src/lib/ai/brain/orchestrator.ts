@@ -177,6 +177,7 @@ async function detectIntent(text: string, ctx: MessageCtx, fallbackDept: Departm
             { role: "system", content: DEPT_INTENT_PROMPTS[deptId] },
             { role: "user", content: `Message: "${text}"\nRole: ${ctx.role}\nLanguage: ${ctx.language}\nMood: ${ctx.mood}\nReturn only the intent word.` },
           ],
+          temperature: 0.3,
         },
         50, "gemma-4-26b", "openrouter"
       );
@@ -257,6 +258,18 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
 
   const { intent, department } = await detectIntent(ctx.text, ctx, fallbackDept);
 
+  // ── Greeting shortcut: skip 27-agent chain for simple greetings ──
+  if (intent === "greeting" && ctx.totalChats <= 1) {
+    const greetingResponse = ctx.language === "bn"
+      ? `ওয়ালাইকুম আসসালাম! 👋 আমি Jobayer Group Career-এর সহকারী। কীভাবে সাহায্য করতে পারি?`
+      : `Hi there! 👋 I'm your Jobayer Group Career assistant. How can I help you today?`;
+    return {
+      text: greetingResponse, model: "shortcut", tokens: 0,
+      agentsUsed: [], departmentsUsed: [department], department,
+      intent, ms: Date.now() - start, chainType: "single",
+    };
+  }
+
   // ── Load persistent memory for this user ──
   let db: any;
   let memories: any[] = [];
@@ -306,8 +319,8 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
 
     if (selectedAgents.length === 0) {
       const fb = await callAI(
-        { messages: [{ role: "system", content: `You are a helpful Jobayer Group assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}.` }, { role: "user", content: ctx.text }] },
-        400, "gemma-4-26b", "openrouter"
+        { messages: [{ role: "system", content: `You are a helpful Jobayer Group assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}.` }, { role: "user", content: ctx.text }], temperature: 0.3 },
+        100, "gemma-4-26b", "openrouter"
       );
       return {
         text: fb.text, model: fb.model, tokens: fb.tokens,
@@ -438,7 +451,8 @@ ${chainContext}
 ## Your Task
 Compose a final natural response to the customer in ${ctx.language === "bn" ? "Bengali" : "English"}.
 Weave the agent outputs into one coherent, warm, helpful message.
-Keep under 400 words. If complaint → empathetic first. If purchase → guide to next step.`;
+Keep under 2 sentences (maximum 40 words). Be brief, warm, and natural — like a real WhatsApp chat.
+If complaint → empathetic first. If purchase → guide to next step.`;
 
   let finalText: string;
   let finalModel: string;
@@ -447,32 +461,34 @@ Keep under 400 words. If complaint → empathetic first. If purchase → guide t
 
   try {
     const result = await callAI(
-      { messages: [{ role: "system", content: compositionPrompt }, { role: "user", content: ctx.text }] },
-      600, "llama-3.3-70b", "openrouter"
+      { messages: [{ role: "system", content: compositionPrompt }, { role: "user", content: ctx.text }], temperature: 0.3 },
+       100, "llama-3.3-70b", "openrouter"
     );
     finalText = result.text;
     finalModel = result.model;
     finalTokens = result.tokens;
   } catch (e) {
     const fb = await callAI(
-      { messages: [{ role: "system", content: `You are a helpful Jobayer Group assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}.` }, { role: "user", content: ctx.text }] },
-      400, "gemma-4-26b", "openrouter"
+      { messages: [{ role: "system", content: `You are a helpful Jobayer Group assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}.` }, { role: "user", content: ctx.text }], temperature: 0.3 },
+      100, "gemma-4-26b", "openrouter"
     );
     finalText = fb.text;
     finalModel = fb.model;
     finalTokens = fb.tokens;
   }
 
-  // ── Agent Senior: CEO quality review ──
+  // ── Agent Senior: CEO quality review (skip for new users to save time/tokens) ──
+  if (ctx.totalChats > 2) {
   try {
     const reviewResponse = await callAI(
       {
-        messages: [
-          { role: "system", content: AGENT_SENIOR_PROMPT },
-          { role: "user", content: `Draft response to review:\n\n${finalText}\n\nCustomer message: ${ctx.text}\nCustomer mood: ${ctx.mood}` },
-        ],
-      },
-      150, "llama-3.3-70b", "openrouter"
+          messages: [
+            { role: "system", content: AGENT_SENIOR_PROMPT },
+            { role: "user", content: `Draft response to review:\n\n${finalText}\n\nCustomer message: ${ctx.text}\nCustomer mood: ${ctx.mood}` },
+          ],
+          temperature: 0.3,
+        },
+        150, "llama-3.3-70b", "openrouter"
     );
 
     const parsed = JSON.parse(cleanJsonResponse(reviewResponse.text)) as {
@@ -498,6 +514,7 @@ Keep under 400 words. If complaint → empathetic first. If purchase → guide t
     }
   } catch {
     // Agent Senior unavailable — proceed with composed response
+  }
   }
 
   // ── Persist memory for future sessions ──

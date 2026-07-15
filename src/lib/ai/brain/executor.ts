@@ -23,7 +23,7 @@ export async function executeAgent(
   ];
 
   try {
-    const result = await callAI({ messages }, 300, preferred.model, preferred.provider);
+    const result = await callAI({ messages, temperature: 0.3 }, 300, preferred.model, preferred.provider);
     return {
       agentId: agent.id,
       text: result.text,
