@@ -37,6 +37,8 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/company/whatsapp-contacts", en: "Contacts", bn: "কন্ট্যাক্ট", icon: "📇" },
       { href: "/company/whatsapp-campaigns", en: "Campaigns", bn: "ক্যাম্পেইন", icon: "📢" },
       { href: "/company/whatsapp-numbers", en: "Number Tools", bn: "নাম্বার টুলস", icon: "🔢" },
+      { href: "/company/leads", en: "Leads", bn: "লিডস", icon: "🎯" },
+      { href: "/company/skills", en: "Skills & Analytics", bn: "স্কিল ও অ্যানালিটিক্স", icon: "📈" },
     ],
   },
   {
@@ -83,7 +85,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
   }, [router]);
 
   useEffect(() => {
-    const aiPaths = ["/company/ai-settings", "/company/ai-agents", "/company/ai-insights", "/company/whatsapp", "/company/whatsapp-contacts", "/company/whatsapp-campaigns", "/company/whatsapp-numbers"];
+    const aiPaths = ["/company/ai-settings", "/company/ai-agents", "/company/ai-insights", "/company/whatsapp", "/company/whatsapp-contacts", "/company/whatsapp-campaigns", "/company/whatsapp-numbers", "/company/leads", "/company/skills"];
     const isAi = aiPaths.some((p) => pathname === p || (p !== "/company" && pathname.startsWith(p)));
     setExpandedGroups(isAi ? ["ai"] : ["business"]);
   }, [pathname]);
