@@ -47,6 +47,10 @@ export async function sendMessage(
     return sendViaBridge(to, text, account);
   }
 
+  if (account.provider === "web") {
+    return sendViaWeb(to, text, account);
+  }
+
   await execute(
     { DB: db },
     "INSERT INTO wa_logs (phone, message, direction, status, message_type, created_at) VALUES (?, ?, 'outbound', 'logged', 'text', datetime('now'))",
@@ -102,6 +106,30 @@ async function sendViaMeta(
     );
 
     return { success: true, messageId: data.messages?.[0]?.id };
+  } catch (e) {
+    return { success: false, error: (e as Error).message };
+  }
+}
+
+async function sendViaWeb(
+  to: string,
+  text: string,
+  account: WhatsAppAccount
+): Promise<SendResult> {
+  try {
+    const db = await ensureDB();
+    await execute(
+      { DB: db },
+      `INSERT INTO wa_message_queue (to_phone, text_content, priority, status, account_id, message_type, created_at)
+       VALUES (?, ?, 1, 'pending_web', ?, 'web_outreach', datetime('now'))`,
+      [to, text, account.accountId]
+    );
+    await execute(
+      { DB: db },
+      "INSERT INTO wa_logs (phone, message, direction, status, message_type, created_at) VALUES (?, ?, 'outbound', 'pending', 'text', datetime('now'))",
+      [to, text]
+    );
+    return { success: true };
   } catch (e) {
     return { success: false, error: (e as Error).message };
   }

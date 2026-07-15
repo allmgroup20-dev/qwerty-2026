@@ -7,7 +7,7 @@ export default function WhatsAppDashboardPage() {
   const { lang } = useLanguageStore();
   const [accounts, setAccounts] = useState<any[]>([]);
   const [warmups, setWarmups] = useState<any[]>([]);
-  const [queueStats, setQueueStats] = useState({ queued: 0, sent: 0, failed: 0 });
+  const [queueStats, setQueueStats] = useState({ queued: 0, sent: 0, failed: 0, pending: 0 });
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
@@ -17,10 +17,24 @@ export default function WhatsAppDashboardPage() {
         fetch("/api/whatsapp/queue"),
       ]);
       const accData = await accRes.json() as { accounts?: any[]; warmups?: any[] };
-      const queueData = await queueRes.json() as { queued?: number; sent?: number; failed?: number };
+      const queueData = await queueRes.json() as { queued?: number; sent?: number; failed?: number; pending?: number };
       if (accData.accounts) setAccounts(accData.accounts);
       if (accData.warmups) setWarmups(accData.warmups);
-      setQueueStats({ queued: queueData.queued ?? 0, sent: queueData.sent ?? 0, failed: queueData.failed ?? 0 });
+      const webAccount = (accData.accounts || []).find((a: any) => a.provider === "web");
+      let pendingCount = 0;
+      if (webAccount) {
+        try {
+          const pRes = await fetch(`/api/whatsapp/queue?account_id=${webAccount.account_id}`);
+          const pData = await pRes.json() as { pending?: unknown[] };
+          pendingCount = (pData.pending || []).length;
+        } catch {}
+      }
+      setQueueStats({
+        queued: queueData.queued ?? 0,
+        sent: queueData.sent ?? 0,
+        failed: queueData.failed ?? 0,
+        pending: pendingCount,
+      });
     } catch (e) {
       console.error(e);
     } finally {
@@ -30,11 +44,11 @@ export default function WhatsAppDashboardPage() {
 
   useEffect(() => { loadData(); }, []);
 
-  const handleAction = async (action: string, accountId?: string) => {
+  const handleAction = async (action: string, accountId?: string, extra?: any) => {
     await fetch("/api/whatsapp/accounts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, accountId }),
+      body: JSON.stringify({ action, accountId, ...extra }),
     });
     loadData();
   };
@@ -47,6 +61,8 @@ export default function WhatsAppDashboardPage() {
     });
     loadData();
   };
+
+  const webAccount = accounts.find((a: any) => a.provider === "web");
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -65,6 +81,79 @@ export default function WhatsAppDashboardPage() {
         </p>
       </div>
 
+      {/* Web Connector Card */}
+      <div className="card p-6 mb-6">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📱</span>
+            <div>
+              <h2 className="font-bold text-base text-primary">
+                {lang === "bn" ? "WhatsApp Web Connector" : "WhatsApp Web Connector"}
+              </h2>
+              <p className="text-xs text-text-secondary mt-0.5">
+                {lang === "bn"
+                  ? "কোনো API কী লাগবে না — শুধু QR স্ক্যান করে কানেক্ট করুন"
+                  : "No API key needed — just scan QR to connect"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {webAccount ? (
+              <>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                  webAccount.has_session ? "bg-green-50 text-green-700" : "bg-yellow-50 text-yellow-700"
+                }`}>
+                  {webAccount.has_session
+                    ? (lang === "bn" ? "✅ সেশন আছে" : "✅ Session saved")
+                    : (lang === "bn" ? "⚪ কানেক্ট করা হয়নি" : "⚪ Not connected")}
+                </span>
+                <a
+                  href={`/company/whatsapp/connect?account=${webAccount.account_id}`}
+                  className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors"
+                >
+                  {lang === "bn" ? "🔗 কানেক্ট" : "🔗 Connect"}
+                </a>
+                <button
+                  onClick={() => handleAction("remove", webAccount.account_id)}
+                  className="px-3 py-2 text-xs font-medium text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
+                >
+                  {lang === "bn" ? "মুছুন" : "Remove"}
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-text-secondary">
+                  {lang === "bn" ? "কোনো Web অ্যাকাউন্ট নেই" : "No web account"}
+                </span>
+                <button
+                  onClick={() => handleAction("add", undefined, { provider: "web", accountId: "web_main" })}
+                  className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors"
+                >
+                  + {lang === "bn" ? "অ্যাকাউন্ট তৈরি" : "Create Account"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        {webAccount && (
+          <div className="mt-4 grid grid-cols-3 gap-3 text-center text-sm">
+            <div className="bg-gray-50 rounded-xl p-3">
+              <div className="text-lg font-bold text-primary">{queueStats.pending}</div>
+              <div className="text-xs text-text-secondary">{lang === "bn" ? "অপেক্ষমান" : "Pending"}</div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3">
+              <div className="text-lg font-bold text-green-600">{webAccount.total_sent || 0}</div>
+              <div className="text-xs text-text-secondary">{lang === "bn" ? "পাঠানো" : "Sent"}</div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3">
+              <div className="text-lg font-bold text-purple-600">{webAccount.has_session ? "🟢" : "⚪"}</div>
+              <div className="text-xs text-text-secondary">{lang === "bn" ? "স্ট্যাটাস" : "Status"}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Queue Stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="card p-5">
           <div className="text-sm text-text-secondary">{lang === "bn" ? "কিউতে" : "Queued"}</div>
@@ -80,14 +169,12 @@ export default function WhatsAppDashboardPage() {
         </div>
       </div>
 
+      {/* Accounts + Queue */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-lg text-primary">{lang === "bn" ? "অ্যাকাউন্টসমূহ" : "Accounts"}</h2>
-            <button onClick={() => handleAction("add")} className="px-4 py-1.5 text-xs font-medium gradient-premium text-white rounded-xl">
-              + {lang === "bn" ? "নতুন" : "New"}
-            </button>
-          </div>
+          <h2 className="font-bold text-lg text-primary mb-4">
+            {lang === "bn" ? "অ্যাকাউন্টসমূহ" : "Accounts"}
+          </h2>
           {accounts.length === 0 ? (
             <div className="text-sm text-text-secondary py-8 text-center">
               {lang === "bn" ? "কোনো অ্যাকাউন্ট নেই" : "No accounts configured"}
@@ -100,7 +187,14 @@ export default function WhatsAppDashboardPage() {
                   <div key={acc.id} className="p-4 rounded-xl border border-border">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-sm font-medium text-primary">{acc.account_id}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-primary">{acc.account_id}</span>
+                          {acc.provider === "web" && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium">
+                              Web
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-text-secondary">{acc.phone || "No phone"} · {acc.provider}</div>
                         <div className="text-xs text-text-secondary mt-1">
                           {warmup ? `${lang === "bn" ? "দিন" : "Day"} ${warmup.day_count} · ${lang === "bn" ? "লিমিট" : "Limit"}: ${acc.daily_sent}/${acc.daily_limit}` : ""}
@@ -109,9 +203,11 @@ export default function WhatsAppDashboardPage() {
                       <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${acc.status === 'connected' ? 'bg-action' : acc.status === 'disconnected' ? 'bg-red-400' : 'bg-yellow-400'}`} />
                         <span className="text-xs text-text-secondary">{acc.status}</span>
-                        <button onClick={() => handleAction(acc.status === 'connected' ? 'disconnect' : 'connect', acc.account_id)} className="text-xs text-primary underline">
-                          {acc.status === 'connected' ? (lang === "bn" ? "বন্ধ" : "Disconnect") : (lang === "bn" ? "চালু" : "Connect")}
-                        </button>
+                        {acc.provider !== "web" && (
+                          <button onClick={() => handleAction(acc.status === 'connected' ? 'disconnect' : 'connect', acc.account_id)} className="text-xs text-primary underline">
+                            {acc.status === 'connected' ? (lang === "bn" ? "বন্ধ" : "Disconnect") : (lang === "bn" ? "চালু" : "Connect")}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -153,6 +249,7 @@ export default function WhatsAppDashboardPage() {
         </div>
       </div>
 
+      {/* Quick Actions */}
       <div className="card p-6">
         <h2 className="font-bold text-lg text-primary mb-4">
           {lang === "bn" ? "কুইক অ্যাকশন" : "Quick Actions"}

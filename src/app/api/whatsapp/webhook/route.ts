@@ -39,7 +39,7 @@ function parseIncomingMessage(body: any): { phone: string; text: string; name?: 
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
 
     const parsed = parseIncomingMessage(body);
     if (!parsed) {
@@ -119,15 +119,25 @@ export async function POST(request: NextRequest) {
       language: lang,
     });
 
-    const sendResult = await sendMessage(phone, reply);
-    await updateContactStatus(phone, "replied", reply);
+    const fromBrowser = body.fromBrowser === true;
 
+    if (!fromBrowser) {
+      const sendResult = await sendMessage(phone, reply);
+      await updateContactStatus(phone, "replied", reply);
+      return NextResponse.json({
+        received: true,
+        replied: sendResult.success,
+        messageId: sendResult.messageId,
+        phone, text: reply,
+      });
+    }
+
+    // For browser connector: return reply so browser can send directly
+    await updateContactStatus(phone, "replied", reply);
     return NextResponse.json({
       received: true,
-      replied: sendResult.success,
-      messageId: sendResult.messageId,
-      phone,
-      text: reply,
+      replied: true,
+      phone, reply,
     });
   } catch (error) {
     console.error("WhatsApp webhook error:", error);

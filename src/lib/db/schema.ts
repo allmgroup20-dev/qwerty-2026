@@ -322,6 +322,7 @@ export const waAccounts = sqliteTable("wa_accounts", {
   dailySent: integer("daily_sent").default(0),
   totalSent: integer("total_sent").default(0),
   config: text("config"),
+  sessionData: text("session_data"),
   lastUsedAt: text("last_used_at"),
   createdAt: text("created_at"),
 });

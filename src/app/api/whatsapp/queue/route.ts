@@ -1,22 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
-import { processQueue, getQueueStats } from "@/lib/whatsapp";
+import { processQueue, getQueueStats, getPendingWebMessages, markWebSent } from "@/lib/whatsapp";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const accountId = request.nextUrl.searchParams.get("account_id");
+    if (accountId) {
+      const pending = await getPendingWebMessages(accountId);
+      return NextResponse.json({ pending });
+    }
     const stats = await getQueueStats();
     return NextResponse.json(stats);
   } catch (error) {
     return NextResponse.json({
-      error: error instanceof Error ? error.message : "Failed to load queue stats"
+      error: error instanceof Error ? error.message : "Failed to load queue"
     }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { action } = await request.json() as { action?: string };
+    const body = await request.json() as { action?: string; id?: number; messageId?: string; accountId?: string };
+    const { action } = body;
     const env = await getDB();
 
     if (action === "flush") {
@@ -38,7 +44,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ retried: true });
     }
 
-    return NextResponse.json({ error: "Unknown action. Use: flush, clear_failed, retry_failed" }, { status: 400 });
+    if (action === "mark_sent") {
+      if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
+      await markWebSent(body.id, body.messageId);
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
     return NextResponse.json({
       error: error instanceof Error ? error.message : "Queue action failed"

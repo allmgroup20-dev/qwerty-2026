@@ -482,9 +482,11 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       daily_sent INTEGER DEFAULT 0,
       total_sent INTEGER DEFAULT 0,
       config TEXT,
+      session_data TEXT,
       last_used_at TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
+    try { await env.DB.prepare("ALTER TABLE wa_accounts ADD COLUMN session_data TEXT").run(); } catch {}
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS wa_warmup (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       account_id TEXT UNIQUE NOT NULL,

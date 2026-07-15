@@ -1,12 +1,13 @@
 export interface WhatsAppAccount {
   accountId: string;
   phone?: string;
-  provider: "meta" | "bridge" | "log";
+  provider: "meta" | "bridge" | "web" | "log";
   status: string;
   dailyLimit: number;
   dailySent: number;
   totalSent: number;
   config?: Record<string, string>;
+  sessionData?: string | null;
 }
 
 export interface SendResult {

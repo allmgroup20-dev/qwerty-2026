@@ -63,6 +63,31 @@ export async function processQueue(batchSize = 3): Promise<number> {
   return sent;
 }
 
+export async function getPendingWebMessages(accountId: string, limit = 10): Promise<MessageQueueItem[]> {
+  const db = await ensureDB();
+  return query<MessageQueueItem>(
+    { DB: db },
+    `SELECT * FROM wa_message_queue WHERE status = 'pending_web' AND account_id = ?
+     ORDER BY priority DESC, created_at ASC LIMIT ?`,
+    [accountId, limit]
+  );
+}
+
+export async function markWebSent(id: number, messageId?: string): Promise<void> {
+  const db = await ensureDB();
+  await execute(
+    { DB: db },
+    "UPDATE wa_message_queue SET status = 'sent', sent_at = datetime('now') WHERE id = ?",
+    [id]
+  );
+  // Also update wa_logs for this message
+  await execute(
+    { DB: db },
+    "UPDATE wa_logs SET status = 'sent' WHERE id = (SELECT id FROM wa_logs WHERE message = (SELECT text_content FROM wa_message_queue WHERE id = ?) AND direction = 'outbound' ORDER BY created_at DESC LIMIT 1)",
+    [id]
+  );
+}
+
 export async function getQueueStats() {
   const db = await ensureDB();
   const queued = await query<{ count: number }>(
