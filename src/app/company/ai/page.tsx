@@ -70,7 +70,7 @@ export default function AIHubPage() {
   const [brainLoading, setBrainLoading] = useState(true);
   const [expandedDept, setExpandedDept] = useState<string | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
-  const [brainSubTab, setBrainSubTab] = useState<"explorer" | "playground" | "memory" | "schedule">("explorer");
+  const [brainSubTab, setBrainSubTab] = useState<"explorer" | "playground" | "memory" | "schedule" | "flows">("explorer");
   const [testMsg, setTestMsg] = useState("");
   const [testResult, setTestResult] = useState<any>(null);
   const [testLoading, setTestLoading] = useState(false);
@@ -79,6 +79,16 @@ export default function AIHubPage() {
   const [memoryLoading, setMemoryLoading] = useState(false);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [schedulesLoading, setSchedulesLoading] = useState(false);
+  const [flows, setFlows] = useState<any[]>([]);
+  const [flowsLoading, setFlowsLoading] = useState(false);
+  const [flowBuilder, setFlowBuilder] = useState<any[]>([]);
+  const [flowName, setFlowName] = useState("");
+  const [flowDesc, setFlowDesc] = useState("");
+  const [flowPhone, setFlowPhone] = useState("");
+  const [flowText, setFlowText] = useState("");
+  const [flowRunning, setFlowRunning] = useState(false);
+  const [flowResult, setFlowResult] = useState<any>(null);
+  const [selectedFlowId, setSelectedFlowId] = useState<number | null>(null);
   const [disabledAgents, setDisabledAgents] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
     try { return JSON.parse(localStorage.getItem("brainDisabledAgents") || "[]"); } catch { return []; }
@@ -235,6 +245,61 @@ export default function AIHubPage() {
     } catch {}
   };
 
+  const loadFlows = async () => {
+    setFlowsLoading(true);
+    try {
+      const res = await fetch("/api/ai/brain/flows");
+      const d: any = await res.json();
+      setFlows(d.flows || []);
+    } catch {}
+    setFlowsLoading(false);
+  };
+
+  const saveFlow = async () => {
+    if (!flowName.trim() || flowBuilder.length === 0) return;
+    try {
+      await fetch("/api/ai/brain/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", name: flowName, description: flowDesc, steps: flowBuilder }),
+      });
+      setFlowName(""); setFlowDesc(""); setFlowBuilder([]);
+      loadFlows();
+    } catch {}
+  };
+
+  const runFlow = async (flowId: number) => {
+    if (!flowPhone.trim() || !flowText.trim()) return;
+    setFlowRunning(true);
+    setFlowResult(null);
+    setSelectedFlowId(flowId);
+    try {
+      const res = await fetch("/api/ai/brain/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "run", flow_id: flowId, phone: flowPhone, text: flowText }),
+      });
+      setFlowResult(await res.json());
+    } catch {}
+    setFlowRunning(false);
+  };
+
+  const addFlowStep = (agentId: string, department: string) => {
+    setFlowBuilder(prev => [...prev, { agentId, department, condition: "" }]);
+  };
+
+  const removeFlowStep = (index: number) => {
+    setFlowBuilder(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const moveFlowStep = (from: number, to: number) => {
+    if (to < 0 || to >= flowBuilder.length) return;
+    const copy = [...flowBuilder];
+    const [removed] = copy.splice(from, 1);
+    copy.splice(to, 0, removed);
+    setFlowBuilder(copy);
+  };
+
   const loadSkills = async () => {
     setSkillsLoading(true);
     try {
@@ -260,7 +325,7 @@ export default function AIHubPage() {
   useEffect(() => { if (activeTab === "settings" && models.length === 0) loadSettings(); }, [activeTab, models.length]);
   useEffect(() => { if (activeTab === "agents") loadAgents(); }, [activeTab, loadAgents]);
   useEffect(() => { if (activeTab === "insights") loadInsights(); }, [activeTab]);
-  useEffect(() => { if (activeTab === "brain") { loadBrain(); loadQueueStats(); } }, [activeTab]);
+  useEffect(() => { if (activeTab === "brain") { loadBrain(); loadQueueStats(); loadFlows(); } }, [activeTab]);
   useEffect(() => { if (activeTab === "skills") loadSkills(); }, [activeTab]);
 
   // ─── Settings Handlers ─────────────────────────────────
@@ -612,6 +677,7 @@ export default function AIHubPage() {
               { id: "playground" as const, icon: "🧪", en: "Test", bn: "টেস্ট" },
               { id: "memory" as const, icon: "🧠", en: "Memory", bn: "মেমোরি" },
               { id: "schedule" as const, icon: "⏰", en: "Schedule", bn: "শিডিউল" },
+              { id: "flows" as const, icon: "🔀", en: "Flows", bn: "ফ্লো" },
             ]).map(tab => (
               <button key={tab.id} onClick={() => setBrainSubTab(tab.id)} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${brainSubTab === tab.id ? "bg-white text-primary shadow-sm" : "text-text-secondary hover:text-text"}`}>
                 <span>{tab.icon}</span><span>{lang === "bn" ? tab.bn : tab.en}</span>
@@ -875,7 +941,118 @@ export default function AIHubPage() {
             </div>
           )}
 
-          {!brainData && (brainSubTab as string) !== "memory" && (brainSubTab as string) !== "schedule" && (
+          {/* ── Flows Section ── */}
+          {(brainSubTab as string) === "flows" && (
+            <div className="space-y-4">
+              {/* ── Flow Builder ── */}
+              <div className="bg-white rounded-2xl border border-border p-6">
+                <h2 className="text-lg font-bold text-primary mb-2">{lang === "bn" ? "🔀 ফ্লো বিল্ডার" : "🔀 Flow Builder"}</h2>
+                <p className="text-sm text-text-secondary mb-4">{lang === "bn" ? "কাস্টম এজেন্ট চেইন তৈরি করুন — ডিপার্টমেন্ট ও এজেন্ট সিলেক্ট করুন" : "Create custom agent chains — select departments & agents"}</p>
+
+                <div className="flex gap-3 mb-4">
+                  <input value={flowName} onChange={e => setFlowName(e.target.value)} placeholder={lang === "bn" ? "ফ্লোর নাম" : "Flow name"} className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-gray-50 text-sm text-primary font-mono" />
+                  <input value={flowDesc} onChange={e => setFlowDesc(e.target.value)} placeholder={lang === "bn" ? "বিবরণ" : "Description"} className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-gray-50 text-sm text-primary font-mono" />
+                </div>
+
+                {/* Agent selector */}
+                <div className="mb-4">
+                  <p className="text-xs font-medium text-text-secondary mb-2">{lang === "bn" ? "এজেন্ট যোগ করুন:" : "Add agents (click to add to chain):"}</p>
+                  <div className="max-h-40 overflow-y-auto space-y-1 border border-border rounded-xl p-2">
+                    {brainData?.departments?.map((dept: any) =>
+                      dept.teams?.flatMap((t: any) => t.agents || []).map((agent: any) => (
+                        <button key={agent.id} onClick={() => addFlowStep(agent.id, dept.id)} className="w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-primary/5 text-text hover:text-primary transition-colors">
+                          {dept.icon} {agent.name} <span className="text-text-secondary">({agent.id})</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Chain builder */}
+                {flowBuilder.length > 0 && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded-xl">
+                    <p className="text-xs font-medium text-text-secondary mb-2">{lang === "bn" ? `চেইন (${flowBuilder.length}টি স্টেপ):` : `Chain (${flowBuilder.length} steps):`}</p>
+                    <div className="space-y-1.5">
+                      {flowBuilder.map((step: any, i: number) => (
+                        <div key={i} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-xs border border-border">
+                          <span className="text-text-secondary w-5">{i + 1}.</span>
+                          <span className="font-medium text-primary flex-1">{step.agentId}</span>
+                          <span className="text-text-secondary text-[10px]">{step.department}</span>
+                          <button onClick={() => moveFlowStep(i, i - 1)} disabled={i === 0} className="px-1.5 py-0.5 text-text-secondary hover:bg-gray-100 rounded disabled:opacity-30">↑</button>
+                          <button onClick={() => moveFlowStep(i, i + 1)} disabled={i === flowBuilder.length - 1} className="px-1.5 py-0.5 text-text-secondary hover:bg-gray-100 rounded disabled:opacity-30">↓</button>
+                          <button onClick={() => removeFlowStep(i)} className="px-1.5 py-0.5 text-red-400 hover:bg-red-50 rounded">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <button onClick={saveFlow} disabled={!flowName.trim() || flowBuilder.length === 0} className="px-5 py-2.5 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50">{lang === "bn" ? "💾 ফ্লো সেভ করুন" : "💾 Save Flow"}</button>
+                  <button onClick={() => { setFlowBuilder([]); setFlowName(""); setFlowDesc(""); }} className="px-4 py-2.5 text-sm font-medium text-text-secondary bg-gray-100 rounded-xl hover:bg-gray-200">{lang === "bn" ? "ক্লিয়ার" : "Clear"}</button>
+                </div>
+              </div>
+
+              {/* ── Saved Flows ── */}
+              <div className="bg-white rounded-2xl border border-border p-6">
+                <h2 className="text-lg font-bold text-primary mb-4">{lang === "bn" ? "📋 সেভ করা ফ্লো" : "📋 Saved Flows"}</h2>
+                {flowsLoading ? <div className="text-xs text-text-secondary">Loading...</div> : flows.length === 0 ? (
+                  <div className="text-xs text-text-secondary py-6 text-center">{lang === "bn" ? "কোনো ফ্লো নেই। উপরে একটি ফ্লো তৈরি করুন।" : "No flows yet. Create one above."}</div>
+                ) : (
+                  <div className="space-y-3">
+                    {flows.map((flow: any) => {
+                      const steps = flow.steps || [];
+                      return (
+                        <div key={flow.id} className={`rounded-xl border p-4 ${selectedFlowId === flow.id ? "border-primary bg-primary/5" : "border-border"}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div><div className="font-semibold text-primary text-sm">{flow.name}</div><div className="text-xs text-text-secondary">{flow.description} · {steps.length} steps · {flow.run_count} runs</div></div>
+                            <button onClick={() => { selectedFlowId === flow.id ? setSelectedFlowId(null) : setSelectedFlowId(flow.id); }} className="text-xs text-primary underline">{selectedFlowId === flow.id ? "Close" : "Run"}</button>
+                          </div>
+                          {/* Chain visualizer */}
+                          <div className="flex items-center gap-1 overflow-x-auto py-1">
+                            {steps.map((s: any, i: number) => (
+                              <div key={i} className="flex items-center gap-1 shrink-0">
+                                <span className="px-2 py-1 text-[10px] font-mono bg-gray-100 rounded-lg whitespace-nowrap">{s.agentId}</span>
+                                {i < steps.length - 1 && <span className="text-text-secondary text-[10px]">→</span>}
+                              </div>
+                            ))}
+                          </div>
+                          {/* Run form */}
+                          {selectedFlowId === flow.id && (
+                            <div className="mt-3 pt-3 border-t border-border space-y-2">
+                              <input value={flowPhone} onChange={e => setFlowPhone(e.target.value)} placeholder={lang === "bn" ? "ফোন নম্বর" : "Phone"} className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-gray-50 font-mono" />
+                              <input value={flowText} onChange={e => setFlowText(e.target.value)} placeholder={lang === "bn" ? 'টেস্ট মেসেজ: "আমি কিনতে চাই"' : 'Test message: "I want to buy"'} className="w-full px-3 py-2 text-xs rounded-lg border border-border bg-gray-50 font-mono" />
+                              <button onClick={() => runFlow(flow.id)} disabled={flowRunning || !flowPhone.trim() || !flowText.trim()} className="px-4 py-2 text-xs font-medium bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50">{flowRunning ? "Running..." : "▶ Run Flow"}</button>
+                            </div>
+                          )}
+                          {/* Flow result */}
+                          {flowResult && selectedFlowId === flow.id && (
+                            <div className="mt-3 pt-3 border-t border-border">
+                              <div className={`text-xs p-3 rounded-xl ${flowResult.success ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+                                <div className="flex items-center gap-2 mb-1"><span className="font-medium">{flowResult.success ? "✅ Completed" : "❌ Failed"}</span><span className="text-text-secondary">{flowResult.agentsUsed?.length || 0} agents</span></div>
+                                <div className="text-text-secondary mb-1">{flowResult.departmentsUsed?.join(" → ")}</div>
+                                <div className="text-text-secondary max-h-32 overflow-y-auto">{flowResult.chainContext}</div>
+                                {/* Step visualizer */}
+                                {flowResult.steps?.map((s: any, i: number) => (
+                                  <div key={i} className="flex items-center gap-2 mt-1 text-[10px]">
+                                    <span className={`w-2 h-2 rounded-full ${s.status === "completed" ? "bg-green-500" : s.status === "failed" ? "bg-red-500" : s.status === "running" ? "bg-yellow-500" : "bg-gray-300"}`} />
+                                    <span className="font-mono">{s.agentId}</span>
+                                    <span className="text-text-secondary">{s.status}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!brainData && (brainSubTab as string) !== "memory" && (brainSubTab as string) !== "schedule" && (brainSubTab as string) !== "flows" && (
             <div className="text-sm text-text-secondary py-12 text-center">{lang === "bn" ? "ব্রেইন ডাটা লোড করতে ব্যর্থ" : "Failed to load brain data"}</div>
           )}
           </>)}
