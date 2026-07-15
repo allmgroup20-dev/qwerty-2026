@@ -70,18 +70,18 @@ body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a2e; mi
 <div class="container">
   <div class="header">
     <h1>🔗 WhatsApp Connector</h1>
-    <p>Run <code style="background:#eee;padding:2px 6px;border-radius:4px;font-size:12px;">node wa-relay.mjs</code> locally, then connect below</p>
+    <p>রিলে চলছে <strong>Railway</strong>-এ (২৪/৭)। নিচে Relay URL দিন এবং Connect করুন।</p>
   </div>
 
   <!-- Relay Config -->
   <div class="card" id="configCard">
     <h2 style="font-size:14px;font-weight:600;margin-bottom:10px;">⚙️ Relay Connection</h2>
     <div class="flex gap-2">
-      <input class="input" id="relayUrl" type="text" value="http://localhost:3001" placeholder="http://localhost:3001" />
+      <input class="input" id="relayUrl" type="text" value="https://" placeholder="https://your-relay.up.railway.app" />
       <button class="btn btn-secondary" onclick="connectRelay()" style="white-space:nowrap;">Connect</button>
     </div>
     <p class="text-xs text-gray mt-2">
-      Make sure <code style="background:#eee;padding:1px 4px;border-radius:3px;">wa-relay.mjs</code> is running on your machine.
+      Railway URL টি এখানে দিন। Relay নিজে থেকেই WhatsApp connect করবে এবং Queue poll করবে।
     </p>
   </div>
 
@@ -123,13 +123,13 @@ body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a2e; mi
 
   <!-- Steps -->
   <div class="card">
-    <h2 style="font-size:14px;font-weight:600;margin-bottom:12px;">📋 How to connect</h2>
-    <div class="step"><div class="num">1</div><div class="text">Open terminal in the project folder</div></div>
-    <div class="step"><div class="num">2</div><div class="text">Run <code style="background:#eee;padding:2px 5px;border-radius:3px;font-size:12px;">node wa-relay.mjs</code></div></div>
-    <div class="step"><div class="num">3</div><div class="text">Enter relay URL (default <code style="background:#eee;padding:2px 5px;border-radius:3px;font-size:12px;">http://localhost:3001</code>)</div></div>
-    <div class="step"><div class="num">4</div><div class="text">Click Connect → Scan QR → Done!</div></div>
+    <h2 style="font-size:14px;font-weight:600;margin-bottom:12px;">📋 Railway-এ ডিপ্লয় করার ধাপ</h2>
+    <div class="step"><div class="num">1</div><div class="text">Railway Dashboard → <strong>New Project</strong> → Deploy from GitHub</div></div>
+    <div class="step"><div class="num">2</div><div class="text">Root Directory সেট করুন: <code style="background:#eee;padding:2px 5px;border-radius:3px;font-size:12px;">relay</code></div></div>
+    <div class="step"><div class="num">3</div><div class="text">Variables যোগ করুন: <code style="background:#eee;padding:2px 5px;border-radius:3px;font-size:12px;">APP_URL=https://jobayer-group-career.workers.dev</code></div></div>
+    <div class="step"><div class="num">4</div><div class="text">ডিপ্লয় হবার পর Railway URL কপি করে উপরে বসান → Connect → Scan QR</div></div>
     <p class="text-xs text-gray mt-3" style="line-height:1.5;">
-      💡 Keep the relay terminal and this tab open. Close both when done. Session is saved to <code style="background:#eee;padding:1px 4px;border-radius:3px;">wa-session.json</code>.
+      💡 রিলে Railway-এ ২৪/৭ চলবে। আপনার ফোন বন্ধ থাকলেও কাজ করবে। Session auto-save হয়।
     </p>
   </div>
 
@@ -344,7 +344,6 @@ async function pollPendingMessages() {
   const savedUrl = localStorage.getItem("wa_relay_url");
   if (savedUrl) {
     $("relayUrl").value = savedUrl;
-    // Try connecting automatically
     relayBase = savedUrl;
     try {
       const res = await relayFetch("/status");
