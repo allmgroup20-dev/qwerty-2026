@@ -29,8 +29,8 @@ export default function SkillsPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/ai/stats");
-      const data = await res.json();
-      if (data.responses) setStats(data as Stats);
+      const data: Stats = await res.json();
+      if (data.responses) setStats(data);
     } catch {}
     setLoading(false);
   }
