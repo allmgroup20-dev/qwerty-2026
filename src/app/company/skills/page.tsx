@@ -42,8 +42,8 @@ export default function SkillsPage() {
     setResult(null);
     try {
       const res = await fetch("/api/ai/skills/consolidate", { method: "POST" });
-      const data = await res.json();
-      if (data.ok) setResult(data as ConsolidationResult);
+      const data: ConsolidationResult & { ok: boolean } = await res.json();
+      if (data.ok) setResult(data);
     } catch {}
     setConsolidating(false);
     loadStats();
