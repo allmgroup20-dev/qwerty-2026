@@ -10,10 +10,11 @@ import AgentDetailDrawer from "@/components/agents/AgentDetailDrawer";
 import GlobalModelSelector from "@/components/agents/GlobalModelSelector";
 import type { Agent, AgentTreeNode, AgentReport, AgentSubmission, AgentLog, AgentStats, GlobalAgentConfig } from "@/lib/ai/agents";
 
-type TabId = "settings" | "agents" | "insights" | "skills";
+type TabId = "settings" | "brain" | "agents" | "insights" | "skills";
 
 const TABS: { id: TabId; icon: string; en: string; bn: string }[] = [
   { id: "settings", icon: "⚙️", en: "Settings", bn: "সেটিংস" },
+  { id: "brain", icon: "🧬", en: "Brain", bn: "মস্তিষ্ক" },
   { id: "agents", icon: "🧠", en: "Agents", bn: "এজেন্ট" },
   { id: "insights", icon: "📊", en: "Insights", bn: "ইনসাইটস" },
   { id: "skills", icon: "📈", en: "Skills", bn: "স্কিল" },
@@ -63,6 +64,15 @@ export default function AIHubPage() {
   const [seniorReport, setSeniorReport] = useState<SeniorReport | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(true);
 
+  // ─── Brain State ───────────────────────────────────────
+  const [brainData, setBrainData] = useState<any>(null);
+  const [brainLoading, setBrainLoading] = useState(true);
+  const [expandedDept, setExpandedDept] = useState<string | null>(null);
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [testMsg, setTestMsg] = useState("");
+  const [testResult, setTestResult] = useState<any>(null);
+  const [testLoading, setTestLoading] = useState(false);
+
   // ─── Skills State ──────────────────────────────────────
   const [skillsStats, setSkillsStats] = useState<AIStats | null>(null);
   const [skillsLoading, setSkillsLoading] = useState(true);
@@ -106,17 +116,44 @@ export default function AIHubPage() {
   const loadInsights = async () => {
     setInsightsLoading(true);
     try {
-      const [statsRes, agentStatsRes, seniorRes] = await Promise.all([
+      const [statsRes, agentStatsRes, seniorRes, brainRes] = await Promise.all([
         fetch("/api/ai/stats"), fetch("/api/ai/agents/stats"),
         fetch("/api/ai/agents/reports?agent_id=agent_senior"),
+        fetch("/api/ai/brain/agents"),
       ]);
       const statsData: AIStats = await statsRes.json();
       if (statsData.responses) setAiStats(statsData);
       setAgentStatsData(await agentStatsRes.json() as AgentStatsData);
       const r = await seniorRes.json() as { reports?: SeniorReport[] };
       if (r.reports?.length) setSeniorReport(r.reports[0]);
+      const brainD = await brainRes.json().catch(() => null);
+      if (brainD) setBrainData(brainD);
     } catch (e) { console.error(e); }
     setInsightsLoading(false);
+  };
+
+  const loadBrain = async () => {
+    setBrainLoading(true);
+    try {
+      const res = await fetch("/api/ai/brain/agents");
+      setBrainData(await res.json());
+    } catch {}
+    setBrainLoading(false);
+  };
+
+  const testBrain = async () => {
+    if (!testMsg.trim()) return;
+    setTestLoading(true);
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/ai/brain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: "test-user", text: testMsg }),
+      });
+      setTestResult(await res.json());
+    } catch {}
+    setTestLoading(false);
   };
 
   const loadSkills = async () => {
@@ -132,6 +169,7 @@ export default function AIHubPage() {
   useEffect(() => { if (activeTab === "settings" && models.length === 0) loadSettings(); }, [activeTab, models.length]);
   useEffect(() => { if (activeTab === "agents") loadAgents(); }, [activeTab, loadAgents]);
   useEffect(() => { if (activeTab === "insights") loadInsights(); }, [activeTab]);
+  useEffect(() => { if (activeTab === "brain") loadBrain(); }, [activeTab]);
   useEffect(() => { if (activeTab === "skills") loadSkills(); }, [activeTab]);
 
   // ─── Settings Handlers ─────────────────────────────────
@@ -354,6 +392,104 @@ export default function AIHubPage() {
         </div>
       )}
 
+      {/* ════════════════════════ BRAIN TAB ════════════════════════ */}
+      {activeTab === "brain" && (
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-text">{lang === "bn" ? "🧬 প্রিমিয়াম এমপ্লয়ি ব্রেইন" : "🧬 Premium Employee Brain"}</h1>
+            <p className="text-sm text-text-secondary mt-1">{lang === "bn" ? "সকল ডিপার্টমেন্ট, টিম ও এজেন্ট এক নজরে" : "All departments, teams & agents at a glance"}</p>
+          </div>
+
+          {brainLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />)}
+            </div>
+          ) : brainData ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-primary">{brainData.totalDepartments}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "ডিপার্টমেন্ট" : "Departments"}</div></div>
+                <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-purple-600">{brainData.totalTeams}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "টিম" : "Teams"}</div></div>
+                <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-green-600">{brainData.totalAgents}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "এজেন্ট" : "Agents"}</div></div>
+                <div className="bg-white rounded-xl border border-border p-4 text-center"><div className="text-2xl font-bold text-amber-600">{brainData.totalDepartments * 4}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "ফ্রি মডেল টিয়ার" : "Free Model Tiers"}</div></div>
+              </div>
+
+              <div className="space-y-4">
+                {brainData.departments.map((dept: any) => (
+                  <div key={dept.id} className="bg-white rounded-2xl border border-border overflow-hidden">
+                    <button onClick={() => setExpandedDept(expandedDept === dept.id ? null : dept.id)} className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{dept.icon}</span>
+                        <div className="text-left">
+                          <div className="font-semibold text-primary">{lang === "bn" ? dept.nameBn : dept.name}</div>
+                          <div className="text-xs text-text-secondary">{dept.teamCount} {lang === "bn" ? "টি টিম" : "teams"} · {dept.agentCount} {lang === "bn" ? "জন এজেন্ট" : "agents"}</div>
+                        </div>
+                      </div>
+                      <span className={`text-text-secondary transition-transform ${expandedDept === dept.id ? "rotate-180" : ""}`}>▼</span>
+                    </button>
+
+                    {expandedDept === dept.id && (
+                      <div className="border-t border-border px-4 pb-4 space-y-3">
+                        <p className="text-sm text-text-secondary mt-3">{dept.description}</p>
+                        {dept.teams.map((team: any) => (
+                          <div key={team.id} className="bg-gray-50 rounded-xl overflow-hidden">
+                            <button onClick={() => setExpandedTeam(expandedTeam === team.id ? null : team.id)} className="w-full flex items-center justify-between p-3 hover:bg-gray-100 transition-colors">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-primary">{team.name}</span>
+                                <span className="text-xs text-text-secondary">({team.agentCount} {lang === "bn" ? "এজেন্ট" : "agents"})</span>
+                              </div>
+                              <span className={`text-xs text-text-secondary transition-transform ${expandedTeam === team.id ? "rotate-180" : ""}`}>▼</span>
+                            </button>
+                            {expandedTeam === team.id && (
+                              <div className="px-3 pb-3 space-y-2">
+                                {team.agents.map((agent: any) => (
+                                  <div key={agent.id} className="bg-white rounded-lg p-3 border border-border text-sm">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="font-medium text-primary">{agent.name}</span>
+                                      <div className="flex gap-1">
+                                        <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${agent.tier === 1 ? "bg-purple-100 text-purple-700" : agent.tier === 2 ? "bg-blue-100 text-blue-700" : agent.tier === 3 ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}>T{agent.tier}</span>
+                                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-50 text-amber-700">{agent.priority}</span>
+                                      </div>
+                                    </div>
+                                    <p className="text-xs text-text-secondary">{agent.description}</p>
+                                    <p className="text-[10px] text-text-secondary mt-1 font-mono">{agent.when}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* ──────── Brain Test Playground ──────── */}
+              <div className="bg-white rounded-2xl border border-border p-6">
+                <h2 className="text-lg font-bold text-primary mb-2">{lang === "bn" ? "🧪 ব্রেইন টেস্ট প্লে-গ্রাউন্ড" : "🧪 Brain Test Playground"}</h2>
+                <p className="text-sm text-text-secondary mb-4">{lang === "bn" ? "কোনো মেসেজ লিখে দেখুন কোন ডিপার্টমেন্ট ও এজেন্ট রেসপন্স করবে" : "Type a message to see which department & agent responds"}</p>
+                <div className="flex gap-3">
+                  <input value={testMsg} onChange={e => setTestMsg(e.target.value)} placeholder={lang === "bn" ? 'যেমন: "আপনার প্রোডাক্টের দাম কত?"' : 'e.g. "What is your product price?"'} className="flex-1 px-4 py-3 rounded-xl border border-border bg-gray-50 text-sm text-primary font-mono" onKeyDown={e => e.key === "Enter" && testBrain()} />
+                  <button onClick={testBrain} disabled={testLoading || !testMsg.trim()} className="px-6 py-3 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50">{testLoading ? "..." : "▶️ Test"}</button>
+                </div>
+                {testResult && (
+                  <div className="mt-4 bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+                    <div className="flex items-center gap-2"><span className="font-medium text-primary">{lang === "bn" ? "ডিপার্টমেন্ট:" : "Department:"}</span><span>{testResult.department}</span></div>
+                    <div className="flex items-center gap-2"><span className="font-medium text-primary">{lang === "bn" ? "ইনটেন্ট:" : "Intent:"}</span><span>{testResult.intent}</span></div>
+                    <div className="flex items-center gap-2"><span className="font-medium text-primary">{lang === "bn" ? "মডেল:" : "Model:"}</span><span className="text-xs font-mono bg-gray-200 px-2 py-0.5 rounded">{testResult.model}</span></div>
+                    <div className="flex items-center gap-2"><span className="font-medium text-primary">{lang === "bn" ? "এজেন্ট:" : "Agents:"}</span><span>{testResult.agentsUsed?.join(", ")}</span></div>
+                    <div className="flex items-start gap-2"><span className="font-medium text-primary shrink-0">{lang === "bn" ? "রিপ্লাই:" : "Reply:"}</span><span className="text-text-secondary">{testResult.reply}</span></div>
+                    <div className="flex items-center gap-2 text-xs text-text-secondary"><span>{testResult.tokens} tokens</span><span>·</span><span>{testResult.processingMs}ms</span></div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-text-secondary py-12 text-center">{lang === "bn" ? "ব্রেইন ডাটা লোড করতে ব্যর্থ" : "Failed to load brain data"}</div>
+          )}
+        </div>
+      )}
+
       {/* ════════════════════════ AGENTS TAB ════════════════════════ */}
       {activeTab === "agents" && (
         <div className="space-y-6">
@@ -444,6 +580,15 @@ export default function AIHubPage() {
                     <div><div className="flex justify-between text-sm mb-1"><span className="text-primary font-medium">{lang === "bn" ? "মোট রেসপন্স" : "Total Responses"}</span><span className="text-text-secondary">{aiStats?.responses.total || 0}</span></div><div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, ((aiStats?.responses.total || 0) / 1000) * 100)}%` }} /></div></div>
                   </div>
                   <div className="mt-6 pt-6 border-t border-border"><h3 className="font-medium text-sm text-primary mb-3">{lang === "bn" ? "API কী স্ট্যাটাস" : "API Key Status"}</h3><div className="flex items-center gap-2"><div className={`w-3 h-3 rounded-full ${(aiStats?.keys.active || 0) > 0 ? "bg-action" : "bg-red-400"}`} /><span className="text-sm text-text-secondary">{aiStats?.keys.active || 0} {lang === "bn" ? "সক্রিয়" : "Active"}</span></div></div>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <h2 className="font-bold text-base text-primary mb-4">{lang === "bn" ? "🧬 প্রিমিয়াম এমপ্লয়ি ব্রেইন" : "🧬 Premium Employee Brain"}</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                  <div className="card p-4 text-center"><div className="text-lg font-bold text-primary">{brainData?.totalDepartments || "—"}</div><div className="text-xs text-text-secondary">{lang === "bn" ? "ডিপার্টমেন্ট" : "Departments"}</div></div>
+                  <div className="card p-4 text-center"><div className="text-lg font-bold text-purple-600">{brainData?.totalTeams || "—"}</div><div className="text-xs text-text-secondary">{lang === "bn" ? "টিম" : "Teams"}</div></div>
+                  <div className="card p-4 text-center"><div className="text-lg font-bold text-green-600">{brainData?.totalAgents || "—"}</div><div className="text-xs text-text-secondary">{lang === "bn" ? "এজেন্ট" : "Agents"}</div></div>
                 </div>
               </div>
 
