@@ -1,22 +1,6 @@
 import { query, queryFirst, execute } from "@/lib/db/queries";
 import { ensureDB } from "@/lib/db";
 
-interface AIModel {
-  model_id: string;
-  name: string;
-  tier: number;
-  provider: string;
-}
-
-interface FailoverState {
-  current_key_slot: number;
-  current_model_index: number;
-  exhausted_models: string;
-  total_responses: number;
-  today_responses: number;
-  last_reset_date: string;
-}
-
 interface AIRequest {
   messages: { role: string; content: string }[];
   maxTokens?: number;
@@ -28,46 +12,79 @@ interface AIResponse {
   tokens: number;
 }
 
+interface ApiKey {
+  id: number;
+  key_value: string;
+  provider: string;
+}
+
+interface FailoverState {
+  total_responses: number;
+  today_responses: number;
+  exhausted_models: string;
+  last_reset_date: string;
+}
+
 const PROVIDER_ENDPOINTS: Record<string, string> = {
   openrouter: "https://openrouter.ai/api/v1/chat/completions",
   opencode: "https://opencode.ai/zen/v1/chat/completions",
 };
 
-async function getFailoverState(db: D1Database): Promise<FailoverState> {
-  let state = await queryFirst<FailoverState>({ DB: db },
+const FREE_MODEL_ORDER: Record<string, string[]> = {
+  openrouter: [
+    "openrouter/free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "nousresearch/hermes-3-llama-3.1-405b:free",
+    "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "google/gemma-4-31b-it:free",
+    "qwen/qwen3-next-80b-a3b-instruct:free",
+    "nvidia/nemotron-3-super-120b-a12b:free",
+    "google/gemma-4-26b-a4b-it:free",
+    "nvidia/nemotron-3-nano-30b-a3b:free",
+    "meta-llama/llama-3.2-3b-instruct:free",
+    "nvidia/nemotron-nano-9b-v2:free",
+    "tencent/hy3:free",
+  ],
+  opencode: [
+    "deepseek-v4-flash-free",
+    "deepseek-v4-flash",
+    "gemini-3.5-flash",
+    "grok-4.5",
+    "claude-haiku-4-5",
+    "qwen3.5-plus",
+    "mimo-v2.5-free",
+    "hy3-free",
+    "gemini-3-flash",
+    "gpt-5.4-mini",
+    "nemotron-3-ultra-free",
+    "gpt-5.4-nano",
+    "minimax-m3",
+    "glm-5",
+    "kimi-k2.5",
+    "north-mini-code-free",
+  ],
+};
+
+// ─── DB Helpers ─────────────────────────────────────────
+
+async function getState(db: D1Database): Promise<FailoverState> {
+  let s = await queryFirst<FailoverState>({ DB: db },
     "SELECT * FROM ai_model_failover_state WHERE id = 1"
   );
-  if (!state) {
+  if (!s) {
     await execute({ DB: db },
-      "INSERT INTO ai_model_failover_state (id, current_key_slot, current_model_index, exhausted_models, total_responses, today_responses, last_reset_date) VALUES (1, 1, 0, '', 0, 0, datetime('now'))"
+      "INSERT INTO ai_model_failover_state (id, total_responses, today_responses, exhausted_models, last_reset_date) VALUES (1, 0, 0, '', datetime('now'))"
     );
-    state = { current_key_slot: 1, current_model_index: 0, exhausted_models: "", total_responses: 0, today_responses: 0, last_reset_date: "" };
+    s = { total_responses: 0, today_responses: 0, exhausted_models: "", last_reset_date: "" };
   }
-  return state;
+  return s;
 }
 
-async function getActiveKeys(db: D1Database, provider?: string): Promise<string[]> {
-  const sql = provider
-    ? "SELECT key_value FROM ai_api_keys WHERE is_active = 1 AND provider = ? ORDER BY id ASC"
-    : "SELECT key_value FROM ai_api_keys WHERE is_active = 1 ORDER BY id ASC";
-  const params = provider ? [provider] : [];
-  const keys = await query<{ key_value: string }>({ DB: db }, sql, params);
-  return keys.map((k) => k.key_value);
-}
-
-async function getActiveModels(db: D1Database, provider?: string): Promise<AIModel[]> {
-  const sql = provider
-    ? "SELECT model_id, name, tier, provider FROM ai_models WHERE is_active = 1 AND provider = ? ORDER BY tier ASC, model_id ASC"
-    : "SELECT model_id, name, tier, provider FROM ai_models WHERE is_active = 1 ORDER BY tier ASC, model_id ASC";
-  const params = provider ? [provider] : [];
-  return query<AIModel>({ DB: db }, sql, params);
-}
-
-async function checkReset(db: D1Database, state: FailoverState): Promise<FailoverState> {
+async function dailyReset(db: D1Database, state: FailoverState): Promise<FailoverState> {
   const today = new Date().toISOString().split("T")[0];
   if (state.last_reset_date !== today) {
     await execute({ DB: db },
-      "UPDATE ai_model_failover_state SET exhausted_models = '', today_responses = 0, last_reset_date = ?, updated_at = datetime('now') WHERE id = 1",
+      "UPDATE ai_model_failover_state SET exhausted_models = '', today_responses = 0, last_reset_date = ? WHERE id = 1",
       [today]
     );
     return { ...state, exhausted_models: "", today_responses: 0, last_reset_date: today };
@@ -75,10 +92,32 @@ async function checkReset(db: D1Database, state: FailoverState): Promise<Failove
   return state;
 }
 
-async function callModel(
+async function getAllKeys(db: D1Database): Promise<ApiKey[]> {
+  return query<ApiKey>({ DB: db },
+    "SELECT id, key_value, provider FROM ai_api_keys WHERE is_active = 1 ORDER BY id ASC"
+  );
+}
+
+async function recordSuccess(db: D1Database): Promise<void> {
+  await execute({ DB: db },
+    "UPDATE ai_model_failover_state SET total_responses = total_responses + 1, today_responses = today_responses + 1 WHERE id = 1"
+  );
+}
+
+async function recordExhaustion(db: D1Database, modelKey: string, exhaustedSet: Set<string>): Promise<void> {
+  exhaustedSet.add(modelKey);
+  await execute({ DB: db },
+    "UPDATE ai_model_failover_state SET exhausted_models = ? WHERE id = 1",
+    [Array.from(exhaustedSet).join(",")]
+  );
+}
+
+// ─── Model Caller ───────────────────────────────────────
+
+async function tryModel(
   apiKey: string,
-  modelId: string,
   provider: string,
+  modelId: string,
   messages: { role: string; content: string }[],
   maxTokens: number
 ): Promise<{ text: string; tokens: number } | null> {
@@ -97,20 +136,13 @@ async function callModel(
     const res = await fetch(endpoint, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        model: modelId,
-        messages,
-        max_tokens: maxTokens,
-      }),
+      body: JSON.stringify({ model: modelId, messages, max_tokens: maxTokens }),
     });
 
-    if (res.status === 429 || res.status === 500 || res.status === 503) {
-      return null;
-    }
-
+    if (res.status === 429 || res.status === 500 || res.status === 503) return null;
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.error(`[${provider}] Model ${modelId} failed with status ${res.status}: ${errText}`);
+      const err = await res.text().catch(() => "");
+      console.error(`[${provider}] ${modelId} (${res.status}): ${err.slice(0, 200)}`);
       return null;
     }
 
@@ -118,65 +150,30 @@ async function callModel(
       choices?: { message: { content: string } }[];
       usage?: { total_tokens: number };
     };
-
     const text = data.choices?.[0]?.message?.content;
     if (!text) return null;
-
-    return {
-      text,
-      tokens: data.usage?.total_tokens || 0,
-    };
+    return { text, tokens: data.usage?.total_tokens || 0 };
   } catch (e) {
-    console.error(`[${provider}] Model call error for ${modelId}:`, (e as Error)?.message);
+    console.error(`[${provider}] ${modelId} error:`, (e as Error)?.message);
     return null;
   }
 }
 
-async function tryProviderStage(
-  env: { DB: D1Database },
-  provider: string,
-  messages: { role: string; content: string }[],
-  maxTokens: number,
-  exhaustedSet: Set<string>
-): Promise<AIResponse | null> {
-  const keys = await getActiveKeys(env.DB, provider);
-  if (!keys.length) return null;
-
-  const models = await getActiveModels(env.DB, provider);
-  if (!models.length) return null;
-
-  let lastError = "";
-
-  for (let keyIdx = 0; keyIdx < keys.length; keyIdx++) {
-    const apiKey = keys[keyIdx];
-    for (const model of models) {
-      const modelKey = `${provider}|${keyIdx}|${model.model_id}`;
-      if (exhaustedSet.has(modelKey)) continue;
-
-      const result = await callModel(apiKey, model.model_id, provider, messages, maxTokens);
-      if (result) {
-        await execute(env,
-          "UPDATE ai_model_failover_state SET total_responses = total_responses + 1, today_responses = today_responses + 1, updated_at = datetime('now') WHERE id = 1"
-        );
-        return {
-          text: result.text,
-          model: `${provider}:${model.model_id}`,
-          tokens: result.tokens,
-        };
-      }
-
-      exhaustedSet.add(modelKey);
-      await execute(env,
-        "UPDATE ai_model_failover_state SET exhausted_models = ?, updated_at = datetime('now') WHERE id = 1",
-        [Array.from(exhaustedSet).join(",")]
-      );
-      lastError = `[${provider}] Model ${model.model_id} failed`;
-    }
-  }
-
-  console.error(lastError);
-  return null;
-}
+// ─── Core Failover Logic ────────────────────────────────
+//
+// Chain of execution:
+//   API Key 1 (OpenRouter)
+//     → Model 1 (openrouter/free)
+//     → Model 2 (llama-3.3-70b)
+//     → Model 3 (hermes-3-405b)
+//     → ... all OpenRouter models
+//   API Key 2 (OpenCode)
+//     → Model 1 (deepseek-v4-flash-free)
+//     → Model 2 (gemini-3.5-flash)
+//     → ... all OpenCode models
+//   API Key 3+ (if more keys added)
+//     → ... same pattern
+//   If ALL exhausted → Error
 
 export async function callAI(
   request: AIRequest,
@@ -184,79 +181,71 @@ export async function callAI(
   preferredModel?: string,
   preferredProvider?: string
 ): Promise<AIResponse> {
-  const env = { DB: await ensureDB() };
+  const db = await ensureDB();
+  const env = { DB: db };
 
-  const state = await getFailoverState(env.DB);
-  const updatedState = await checkReset(env.DB, state);
-
-  const exhaustedSet = new Set(
-    updatedState.exhausted_models ? updatedState.exhausted_models.split(",").filter(Boolean) : []
+  const state = await getState(db);
+  const resetState = await dailyReset(db, state);
+  const exhaustedSet = new Set<string>(
+    resetState.exhausted_models ? resetState.exhausted_models.split(",").filter(Boolean) : []
   );
+
+  const allKeys = await getAllKeys(db);
+  if (allKeys.length === 0) {
+    throw new Error("No API keys configured. Add at least one key in AI Settings.");
+  }
 
   const messages = request.messages;
 
-  const openrouterKeys = await getActiveKeys(env.DB, "openrouter");
-  const opencodeKeys = await getActiveKeys(env.DB, "opencode");
-  if (!openrouterKeys.length && !opencodeKeys.length) {
-    throw new Error("No AI API keys configured. Add OpenRouter or OpenCode keys in AI Settings.");
-  }
-
-  // If preferredProvider is given, try that provider first
-  const providers = preferredProvider
+  // Determine provider order
+  const providerOrder = preferredProvider
     ? [preferredProvider, ...["openrouter", "opencode"].filter((p) => p !== preferredProvider)]
     : ["openrouter", "opencode"];
 
-  for (const provider of providers) {
-    const providerKeys = provider === "openrouter" ? openrouterKeys : opencodeKeys;
-    if (!providerKeys.length) continue;
+  // KEY-BY-KEY: Iterate through each API key
+  for (const key of allKeys) {
+    const { id: keyId, key_value: apiKey, provider } = key;
 
-    // Try preferred model first within this provider, then all models
-    let result: AIResponse | null = null;
-    if (preferredModel) {
-      result = await tryPreferredModel(env, provider, preferredModel, messages, maxTokens, exhaustedSet);
-      if (result) return result;
-    }
-    result = await tryProviderStage(env, provider, messages, maxTokens, exhaustedSet);
-    if (result) return result;
-  }
+    // Skip if this provider is not in our order
+    if (!providerOrder.includes(provider)) continue;
 
-  throw new Error("All AI models exhausted across all providers.");
-}
+    // Get the model list for this provider
+    const modelList = FREE_MODEL_ORDER[provider] || [];
+    if (modelList.length === 0) continue;
 
-async function tryPreferredModel(
-  env: { DB: D1Database },
-  provider: string,
-  modelId: string,
-  messages: { role: string; content: string }[],
-  maxTokens: number,
-  exhaustedSet: Set<string>
-): Promise<AIResponse | null> {
-  const keys = await getActiveKeys(env.DB, provider);
-  if (!keys.length) return null;
+    // If preferredModel is given, try it first within this key
+    const modelsToTry = preferredModel && providerOrder.indexOf(provider) === 0
+      ? [preferredModel, ...modelList.filter((m) => m !== preferredModel)]
+      : modelList;
 
-  for (let keyIdx = 0; keyIdx < keys.length; keyIdx++) {
-    const apiKey = keys[keyIdx];
-    const modelKey = `${provider}|${keyIdx}|${modelId}`;
-    if (exhaustedSet.has(modelKey)) continue;
+    // MODEL-BY-MODEL: Try each model in this key
+    for (const modelId of modelsToTry) {
+      const modelKey = `k${keyId}|${provider}|${modelId}`;
 
-    const result = await callModel(apiKey, modelId, provider, messages, maxTokens);
-    if (result) {
-      await execute(env,
-        "UPDATE ai_model_failover_state SET total_responses = total_responses + 1, today_responses = today_responses + 1, updated_at = datetime('now') WHERE id = 1"
-      );
-      return {
-        text: result.text,
-        model: `${provider}:${modelId}`,
-        tokens: result.tokens,
-      };
+      // Skip if this (key, provider, model) combination is exhausted
+      if (exhaustedSet.has(modelKey)) continue;
+
+      const result = await tryModel(apiKey, provider, modelId, messages, maxTokens);
+      if (result) {
+        await recordSuccess(db);
+        return {
+          text: result.text,
+          model: `${provider}:${modelId}`,
+          tokens: result.tokens,
+        };
+      }
+
+      // This (key + model) exhausted — record it
+      await recordExhaustion(db, modelKey, exhaustedSet);
+      console.warn(`[FAILOVER] ${provider} key#${keyId} model ${modelId} — exhausted, trying next`);
     }
 
-    exhaustedSet.add(modelKey);
-    await execute(env,
-      "UPDATE ai_model_failover_state SET exhausted_models = ?, updated_at = datetime('now') WHERE id = 1",
-      [Array.from(exhaustedSet).join(",")]
-    );
+    console.warn(`[FAILOVER] ${provider} key#${keyId} — ALL models exhausted, moving to next key`);
   }
 
-  return null;
+  throw new Error(
+    `All models exhausted across ${allKeys.length} API key(s). ` +
+    `Exhausted: ${Array.from(exhaustedSet).join(", ")}. ` +
+    `Reset happens daily at midnight UTC.`
+  );
 }

@@ -119,6 +119,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
+    if (body.action === "sync_free_models") {
+      const { execute } = await import("@/lib/db/queries");
+      const keys = await query<{ key_value: string }>(
+        { DB: db },
+        "SELECT key_value FROM ai_api_keys WHERE provider = 'openrouter' AND is_active = 1 LIMIT 1"
+      );
+      if (!keys.length) return NextResponse.json({ error: "No OpenRouter key" }, { status: 400 });
+
+      try {
+        const res = await fetch("https://openrouter.ai/api/v1/models", {
+          headers: { Authorization: `Bearer ${keys[0].key_value}` },
+        });
+        const data = await res.json() as { data?: { id: string; name: string; context_length: number; pricing: { prompt: number; completion: number } }[] };
+        if (!data.data) return NextResponse.json({ error: "Failed to fetch models" }, { status: 500 });
+
+        const freeModels = data.data.filter((m) => m.pricing.prompt === 0 && m.pricing.completion === 0);
+        let added = 0;
+        for (const m of freeModels) {
+          const existing = await queryFirst<{ model_id: string }>(
+            { DB: db },
+            "SELECT model_id FROM ai_models WHERE model_id = ?", [m.id]
+          );
+          if (!existing) {
+            await execute({ DB: db },
+              "INSERT INTO ai_models (model_id, name, provider, tier, is_active) VALUES (?, ?, 'openrouter', 4, 1)",
+              [m.id, m.name || m.id]
+            );
+            added++;
+          }
+        }
+        return NextResponse.json({ success: true, totalFreeModels: freeModels.length, newModelsAdded: added });
+      } catch (e) {
+        return NextResponse.json({ error: `Sync failed: ${(e as Error).message}` }, { status: 500 });
+      }
+    }
+
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
     return NextResponse.json({
