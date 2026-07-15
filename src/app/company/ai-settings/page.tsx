@@ -313,6 +313,49 @@ export default function AISettingsPage() {
         </div>
       </div>
 
+      <div className="card p-6 mb-6 border-2 border-action/20 bg-action/5">
+        <h2 className="font-bold text-lg text-action mb-4">
+          {lang === "bn" ? "ফেইলওভার চেইন (মডেল অর্ডার)" : "Failover Chain (Model Order)"}
+        </h2>
+        <p className="text-xs text-text-secondary mb-4">
+          {lang === "bn"
+            ? "প্রতিটি API কী-এর জন্য মডেলগুলো এই ক্রমে Try করা হয়। প্রথমে OpenRouter কী-এর সব মডেল, তারপর OpenCode কী-এর সব মডেল। প্রতিটি মডেল নিঃশেষ হলে পরের মডেলে চলে যায়। প্রতিদিন UTC মধ্যরাতে রিসেট হয়।"
+            : "Models are tried in this order per API key. OpenRouter keys first, then OpenCode. Each model when exhausted moves to the next. Resets daily at midnight UTC."}
+        </p>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <h3 className="text-sm font-semibold text-primary mb-2">🔵 OpenRouter Chain</h3>
+            <ol className="space-y-1 text-xs text-text-secondary">
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">1</span>openrouter/free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">2</span>llama-3.3-70b-instruct:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">3</span>hermes-3-llama-3.1-405b:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">4</span>nemotron-3-ultra-550b:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">5</span>gemma-4-31b-it:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">6</span>qwen3-next-80b-a3b:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">7</span>nemotron-3-super-120b:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">8</span>gemma-4-26b-a4b-it:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">9</span>nemotron-3-nano-reasoning:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">10</span>nemotron-3-nano-30b:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">11</span>llama-3.2-3b-instruct:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">12</span>nemotron-nano-12b-vl:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">13</span>nemotron-nano-9b-v2:free</li>
+              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">14</span>hy3:free</li>
+            </ol>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-primary mb-2">🟣 OpenCode Chain (Fallback)</h3>
+            <ol className="space-y-1 text-xs text-text-secondary">
+              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">1</span>nemotron-3-ultra-free</li>
+              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">2</span>mimo-v2.5-free</li>
+              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">3</span>north-mini-code-free</li>
+              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">4</span>big-pickle</li>
+              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">5</span>hy3-free</li>
+              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">6</span>deepseek-v4-flash-free</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
       <div className="card p-6 border-purple-200">
         <h2 className="font-bold text-lg text-purple-700 mb-4">
           {lang === "bn" ? "OpenCode মডেল" : "OpenCode Models"} ({opencodeModels.length})

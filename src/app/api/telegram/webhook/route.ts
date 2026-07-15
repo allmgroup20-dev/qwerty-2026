@@ -15,6 +15,8 @@ import {
   updateProfileScore,
   saveMessage,
   findSkill,
+  saveSkill,
+  extractKeywords,
   isWorkerPhone,
   getOrCreateLead,
   updateLeadStatus,
@@ -108,6 +110,14 @@ export async function POST(request: NextRequest) {
       const brainResult = await processMessage(brainCtx);
       reply = brainResult.text;
     }
+
+    // Auto-save to skills
+    try {
+      const keywords = extractKeywords(text);
+      if (keywords.length >= 2 && reply.length > 10) {
+        await saveSkill(keywords, text, reply, "auto_learned");
+      }
+    } catch {}
 
     // Record platform preference — user replied on Telegram
     await recordPlatformActivity(phone, "telegram");

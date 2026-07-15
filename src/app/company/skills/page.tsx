@@ -56,10 +56,10 @@ export default function SkillsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 animate-fade-up">
           <h1 className="text-2xl font-bold text-primary">
-            {lang === "bn" ? "স্কিল ও অ্যানালিটিক্স" : "Skills & Analytics"}
+            {lang === "bn" ? "দক্ষতা ও অ্যানালিটিক্স" : "Skills & Analytics"}
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            {lang === "bn" ? "এআই স্কিল কনসলিডেশন ও সিস্টেম অ্যানালিটিক্স" : "AI skill consolidation & system analytics"}
+            {lang === "bn" ? "এআই দক্ষতা একত্রীকরণ ও সিস্টেম অ্যানালিটিক্স" : "AI skill consolidation & system analytics"}
           </p>
         </div>
 
@@ -88,7 +88,7 @@ export default function SkillsPage() {
             </h3>
             <p className="text-xs text-text-secondary mb-4">
               {lang === "bn"
-                ? "স্বয়ংক্রিয়ভাবে WhatsApp কথোপকথন বিশ্লেষণ করে বারবার আসা প্রশ্নগুলোকে স্কিল হিসেবে সংরক্ষণ করে। ৩+ বার আসা প্রশ্ন জিরো-টোকেন শর্টকাট হয়, ২+ বার FAQ হয়।"
+                ? "স্বয়ংক্রিয়ভাবে WhatsApp কথোপকথন বিশ্লেষণ করে বারবার আসা প্রশ্নগুলোকে দক্ষতা হিসেবে সংরক্ষণ করে। ৩+ বার আসা প্রশ্ন জিরো-টোকেন শর্টকাট হয়, ২+ বার FAQ হয়।"
                 : "Automatically analyzes WhatsApp conversations and saves repeated questions as skills. 3+ occurrences become zero-token shortcuts, 2+ become FAQs."}
             </p>
             {result && (

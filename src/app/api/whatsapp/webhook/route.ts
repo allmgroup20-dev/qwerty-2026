@@ -17,6 +17,8 @@ import {
   updateProfileScore,
   saveMessage,
   findSkill,
+  saveSkill,
+  extractKeywords,
   isWorkerPhone,
   getWorkerByPhone,
   getOrCreateLead,
@@ -139,6 +141,14 @@ export async function POST(request: NextRequest) {
       console.warn(`[WhatsApp Webhook] Brain returned empty reply for ${phone} — using fallback`);
       reply = "ধন্যবাদ আপনার মেসেজের জন্য। আমি আপনার সহায়তার জন্য প্রস্তুত আছি। বিস্তারিত জানাতে পারেন?";
     }
+
+    // Auto-save to skills — so brain learns from this Q&A
+    try {
+      const keywords = extractKeywords(text);
+      if (keywords.length >= 2 && reply.length > 10) {
+        await saveSkill(keywords, text, reply, "auto_learned");
+      }
+    } catch {}
 
     // Record platform preference — user replied on WhatsApp
     await recordPlatformActivity(phone, "whatsapp");

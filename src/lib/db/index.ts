@@ -314,6 +314,31 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       ('opencode/minimax-m2.7', 'MiniMax M2.7 (OpenCode)', 3, 'opencode')
     `).run();
 
+    // Seed verified free failover models (used by callAI in router.ts)
+    await env.DB.prepare(`INSERT OR IGNORE INTO ai_models (model_id, name, tier, provider) VALUES
+      ('meta-llama/llama-3.3-70b-instruct:free', 'Llama 3.3 70B Free', 1, 'openrouter'),
+      ('nousresearch/hermes-3-llama-3.1-405b:free', 'Hermes 3 405B Free', 1, 'openrouter'),
+      ('nvidia/nemotron-3-ultra-550b-a55b:free', 'Nemotron Ultra 550B Free', 1, 'openrouter'),
+      ('google/gemma-4-31b-it:free', 'Gemma 4 31B Free', 2, 'openrouter'),
+      ('qwen/qwen3-next-80b-a3b-instruct:free', 'Qwen3 Next 80B Free', 2, 'openrouter'),
+      ('nvidia/nemotron-3-super-120b-a12b:free', 'Nemotron Super 120B Free', 2, 'openrouter'),
+      ('google/gemma-4-26b-a4b-it:free', 'Gemma 4 26B Free', 3, 'openrouter'),
+      ('nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', 'Nemotron Nano Reasoning Free', 3, 'openrouter'),
+      ('nvidia/nemotron-3-nano-30b-a3b:free', 'Nemotron Nano 30B Free', 3, 'openrouter'),
+      ('meta-llama/llama-3.2-3b-instruct:free', 'Llama 3.2 3B Free', 4, 'openrouter'),
+      ('nvidia/nemotron-nano-12b-v2-vl:free', 'Nemotron Nano 12B VL Free', 4, 'openrouter'),
+      ('nvidia/nemotron-nano-9b-v2:free', 'Nemotron Nano 9B Free', 4, 'openrouter'),
+      ('tencent/hy3:free', 'Tencent Hy3 Free', 5, 'openrouter')
+    `).run();
+    await env.DB.prepare(`INSERT OR IGNORE INTO ai_models (model_id, name, tier, provider) VALUES
+      ('nemotron-3-ultra-free', 'Nemotron Ultra Free (OpenCode)', 1, 'opencode'),
+      ('mimo-v2.5-free', 'MiMo V2.5 Free (OpenCode)', 2, 'opencode'),
+      ('north-mini-code-free', 'North Mini Code Free (OpenCode)', 3, 'opencode'),
+      ('big-pickle', 'Big Pickle (OpenCode)', 4, 'opencode'),
+      ('hy3-free', 'Hy3 Free (OpenCode)', 5, 'opencode'),
+      ('deepseek-v4-flash-free', 'DeepSeek V4 Flash Free (OpenCode)', 5, 'opencode')
+    `).run();
+
     // Seed default personas
     await env.DB.prepare(`INSERT OR IGNORE INTO ai_personas (name, gender) VALUES
       ('Fatima Begum', 'female'), ('Abdullah Hasan', 'male'),
