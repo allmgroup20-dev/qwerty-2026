@@ -5,9 +5,7 @@ import { calculatePriorityScore } from "@/lib/whatsapp/numbers";
 import { execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 import {
-  callAI,
-  buildSystemPrompt,
-  getPersona,
+  processMessage,
   analyzePainPoints,
   analyzeInterests,
   detectLanguage,
@@ -24,6 +22,7 @@ import {
   getOrCreateLead,
   updateLeadStatus,
 } from "@/lib/ai";
+import type { MessageCtx } from "@/lib/ai/brain/types";
 
 function parseIncomingMessage(body: any): { phone: string; text: string; name?: string } | null {
   const entry = body?.entry?.[0];
@@ -77,7 +76,6 @@ export async function POST(request: NextRequest) {
 
     // Detect language, mood, dialect, religion
     const profile = await getOrCreateProfile(phone);
-    const persona = getPersona(phone);
     const lang = detectLanguage(text);
     const mood = detectMood(text);
     const dialect = detectDialect(text);
@@ -108,52 +106,41 @@ export async function POST(request: NextRequest) {
       else funnelStage = "11-12";
     }
 
-    // Check skill cache first
+    // Use Premium Employee Brain
     let reply: string | null = null;
+
     const cachedSkill = await findSkill(text);
     if (cachedSkill) {
       reply = cachedSkill;
-    }
-
-    if (!reply) {
-      const systemPrompt = await buildSystemPrompt({
-        role,
-        persona,
-        profile,
-        painPoints,
-        interests,
-        language: lang,
+    } else {
+      const brainCtx: MessageCtx = {
         phone,
+        text,
+        name,
+        role,
+        language: lang,
         mood,
         dialect,
         religion,
         funnelStage,
+        totalChats: profile?.total_chats || 0,
+        painPoints,
+        interests,
         isWorker,
-      });
+      };
 
-      const result = await callAI({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: text },
-        ],
-        maxTokens: 600,
-      });
-
-      reply = result.text;
+      const brainResult = await processMessage(brainCtx);
+      reply = brainResult.text;
     }
 
     // Save conversation
     await saveMessage(phone, "user", text, {
-      personaName: persona.name,
-      personaGender: persona.gender,
       language: lang,
       painPoints,
       interests,
     });
 
     await saveMessage(phone, "assistant", reply, {
-      personaName: persona.name,
-      personaGender: persona.gender,
       language: lang,
     });
 
