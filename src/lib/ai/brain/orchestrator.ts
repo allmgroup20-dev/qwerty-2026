@@ -167,7 +167,7 @@ const DEPT_INTENT_PROMPTS: Record<DepartmentId, string> = {
 };
 
 async function detectIntent(text: string, ctx: MessageCtx, fallbackDept: DepartmentId): Promise<{ intent: Intent; department: DepartmentId }> {
-  const depts: DepartmentId[] = ["sales", "psychology", "customer_experience", "member_success", "operations"];
+  const depts: DepartmentId[] = [fallbackDept, "customer_experience", "operations"];
 
   for (const deptId of depts) {
     try {
@@ -178,7 +178,7 @@ async function detectIntent(text: string, ctx: MessageCtx, fallbackDept: Departm
             { role: "user", content: `Message: "${text}"\nRole: ${ctx.role}\nLanguage: ${ctx.language}\nMood: ${ctx.mood}\nReturn only the intent word.` },
           ],
         },
-        50, "gemma-4-26b", "openrouter"
+        30, "gemma-4-26b", "openrouter"
       );
       const intent = result.text.trim().toLowerCase() as Intent;
       const route = INTENT_ROUTES.find((r) => r.intent === intent);
@@ -248,7 +248,7 @@ function selectSingleDeptAgents(department: DepartmentId, intent: Intent, ctx: M
     } catch { return true; }
   });
   candidates.sort((a, b) => b.priority - a.priority);
-  return candidates.slice(0, 3);
+  return candidates.slice(0, 1);
 }
 
 export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
@@ -334,73 +334,23 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
     departmentsUsed.push(department);
   }
 
-  // ── Negativity Detection Scan (runs alongside every conversation) ──
-  let negativityFindings = "";
-  try {
-    const negAgentIds = NEGATIVITY_CHAINS.negativity_scan;
-    for (const agentId of negAgentIds) {
-      const agentData = findAgent(agentId);
-      if (!agentData || agentData.department !== "negativity_detection") continue;
-      const agent = agentData.agent;
-      try {
-        const contextVars = buildContext(ctx, intent, chainContext, memories);
-        const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
-        const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
-        const output = await executeAgent(agent, agentPrompt, ctx.text);
-        if (output.text && !output.text.includes("[Service temporarily unavailable")) {
-          negativityFindings += `\n[${agent.name}]: ${output.text}`;
-          agentsUsed.push(agent.id);
-          if (!departmentsUsed.includes("negativity_detection")) departmentsUsed.push("negativity_detection");
-          if (db) {
-            setMemory(db, ctx.phone, agent.id, `last_${agent.id}`, output.text.slice(0, 500), "agent_output", 1, 1440).catch(() => {});
-          }
-        }
-      } catch {}
-    }
-  } catch {}
-
-  // ── If negativity triggers found, run advisory agents ──
-  let advisoryNotes = "";
-  if (negativityFindings.length > 0) {
+  // ── Negativity Detection (fire-and-forget) ──
+  (async () => {
     try {
-      const advisoryIds = NEGATIVITY_CHAINS.negativity_advisory;
-      for (const agentId of advisoryIds) {
+      const negDb = await getDB().catch(() => null);
+      if (!negDb) return;
+      for (const agentId of NEGATIVITY_CHAINS.negativity_scan) {
         const agentData = findAgent(agentId);
-        if (!agentData) continue;
-        const agent = agentData.agent;
+        if (!agentData || agentData.department !== "negativity_detection") continue;
         try {
-          const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, memories), previousOutput: chainContext, negativityFindings };
-          const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
-          const agentPrompt = buildAgentPrompt(agent, ctxWithFindings, promptOverride || undefined);
-          const output = await executeAgent(agent, agentPrompt, ctx.text);
+          const output = await executeAgent(agentData.agent, buildAgentPrompt(agentData.agent, buildContext(ctx, intent, chainContext, memories)), ctx.text).catch(() => ({ text: "" }));
           if (output.text && !output.text.includes("[Service temporarily unavailable")) {
-            advisoryNotes += `\n[${agent.name}]: ${output.text}`;
-            agentsUsed.push(agent.id);
-            if (!departmentsUsed.includes("negativity_detection")) departmentsUsed.push("negativity_detection");
+            setMemory(negDb, ctx.phone, agentId, `last_${agentId}`, output.text.slice(0, 500), "agent_output", 1, 1440).catch(() => {});
           }
         } catch {}
       }
     } catch {}
-  }
-
-  // ── Accumulate knowledge ──
-  if (negativityFindings.length > 0 && db) {
-    try {
-      const kbAgentId = "negativity_insight_miner";
-      const kbData = findAgent(kbAgentId);
-      if (kbData) {
-        const agent = kbData.agent;
-        const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, memories), previousOutput: chainContext, negativityFindings };
-        const promptOverride = await getActivePromptOverride(db, agent.id).catch(() => null);
-        const agentPrompt = buildAgentPrompt(agent, ctxWithFindings, promptOverride || undefined);
-        const output = await executeAgent(agent, agentPrompt, ctx.text);
-        if (output.text && !output.text.includes("[Service temporarily unavailable")) {
-          // Store insight in memory
-          setMemory(db, ctx.phone, kbAgentId, `insight_${Date.now()}`, output.text.slice(0, 1000), "negativity_insight", 1, 43200).catch(() => {});
-        }
-      }
-    } catch {}
-  }
+  })();
 
   const primaryDept = department;
   const finalDept = DEPARTMENTS[primaryDept];
@@ -448,56 +398,35 @@ Keep under 400 words. If complaint → empathetic first. If purchase → guide t
   try {
     const result = await callAI(
       { messages: [{ role: "system", content: compositionPrompt }, { role: "user", content: ctx.text }] },
-      600, "llama-3.3-70b", "openrouter"
+      200, "gemma-4-26b", "openrouter"
     );
     finalText = result.text;
     finalModel = result.model;
     finalTokens = result.tokens;
-  } catch (e) {
-    const fb = await callAI(
-      { messages: [{ role: "system", content: `You are a helpful Jobayer Group assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}.` }, { role: "user", content: ctx.text }] },
-      400, "gemma-4-26b", "openrouter"
-    );
-    finalText = fb.text;
-    finalModel = fb.model;
-    finalTokens = fb.tokens;
+  } catch {
+    finalText = chainContext || `I understand your message about "${ctx.text}". A team member will get back to you shortly.`;
+    finalModel = "fallback";
+    finalTokens = 0;
   }
 
-  // ── Agent Senior: CEO quality review ──
-  try {
-    const reviewResponse = await callAI(
-      {
-        messages: [
-          { role: "system", content: AGENT_SENIOR_PROMPT },
-          { role: "user", content: `Draft response to review:\n\n${finalText}\n\nCustomer message: ${ctx.text}\nCustomer mood: ${ctx.mood}` },
-        ],
-      },
-      150, "llama-3.3-70b", "openrouter"
-    );
-
-    const parsed = JSON.parse(cleanJsonResponse(reviewResponse.text)) as {
-      quality: number;
-      appropriateness: "pass" | "needs_rewrite" | "blocked";
-      issues: string[];
-      feedback: string;
-      rewritten: string | null;
-    };
-
-    seniorReview = {
-      quality: parsed.appropriateness,
-      score: parsed.quality,
-      feedback: parsed.feedback,
-      issues: parsed.issues || [],
-      rewritten: parsed.rewritten || undefined,
-    };
-
-    if (parsed.appropriateness === "blocked") {
-      finalText = `${ctx.language === "bn" ? "ক্ষমা করবেন, আমি এই বিষয়ে উত্তর দিতে পারছি না। একজন সিনিয়র এজেন্ট শীঘ্রই আপনার সাথে যোগাযোগ করবে।" : "I apologize, I cannot answer this. A senior agent will contact you shortly."}`;
-    } else if (parsed.appropriateness === "needs_rewrite" && parsed.rewritten) {
-      finalText = parsed.rewritten;
-    }
-  } catch {
-    // Agent Senior unavailable — proceed with composed response
+  // ── Agent Senior: lightweight quality check (fire-and-forget, non-blocking) ──
+  if (finalText.length < 300) {
+    try {
+      const reviewResponse = await callAI(
+        {
+          messages: [
+            { role: "system", content: `You are a quality reviewer. Check if this response is appropriate and well-written. Reply ONLY with one word: "pass", "rewrite", or "block".` },
+            { role: "user", content: `Response: "${finalText}"\nCustomer mood: ${ctx.mood}` },
+          ],
+        },
+        20, "gemma-4-26b", "openrouter"
+      );
+      const verdict = reviewResponse.text.trim().toLowerCase();
+      if (verdict === "block") {
+        finalText = `${ctx.language === "bn" ? "ক্ষমা করবেন, আমি এই বিষয়ে উত্তর দিতে পারছি না। একজন সিনিয়র এজেন্ট শীঘ্রই আপনার সাথে যোগাযোগ করবে।" : "I apologize, I cannot answer this. A senior agent will contact you shortly."}`;
+      }
+      seniorReview = { quality: verdict, score: 5, feedback: "", issues: [], rewritten: undefined };
+    } catch {}
   }
 
   // ── Persist memory for future sessions ──

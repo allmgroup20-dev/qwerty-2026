@@ -134,6 +134,12 @@ export async function POST(request: NextRequest) {
       reply = brainResult.text;
     }
 
+    // Ensure reply is never empty — fallback if brain returns nothing
+    if (!reply || reply.trim().length === 0) {
+      console.warn(`[WhatsApp Webhook] Brain returned empty reply for ${phone} — using fallback`);
+      reply = "ধন্যবাদ আপনার মেসেজের জন্য। আমি আপনার সহায়তার জন্য প্রস্তুত আছি। বিস্তারিত জানাতে পারেন?";
+    }
+
     // Record platform preference — user replied on WhatsApp
     await recordPlatformActivity(phone, "whatsapp");
 
