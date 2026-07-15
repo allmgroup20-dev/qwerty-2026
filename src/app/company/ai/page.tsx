@@ -70,7 +70,7 @@ export default function AIHubPage() {
   const [brainLoading, setBrainLoading] = useState(true);
   const [expandedDept, setExpandedDept] = useState<string | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
-  const [brainSubTab, setBrainSubTab] = useState<"explorer" | "playground" | "memory" | "schedule" | "flows">("explorer");
+  const [brainSubTab, setBrainSubTab] = useState<"explorer" | "playground" | "memory" | "schedule" | "flows" | "tuning">("explorer");
   const [testMsg, setTestMsg] = useState("");
   const [testResult, setTestResult] = useState<any>(null);
   const [testLoading, setTestLoading] = useState(false);
@@ -89,6 +89,10 @@ export default function AIHubPage() {
   const [flowRunning, setFlowRunning] = useState(false);
   const [flowResult, setFlowResult] = useState<any>(null);
   const [selectedFlowId, setSelectedFlowId] = useState<number | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackStats, setFeedbackStats] = useState<any>(null);
+  const [tokenStats, setTokenStats] = useState<any>(null);
+  const [exportLoading, setExportLoading] = useState(false);
   const [disabledAgents, setDisabledAgents] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
     try { return JSON.parse(localStorage.getItem("brainDisabledAgents") || "[]"); } catch { return []; }
@@ -97,6 +101,64 @@ export default function AIHubPage() {
   const [testResults, setTestResults] = useState<any>(null);
   const [testSuiteLoading, setTestSuiteLoading] = useState(false);
   const [queueStats, setQueueStats] = useState<any>(null);
+  const [tuningData, setTuningData] = useState<any>(null);
+  const [tuningLoading, setTuningLoading] = useState(false);
+  const [tuningAgentId, setTuningAgentId] = useState("");
+  const [tuningAnalysis, setTuningAnalysis] = useState<any>(null);
+  const [tuningSuggestion, setTuningSuggestion] = useState<any>(null);
+  const [tuningApplyMsg, setTuningApplyMsg] = useState("");
+
+  const loadTuningDashboard = async () => {
+    setTuningLoading(true);
+    try {
+      const res = await fetch("/api/ai/brain/tune");
+      const d = await res.json();
+      setTuningData(d);
+    } catch {}
+    setTuningLoading(false);
+  };
+
+  const analyzeAgentForTuning = async () => {
+    if (!tuningAgentId) return;
+    setTuningAnalysis(null);
+    setTuningSuggestion(null);
+    try {
+      const res = await fetch("/api/ai/brain/tune", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "analyze", agentId: tuningAgentId }),
+      });
+      setTuningAnalysis(await res.json());
+    } catch {}
+  };
+
+  const suggestPromptImprovement = async () => {
+    if (!tuningAgentId) return;
+    setTuningSuggestion(null);
+    try {
+      const res = await fetch("/api/ai/brain/tune", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "suggest", agentId: tuningAgentId }),
+      });
+      setTuningSuggestion(await res.json());
+    } catch {}
+  };
+
+  const applyPromptImprovement = async () => {
+    if (!tuningSuggestion?.suggestedPrompt || !tuningAgentId) return;
+    setTuningApplyMsg("");
+    try {
+      const res = await fetch("/api/ai/brain/tune", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "apply", agentId: tuningAgentId, prompt: tuningSuggestion.suggestedPrompt, source: "ai_suggested", feedbackTriggered: true }),
+      });
+      const d: any = await res.json();
+      setTuningApplyMsg(d.success ? (lang === "bn" ? "✓ প্রম্পট আপডেট করা হয়েছে" : "✓ Prompt updated") : (lang === "bn" ? "✗ ব্যর্থ" : "✗ Failed"));
+      loadTuningDashboard();
+    } catch {}
+  };
 
   const toggleAgent = (agentId: string) => {
     setDisabledAgents(prev => {
@@ -300,6 +362,49 @@ export default function AIHubPage() {
     setFlowBuilder(copy);
   };
 
+  const submitFeedback = async () => {
+    if (feedbackRating === 0 || !testResult) return;
+    try {
+      await fetch("/api/ai/brain/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: "test-user",
+          rating: feedbackRating,
+          intent: testResult.intent,
+          department: testResult.department,
+          model_used: testResult.model,
+          processing_ms: testResult.processingMs,
+        }),
+      });
+    } catch {}
+    setFeedbackRating(0);
+  };
+
+  const loadFeedbackStats = async () => {
+    try {
+      const res = await fetch("/api/ai/brain/feedback");
+      const d: any = await res.json();
+      setFeedbackStats(d);
+    } catch {}
+  };
+
+  const exportBrainData = async () => {
+    setExportLoading(true);
+    try {
+      const res = await fetch("/api/ai/brain/export");
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `brain-export-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+    setExportLoading(false);
+  };
+
   const loadSkills = async () => {
     setSkillsLoading(true);
     try {
@@ -316,9 +421,11 @@ export default function AIHubPage() {
       Promise.all([
         fetch("/api/ai/brain/log").then(r => r.json()),
         fetch("/api/ai/brain/agents").then(r => r.json()),
-      ]).then(([logData, agentData]) => {
+        fetch("/api/ai/brain/feedback").then(r => r.json()),
+      ]).then(([logData, agentData, fbData]) => {
         setDashBrainStats(logData);
         setDashBrainUsage(agentData);
+        setFeedbackStats(fbData);
       }).catch(() => {}).finally(() => setDashLoading(false));
     }
   }, [activeTab]);
@@ -557,6 +664,61 @@ export default function AIHubPage() {
                   </div>
                 </div>
               </div>
+
+              {/* ── Feedback Stats + Export ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-bold text-primary text-sm">{lang === "bn" ? "⭐ ফিডব্যাক সারাংশ" : "⭐ Feedback Summary"}</h2>
+                    <button onClick={loadFeedbackStats} className="text-xs text-primary underline">{lang === "bn" ? "রিফ্রেশ" : "Refresh"}</button>
+                  </div>
+                  {feedbackStats ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                        <div className="bg-gray-50 rounded-lg p-2"><div className="font-bold text-primary">{feedbackStats.stats.total}</div><div className="text-text-secondary">{lang === "bn" ? "মোট" : "Total"}</div></div>
+                        <div className="bg-gray-50 rounded-lg p-2"><div className="font-bold text-green-600">{feedbackStats.stats.positive}</div><div className="text-text-secondary">{lang === "bn" ? "পজিটিভ" : "Positive"}</div></div>
+                        <div className="bg-gray-50 rounded-lg p-2"><div className="font-bold text-amber-600">{feedbackStats.stats.neutral}</div><div className="text-text-secondary">{lang === "bn" ? "নিউট্রাল" : "Neutral"}</div></div>
+                        <div className="bg-gray-50 rounded-lg p-2"><div className="font-bold text-red-600">{feedbackStats.stats.negative}</div><div className="text-text-secondary">{lang === "bn" ? "নেগেটিভ" : "Negative"}</div></div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-text-secondary">{lang === "bn" ? "গড় রেটিং:" : "Avg Rating:"}</span>
+                        <span className="text-lg font-bold text-amber-500">{Number(feedbackStats.stats.avg_rating).toFixed(1)}</span>
+                        <span className="text-text-secondary">/ 5</span>
+                      </div>
+                      {feedbackStats.byDepartment?.length > 0 && (
+                        <div className="space-y-1.5">
+                          <p className="text-[10px] font-medium text-text-secondary">{lang === "bn" ? "ডিপার্টমেন্ট অনুযায়ী:" : "By Department:"}</p>
+                          {feedbackStats.byDepartment.map((d: any, i: number) => (
+                            <div key={i} className="flex items-center gap-2 text-xs">
+                              <span className="text-primary w-28 truncate">{d.department || "unknown"}</span>
+                              <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full bg-amber-400" style={{ width: `${(d.count / Math.max(...feedbackStats.byDepartment.map((x: any) => x.count))) * 100}%` }} />
+                              </div>
+                              <span className="text-text-secondary w-8 text-right">{d.count}</span>
+                              <span className="text-amber-500 w-6 text-right">{Number(d.avg_rating).toFixed(1)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <button onClick={loadFeedbackStats} className="px-4 py-2 text-xs font-medium bg-primary text-white rounded-xl">{lang === "bn" ? "📊 ফিডব্যাক লোড" : "📊 Load Feedback"}</button>
+                  )}
+                </div>
+
+                <div className="card p-6">
+                  <h2 className="font-bold text-primary text-sm mb-4">{lang === "bn" ? "📦 ডাটা এক্সপোর্ট" : "📦 Data Export"}</h2>
+                  <p className="text-xs text-text-secondary mb-4">{lang === "bn" ? "সমস্ত ব্রেইন ডাটা (ব্যবহার, ফিডব্যাক, ফ্লো, মেমোরি, শিডিউল) JSON ফরম্যাটে ডাউনলোড করুন" : "Download all brain data (usage, feedback, flows, memory, schedules) as JSON"}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4 text-center text-xs">
+                    <div className="bg-gray-50 rounded-lg p-2"><div className="font-bold text-primary">{dashBrainStats?.stats?.total || 0}</div><div className="text-text-secondary">{lang === "bn" ? "রিকোয়েস্ট" : "Requests"}</div></div>
+                    <div className="bg-gray-50 rounded-lg p-2"><div className="font-bold text-green-600">{feedbackStats?.stats?.total || 0}</div><div className="text-text-secondary">{lang === "bn" ? "ফিডব্যাক" : "Feedback"}</div></div>
+                    <div className="bg-gray-50 rounded-lg p-2"><div className="font-bold text-purple-600">{dashBrainUsage?.totalDepartments || 7}</div><div className="text-text-secondary">{lang === "bn" ? "ডিপার্টমেন্ট" : "Depts"}</div></div>
+                    <div className="bg-gray-50 rounded-lg p-2"><div className="font-bold text-amber-600">{dashBrainUsage?.totalAgents || 235}</div><div className="text-text-secondary">{lang === "bn" ? "এজেন্ট" : "Agents"}</div></div>
+                    <div className="bg-gray-50 rounded-lg p-2"><div className="font-bold text-blue-600">{dashBrainStats?.stats?.total_tokens || 0}</div><div className="text-text-secondary">{lang === "bn" ? "টোকেন" : "Tokens"}</div></div>
+                  </div>
+                  <button onClick={exportBrainData} disabled={exportLoading} className="px-5 py-2.5 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/90 disabled:opacity-50">{exportLoading ? "..." : (lang === "bn" ? "💾 JSON এক্সপোর্ট" : "💾 Export JSON")}</button>
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -678,6 +840,7 @@ export default function AIHubPage() {
               { id: "memory" as const, icon: "🧠", en: "Memory", bn: "মেমোরি" },
               { id: "schedule" as const, icon: "⏰", en: "Schedule", bn: "শিডিউল" },
               { id: "flows" as const, icon: "🔀", en: "Flows", bn: "ফ্লো" },
+              { id: "tuning" as const, icon: "🎯", en: "Tuning", bn: "টিউনিং" },
             ]).map(tab => (
               <button key={tab.id} onClick={() => setBrainSubTab(tab.id)} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${brainSubTab === tab.id ? "bg-white text-primary shadow-sm" : "text-text-secondary hover:text-text"}`}>
                 <span>{tab.icon}</span><span>{lang === "bn" ? tab.bn : tab.en}</span>
@@ -778,6 +941,13 @@ export default function AIHubPage() {
                       </div>
                     )}
                     <div className="flex items-center gap-2 text-xs text-text-secondary"><span>{testResult.tokens} tokens</span><span>·</span><span>{testResult.processingMs}ms</span></div>
+                    {/* Feedback widget */}
+                    <div className="flex items-center gap-2 pt-1 border-t border-border mt-1">
+                      <span className="text-[10px] text-text-secondary">{lang === "bn" ? "এই রেসপন্সটি রেট দিন:" : "Rate this response:"}</span>
+                      {[1, 2, 3, 4, 5].map(r => (
+                        <button key={r} onClick={() => { setFeedbackRating(r); setTimeout(submitFeedback, 100); }} className={`w-5 h-5 text-xs rounded-full ${feedbackRating >= r ? "bg-amber-400 text-white" : "bg-gray-100 text-text-secondary"} transition-colors`}>{r}</button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1052,7 +1222,161 @@ export default function AIHubPage() {
             </div>
           )}
 
-          {!brainData && (brainSubTab as string) !== "memory" && (brainSubTab as string) !== "schedule" && (brainSubTab as string) !== "flows" && (
+          {/* ── Tuning Section ── */}
+          {(brainSubTab as string) === "tuning" && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-border p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-primary">{lang === "bn" ? "🎯 এজেন্ট টিউনিং" : "🎯 Agent Tuning"}</h2>
+                  <button onClick={loadTuningDashboard} disabled={tuningLoading} className="px-4 py-2 text-xs font-medium bg-primary text-white rounded-xl disabled:opacity-50">{tuningLoading ? "..." : (lang === "bn" ? "📊 রিফ্রেশ" : "📊 Refresh")}</button>
+                </div>
+                <p className="text-sm text-text-secondary mb-4">{lang === "bn" ? "ফিডব্যাক ডাটা ব্যবহার করে এজেন্ট প্রম্পট অটো-ইমপ্রুভ করুন। নিচে এজেন্ট সিলেক্ট করে অ্যানালাইসিস ও ইমপ্রুভমেন্ট সাজেশন দেখুন।" : "Use feedback data to auto-improve agent prompts. Select an agent below to see analysis & improvement suggestions."}</p>
+
+                {/* Agent selector */}
+                <div className="mb-4">
+                  <p className="text-xs font-medium text-text-secondary mb-2">{lang === "bn" ? "এজেন্ট সিলেক্ট করুন:" : "Select Agent:"}</p>
+                  <div className="flex gap-2">
+                    <input value={tuningAgentId} onChange={e => setTuningAgentId(e.target.value)} placeholder={lang === "bn" ? "এজেন্ট আইডি (যেমন: lead_scanner)" : "Agent ID (e.g. lead_scanner)"} className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-gray-50 text-sm text-primary font-mono" />
+                    <button onClick={analyzeAgentForTuning} disabled={!tuningAgentId || tuningLoading} className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50">{lang === "bn" ? "🔍 অ্যানালাইজ" : "🔍 Analyze"}</button>
+                    <button onClick={suggestPromptImprovement} disabled={!tuningAgentId || !tuningAnalysis} className="px-4 py-2 text-sm font-medium bg-purple-500 text-white rounded-xl hover:bg-purple-600 disabled:opacity-50">{lang === "bn" ? "🤖 সাজেশন" : "🤖 Suggest"}</button>
+                  </div>
+                </div>
+
+                {/* Feedback Analysis */}
+                {tuningAnalysis && (
+                  <div className="mb-4 p-4 bg-blue-50 rounded-xl">
+                    <h3 className="text-sm font-bold text-blue-700 mb-2">{lang === "bn" ? "📋 ফিডব্যাক অ্যানালাইসিস" : "📋 Feedback Analysis"}</h3>
+                    <div className="space-y-2 text-xs">
+                      {tuningAnalysis.issues?.length > 0 && (
+                        <div>
+                          <p className="font-medium text-red-600">{lang === "bn" ? "সমস্যা:" : "Issues:"}</p>
+                          {tuningAnalysis.issues.map((i: string, idx: number) => <p key={idx} className="text-text-secondary pl-3">• {i}</p>)}
+                        </div>
+                      )}
+                      {tuningAnalysis.praise?.length > 0 && (
+                        <div>
+                          <p className="font-medium text-green-600">{lang === "bn" ? "প্রশংসা:" : "Praise:"}</p>
+                          {tuningAnalysis.praise.map((p: string, idx: number) => <p key={idx} className="text-text-secondary pl-3">• {p}</p>)}
+                        </div>
+                      )}
+                      {tuningAnalysis.suggestion && (
+                        <div className="mt-2 p-2 bg-white rounded-lg">
+                          <p className="font-medium text-purple-600 mb-1">{lang === "bn" ? "AI সাজেশন:" : "AI Suggestion:"}</p>
+                          <p className="text-text-secondary whitespace-pre-wrap">{tuningAnalysis.suggestion}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Suggested Prompt */}
+                {tuningSuggestion && (
+                  <div className="mb-4">
+                    <div className="p-4 bg-purple-50 rounded-xl mb-3">
+                      <h3 className="text-sm font-bold text-purple-700 mb-2">{lang === "bn" ? "🤖 সাজেস্টেড প্রম্পট" : "🤖 Suggested Prompt"}</h3>
+                      <pre className="text-xs text-text-secondary whitespace-pre-wrap bg-white p-3 rounded-lg border border-purple-100 max-h-60 overflow-y-auto">{tuningSuggestion.suggestedPrompt}</pre>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-xl mb-3">
+                      <h3 className="text-sm font-bold text-text-secondary mb-2">{lang === "bn" ? "📄 বর্তমান প্রম্পট" : "📄 Current Prompt"}</h3>
+                      <pre className="text-xs text-text-secondary whitespace-pre-wrap bg-white p-3 rounded-lg border border-gray-100 max-h-60 overflow-y-auto">{tuningSuggestion.originalPrompt}</pre>
+                    </div>
+                    <button onClick={applyPromptImprovement} className="px-5 py-2.5 text-sm font-medium bg-green-500 text-white rounded-xl hover:bg-green-600">{lang === "bn" ? "✅ প্রম্পট আপডেট করুন" : "✅ Apply Improvement"}</button>
+                    {tuningApplyMsg && <p className="text-sm mt-2 font-medium text-green-600">{tuningApplyMsg}</p>}
+                  </div>
+                )}
+              </div>
+
+              {/* Agents Needing Improvement */}
+              {tuningData?.agentsNeedingImprovement?.length > 0 && (
+                <div className="bg-white rounded-2xl border border-border p-6">
+                  <h3 className="text-sm font-bold text-primary mb-3">{lang === "bn" ? "⚠️ ইমপ্রুভমেন্ট প্রয়োজন" : "⚠️ Needs Improvement"}</h3>
+                  <div className="space-y-2">
+                    {tuningData.agentsNeedingImprovement.map((a: any, i: number) => (
+                      <div key={i} onClick={() => setTuningAgentId(a.agentId)} className="flex items-center justify-between p-3 rounded-xl hover:bg-red-50 cursor-pointer transition-colors border border-border">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium text-primary">{a.agentName}</span>
+                          <span className="text-xs text-text-secondary">({a.agentId})</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">{a.avgRating.toFixed(1)} ★</span>
+                          <span className="text-text-secondary">{a.totalFeedback} {lang === "bn" ? "টি ফিডব্যাক" : "feedbacks"}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Version History */}
+              {tuningData?.versionHistory?.length > 0 && (
+                <div className="bg-white rounded-2xl border border-border p-6">
+                  <h3 className="text-sm font-bold text-primary mb-3">{lang === "bn" ? "📜 প্রম্পট ভার্সন হিস্ট্রি" : "📜 Prompt Version History"}</h3>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {tuningData.versionHistory.map((v: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 text-xs">
+                        <div>
+                          <span className="font-medium text-primary">{v.agentId}</span>
+                          <span className="text-text-secondary mx-2">v{v.version}</span>
+                          {v.active === 1 && <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-600 text-[10px] font-medium">{lang === "bn" ? "সক্রিয়" : "Active"}</span>}
+                          <span className="text-text-secondary ml-2">{v.source}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-text-secondary">{v.avgRatingBefore.toFixed(1)} → {v.avgRatingAfter.toFixed(1)}</span>
+                          <span className="text-text-secondary">{v.createdAt?.split("T")[0]}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AB Tests */}
+              {tuningData?.abTests?.length > 0 && (
+                <div className="bg-white rounded-2xl border border-border p-6">
+                  <h3 className="text-sm font-bold text-primary mb-3">{lang === "bn" ? "🔬 A/B টেস্ট" : "🔬 A/B Tests"}</h3>
+                  <div className="space-y-2">
+                    {tuningData.abTests.map((t: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 text-xs">
+                        <div>
+                          <span className="font-medium text-primary">{t.agentId}</span>
+                          <span className="text-text-secondary mx-2">v{t.versionA} vs v{t.versionB}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-text-secondary">A: {t.aAvgRating.toFixed(1)} ({t.aCount})</span>
+                          <span className="text-text-secondary">B: {t.bAvgRating.toFixed(1)} ({t.bCount})</span>
+                          {t.winner && <span className={`px-1.5 py-0.5 rounded font-medium ${t.winner === "b" ? "bg-green-100 text-green-600" : t.winner === "a" ? "bg-blue-100 text-blue-600" : "bg-gray-200 text-gray-600"}`}>{t.winner === "b" ? "B wins" : t.winner === "a" ? "A wins" : t.winner}</span>}
+                          <span className={`px-1.5 py-0.5 rounded ${t.status === "running" ? "bg-amber-100 text-amber-600" : "bg-green-100 text-green-600"}`}>{t.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tuning Log */}
+              {tuningData?.improvementLog?.length > 0 && (
+                <div className="bg-white rounded-2xl border border-border p-6">
+                  <h3 className="text-sm font-bold text-primary mb-3">{lang === "bn" ? "📝 টিউনিং লগ" : "📝 Tuning Log"}</h3>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {tuningData.improvementLog.map((l: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 text-xs">
+                        <div>
+                          <span className="font-medium text-primary">{l.agentId}</span>
+                          <span className="text-text-secondary ml-2">{l.action}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-text-secondary">
+                          {l.ratingBefore > 0 && <span>{l.ratingBefore.toFixed(1)} → {l.ratingAfter.toFixed(1)}</span>}
+                          <span>{l.createdAt?.split("T")[0]}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!brainData && (brainSubTab as string) !== "memory" && (brainSubTab as string) !== "schedule" && (brainSubTab as string) !== "flows" && (brainSubTab as string) !== "tuning" && (
             <div className="text-sm text-text-secondary py-12 text-center">{lang === "bn" ? "ব্রেইন ডাটা লোড করতে ব্যর্থ" : "Failed to load brain data"}</div>
           )}
           </>)}

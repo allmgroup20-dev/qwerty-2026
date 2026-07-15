@@ -96,8 +96,8 @@ export async function executeAgent(
   };
 }
 
-export function buildAgentPrompt(agent: AgentDef, ctx: Record<string, any>): string {
-  let prompt = agent.promptTemplate;
+export function buildAgentPrompt(agent: AgentDef, ctx: Record<string, any>, promptOverride?: string): string {
+  let prompt = promptOverride || agent.promptTemplate;
   for (const [key, val] of Object.entries(ctx)) {
     prompt = prompt.replace(`{{${key}}}`, String(val ?? ""));
   }

@@ -4,6 +4,7 @@ import { DEPARTMENTS, getAgentsByDepartment, findAgent } from "./registry";
 import type { Intent, DepartmentId, MessageCtx, BrainResult, AgentDef, CrossDeptStep, AgentSeniorReview } from "./types";
 import { getMemory, setMemory, buildMemoryContext } from "./memory";
 import { getDB } from "@/lib/db";
+import { getActivePromptOverride } from "./agent-tuning";
 
 // ── Intent → Department routing ──
 const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
@@ -274,7 +275,8 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
       const agent = agentData.agent;
       try {
         const contextVars = buildContext(ctx, intent, chainContext, memories);
-        const agentPrompt = buildAgentPrompt(agent, contextVars);
+        const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
+        const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text);
         chainContext += `\n[${agent.name} (${agentData.department})]\n${output.text}`;
         agentsUsed.push(agent.id);
@@ -307,7 +309,8 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
     for (const agent of selectedAgents) {
       try {
         const contextVars = buildContext(ctx, intent, chainContext, memories);
-        const agentPrompt = buildAgentPrompt(agent, contextVars);
+        const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
+        const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text);
         chainContext += `\n[${agent.name}]\n${output.text}`;
         agentsUsed.push(agent.id);
