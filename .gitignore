@@ -11,3 +11,5 @@ cloudflare-env.d.ts
 .DS_Store
 *.log
 jobayer-group-career/
+relay/node_modules/
+relay/auth/

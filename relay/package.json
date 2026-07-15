@@ -1,0 +1,12 @@
+{
+  "name": "whatsapp-relay",
+  "version": "1.0.0",
+  "description": "WhatsApp Baileys relay for Jobayer Group Career — connects WhatsApp 24/7 and bridges to Cloudflare API",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.0"
+  }
+}
