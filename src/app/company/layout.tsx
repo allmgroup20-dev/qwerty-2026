@@ -35,6 +35,7 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/dashboard/telegram", en: "Telegram", bn: "টেলিগ্রাম", icon: "✈️" },
       { href: "/dashboard/platforms", en: "Platform Prefs", bn: "প্ল্যাটফর্ম", icon: "🔄" },
       { href: "/company/skills", en: "Skills", bn: "দক্ষতা", icon: "🧠" },
+      { href: "/company/ai-conversations", en: "Conversations", bn: "কথোপকথন", icon: "💬" },
       { href: "/company/ai", en: "AI", bn: "এআই", icon: "🤖" },
     ],
   },

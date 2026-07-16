@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLanguageStore } from "@/lib/store";
 
 interface Stats {
@@ -18,12 +18,31 @@ interface ConsolidationResult {
   shortcuts: number;
 }
 
+interface SkillHistoryItem {
+  id: number;
+  name: string;
+  category: string;
+  keywords: string;
+  response: string;
+  version: number;
+  updated_by: string | null;
+  updated_at: string;
+  created_at: string;
+  psychologist_notes: string | null;
+  is_psychologist_updated: boolean;
+  audit_log: { action: string; changed_by: string; changed_at: string; details: string }[];
+}
+
 export default function SkillsPage() {
   const { lang } = useLanguageStore();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [consolidating, setConsolidating] = useState(false);
   const [result, setResult] = useState<ConsolidationResult | null>(null);
+  const [skillHistory, setSkillHistory] = useState<SkillHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [expandedSkill, setExpandedSkill] = useState<number | null>(null);
 
   async function loadStats() {
     setLoading(true);
@@ -36,6 +55,18 @@ export default function SkillsPage() {
   }
 
   useEffect(() => { loadStats(); }, []);
+
+  const loadSkillHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch("/api/ai/psychologist?action=skill_history");
+      const data: { skills?: SkillHistoryItem[] } = await res.json();
+      if (data.skills) setSkillHistory(data.skills);
+    } catch {}
+    setHistoryLoading(false);
+  }, []);
+
+  useEffect(() => { if (showHistory) loadSkillHistory(); }, [showHistory, loadSkillHistory]);
 
   async function runConsolidation() {
     setConsolidating(true);
@@ -162,6 +193,104 @@ export default function SkillsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ══════════════ SKILL HISTORY ══════════════ */}
+        <div className="card p-5 mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-primary text-sm">
+              {lang === "bn" ? "স্কিল হিস্টোরি (সাইকোলজিস্ট ট্র্যাকিং)" : "Skill History (Psychologist Tracking)"}
+            </h3>
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-xl hover:bg-primary/90 transition-all"
+            >
+              {showHistory ? (lang === "bn" ? "বন্ধ করুন" : "Close") : (lang === "bn" ? "দেখুন" : "View History")}
+            </button>
+          </div>
+
+          {showHistory && (
+            historyLoading ? (
+              <div className="text-text-secondary text-sm py-8 text-center">Loading history...</div>
+            ) : skillHistory.length === 0 ? (
+              <div className="text-text-secondary text-sm py-8 text-center">
+                {lang === "bn" ? "কোনো স্কিল পাওয়া যায়নি" : "No skills found"}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {skillHistory.map((skill) => (
+                  <div key={skill.id} className="border border-gray-100 rounded-xl overflow-hidden">
+                    <div
+                      onClick={() => setExpandedSkill(expandedSkill === skill.id ? null : skill.id)}
+                      className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className={`w-2 h-2 rounded-full ${skill.is_psychologist_updated ? "bg-purple-500" : "bg-gray-300"}`} />
+                        <span className="text-sm font-medium text-primary truncate">{skill.name}</span>
+                        <span className="text-xs text-text-secondary">v{skill.version}</span>
+                        {skill.is_psychologist_updated && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium">
+                            {lang === "bn" ? "সাইকোলজিস্ট" : "Psychologist"}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-text-secondary">
+                        <span>{new Date(skill.updated_at).toLocaleDateString()}</span>
+                        <span className={`transition-transform ${expandedSkill === skill.id ? "rotate-180" : ""}`}>▼</span>
+                      </div>
+                    </div>
+
+                    {expandedSkill === skill.id && (
+                      <div className="px-3 pb-3 space-y-2 text-xs">
+                        <div className="grid grid-cols-2 gap-2 p-2 bg-gray-50 rounded-lg">
+                          <div><span className="text-text-secondary">{lang === "bn" ? "বিভাগ:" : "Category:"}</span> {skill.category || "-"}</div>
+                          <div><span className="text-text-secondary">{lang === "bn" ? "কীওয়ার্ড:" : "Keywords:"}</span> {skill.keywords?.slice(0, 100) || "-"}</div>
+                          <div><span className="text-text-secondary">{lang === "bn" ? "আপডেট করেছেন:" : "Updated by:"}</span> {skill.updated_by || "system"}</div>
+                          <div><span className="text-text-secondary">{lang === "bn" ? "তৈরি:" : "Created:"}</span> {new Date(skill.created_at).toLocaleDateString()}</div>
+                        </div>
+
+                        {skill.psychologist_notes && (
+                          <div className="p-2 bg-purple-50 border border-purple-100 rounded-lg">
+                            <span className="font-medium text-purple-700">{lang === "bn" ? "সাইকোলজিস্ট নোট:" : "Psychologist Notes:"}</span>
+                            <p className="mt-0.5 text-purple-600">{skill.psychologist_notes}</p>
+                          </div>
+                        )}
+
+                        <div className="text-xs font-medium text-text-secondary mt-2 mb-1">
+                          {lang === "bn" ? "রেসপন্স:" : "Response:"}
+                        </div>
+                        <div className="p-2 bg-gray-50 rounded-lg text-text-secondary whitespace-pre-wrap max-h-24 overflow-y-auto">
+                          {skill.response?.slice(0, 500) || "-"}
+                        </div>
+
+                        {skill.audit_log && skill.audit_log.length > 0 && (
+                          <>
+                            <div className="text-xs font-medium text-text-secondary mt-2 mb-1">
+                              {lang === "bn" ? "অডিট লগ:" : "Audit Log:"}
+                            </div>
+                            <div className="space-y-1">
+                              {skill.audit_log.map((log, li) => (
+                                <div key={li} className="flex items-center gap-2 p-1.5 bg-gray-50 rounded-lg">
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                    log.action === "update" ? "bg-amber-100 text-amber-700" :
+                                    log.action === "create" ? "bg-green-100 text-green-700" :
+                                    "bg-blue-100 text-blue-700"
+                                  }`}>{log.action}</span>
+                                  <span className="text-text-secondary">{log.changed_by}</span>
+                                  <span className="text-text-secondary/60">{new Date(log.changed_at).toLocaleDateString()}</span>
+                                  {log.details && <span className="text-text-secondary/60 truncate">- {log.details}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          )}
         </div>
       </div>
     </div>
