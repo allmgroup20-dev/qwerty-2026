@@ -28,6 +28,15 @@ interface AuditLogEntry {
   details: string | null;
 }
 
+interface PsychTask {
+  id: number;
+  agent_id: string;
+  target_phone: string;
+  issue_type: string;
+  context: string;
+  created_at: string;
+}
+
 interface SkillHistoryItem {
   id: number;
   name: string;
@@ -58,6 +67,10 @@ export default function SkillsPage() {
   const [expandedSkill, setExpandedSkill] = useState<number | null>(null);
   const [buttonLoading, setButtonLoading] = useState<number | null>(null);
   const [editingSkill, setEditingSkill] = useState<number | null>(null);
+  const [pendingTasks, setPendingTasks] = useState<PsychTask[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [taskAnswers, setTaskAnswers] = useState<Record<number, string>>({});
+  const [taskSubmitting, setTaskSubmitting] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ keywords: "", question: "", answer: "", category: "" });
   const [saving, setSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -88,6 +101,54 @@ export default function SkillsPage() {
   }, []);
 
   useEffect(() => { if (showHistory) loadSkillHistory(); }, [showHistory, loadSkillHistory]);
+
+  async function loadPendingTasks() {
+    setTasksLoading(true);
+    try {
+      const res = await fetch("/api/ai/psychologist?action=feedback");
+      const data: { feedback?: PsychTask[] } = await res.json();
+      if (data.feedback) setPendingTasks(data.feedback.filter((f: PsychTask) => f.issue_type === "manual_override"));
+    } catch {}
+    setTasksLoading(false);
+  }
+
+  useEffect(() => { loadPendingTasks(); }, []);
+
+  function extractSkillId(context: string): number | null {
+    const m = context.match(/Skill\s+#?(\d+)/i);
+    return m ? parseInt(m[1]) : null;
+  }
+
+  async function resolveTask(taskId: number, context: string) {
+    const skillId = extractSkillId(context);
+    if (!skillId) { setMsg({ type: "error", text: "Skill ID not found in request" }); return; }
+    const answer = taskAnswers[taskId];
+    if (!answer || !answer.trim()) return;
+    setTaskSubmitting(taskId);
+    try {
+      const res = await fetch("/api/ai/psychologist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_skill", skillId, answer }),
+      });
+      const data: { success: boolean } = await res.json();
+      if (data.success) {
+        await fetch("/api/ai/psychologist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "resolve_feedback", feedbackId: taskId }),
+        });
+        setMsg({ type: "success", text: lang === "bn"
+          ? "✅ উত্তর সংরক্ষিত হয়েছে — override সরানো হয়েছে"
+          : "✅ Answer saved — override removed" });
+        loadPendingTasks();
+        if (showHistory) loadSkillHistory();
+      }
+    } catch {
+      setMsg({ type: "error", text: lang === "bn" ? "ব্যর্থ" : "Failed" });
+    }
+    setTaskSubmitting(null);
+  }
 
   useEffect(() => {
     if (msg) { const t = setTimeout(() => setMsg(null), 3000); return () => clearTimeout(t); }
@@ -363,6 +424,56 @@ export default function SkillsPage() {
           )}
         </div>
 
+        {/* ══════════════ PENDING PSYCHOLOGIST TASKS ══════════════ */}
+        {pendingTasks.length > 0 && (
+          <div className="card p-5 mt-6 border-2 border-purple-200 bg-purple-50/20">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-purple-700 text-sm">
+                🧠 {lang === "bn" ? "সাইকোলজিস্টের জন্য অপেক্ষমাণ টাস্ক" : "Pending Psychologist Tasks"}
+                <span className="ml-2 text-[10px] bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">{pendingTasks.length}</span>
+              </h3>
+              <button onClick={loadPendingTasks} className="px-3 py-1.5 text-xs font-medium bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all">
+                {lang === "bn" ? "🔄 রিফ্রেশ" : "🔄 Refresh"}
+              </button>
+            </div>
+            {tasksLoading ? (
+              <div className="text-text-secondary text-sm py-4 text-center">Loading...</div>
+            ) : (
+              <div className="space-y-2">
+                {pendingTasks.map((task) => {
+                  const skillId = extractSkillId(task.context);
+                  return (
+                    <div key={task.id} className="border border-purple-200 bg-white rounded-xl p-3">
+                      <div className="text-xs text-text-secondary mb-1">
+                        {lang === "bn" ? "স্কিল #" : "Skill #"}{skillId || "?"}
+                        <span className="mx-2">|</span>
+                        {new Date(task.created_at).toLocaleString()}
+                      </div>
+                      <div className="text-sm font-medium text-primary mb-2 whitespace-pre-wrap">{task.context}</div>
+                      <textarea
+                        value={taskAnswers[task.id] || ""}
+                        onChange={(e) => setTaskAnswers((prev) => ({ ...prev, [task.id]: e.target.value }))}
+                        placeholder={lang === "bn" ? "এই প্রশ্নের জন্য সর্বোত্তম উত্তর লিখুন..." : "Write the best answer for this question..."}
+                        rows={3}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 mb-2"
+                      />
+                      <button
+                        onClick={() => resolveTask(task.id, task.context)}
+                        disabled={taskSubmitting === task.id || !taskAnswers[task.id]?.trim()}
+                        className="px-4 py-2 text-xs font-medium bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 transition-all"
+                      >
+                        {taskSubmitting === task.id
+                          ? (lang === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving...")
+                          : (lang === "bn" ? "✅ উত্তর সংরক্ষণ করুন" : "✅ Save Answer")}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ══════════════ SKILL HISTORY ══════════════ */}
         <div className="card p-5 mt-6">
           <div className="flex items-center justify-between mb-3">
@@ -398,11 +509,6 @@ export default function SkillsPage() {
                         <span className={`w-2 h-2 rounded-full ${skill.is_psychologist_updated ? "bg-purple-500" : skill.manual_override === 1 ? "bg-amber-500" : "bg-gray-300"}`} />
                         <span className="text-sm font-medium text-primary truncate">{skill.question || skill.name || `Skill #${skill.id}`}</span>
                         <span className="text-xs text-text-secondary">v{skill.version || 0}</span>
-                        {skill.manual_override === 1 && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
-                            {lang === "bn" ? "ম্যানুয়াল" : "Manual"}
-                          </span>
-                        )}
                         {skill.is_psychologist_updated && (
                           <span className="text-[10px] px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium">
                             {lang === "bn" ? "সাইকোলজিস্ট" : "Psychologist"}
