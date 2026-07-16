@@ -370,13 +370,29 @@ export async function buildSystemPrompt(params: {
     }
   }
 
-  /* --- Conversation History --- */
+  /* --- Conversation Summary (instead of full history — token saver) --- */
   if (params.phone) {
-    const history = await getHistory(params.phone);
-    if (history) {
-      parts.push("CONVERSATION HISTORY:");
-      parts.push(formatConversationHistory(history));
+    const summary = (await import("./history")).getSummary;
+    const s = await summary(params.phone);
+    if (s) {
+      parts.push("CONVERSATION SUMMARY:");
+      parts.push(s);
       parts.push("");
+      // Include only last 2 messages for context
+      const history = await getHistory(params.phone);
+      if (history) {
+        const recent = history.slice(-2);
+        parts.push("RECENT EXCHANGES:");
+        parts.push(formatConversationHistory(recent));
+        parts.push("");
+      }
+    } else {
+      const history = await getHistory(params.phone);
+      if (history) {
+        parts.push("CONVERSATION HISTORY:");
+        parts.push(formatConversationHistory(history));
+        parts.push("");
+      }
     }
   }
 

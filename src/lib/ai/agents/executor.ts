@@ -1,5 +1,5 @@
 import { ensureDB } from "@/lib/db";
-import { query, execute } from "@/lib/db/queries";
+import { query, queryFirst, execute } from "@/lib/db/queries";
 import { callAI } from "@/lib/ai/router";
 import { getAgent, updateAgentConfig, createSubmission, createReport, logActivity, getGlobalConfig } from "./registry";
 import { buildResearchPrompt, parseResearchResponse } from "./prompts";
@@ -12,6 +12,31 @@ const DEFAULT_RESEARCH_PROVIDER = "openrouter";
 export async function runAgent(agentId: string): Promise<RunResult> {
   const agent = await getAgent(agentId);
   if (!agent) return { success: false, agent_id: agentId, error: "Agent not found" };
+
+  // Phase 4: Check agent output cache — if same agent ran recently, skip
+  try {
+    const cacheWindow = Math.max(agent.cron_interval || 360, 60);
+    const db = await ensureDB();
+    const lastReport = await queryFirst<{ id: number; created_at: string }>(
+      { DB: db },
+      "SELECT id, created_at FROM ai_agent_reports WHERE agent_id = ? ORDER BY created_at DESC LIMIT 1",
+      [agentId]
+    );
+    if (lastReport?.created_at) {
+      const elapsed = (Date.now() - new Date(lastReport.created_at).getTime()) / 60000;
+      if (elapsed < cacheWindow * 0.5) {
+        const cached = await queryFirst<{ summary_bn: string }>(
+          { DB: db },
+          "SELECT summary_bn FROM ai_agent_reports WHERE id = ?",
+          [lastReport.id]
+        );
+        if (cached?.summary_bn) {
+          await logActivity(agentId, "cached", `ক্যাশ থেকে ফলাফল (${Math.round(elapsed)} মিনিট পুরনো)`);
+          return { success: true, agent_id: agentId, report_id: lastReport.id };
+        }
+      }
+    }
+  } catch {}
 
   try {
     await updateAgentConfig(agentId, { status: "active" });
@@ -29,7 +54,6 @@ export async function runAgent(agentId: string): Promise<RunResult> {
       recentMessages: data.recentMessages,
     });
 
-    // Determine model/provider: agent config > global config > default
     const globalConfig = await getGlobalConfig();
     const preferredModel = agent.model_id || (globalConfig?.mode === "model" ? globalConfig.modelId : undefined) || undefined;
     const preferredProvider = agent.provider || (globalConfig?.mode === "provider" ? globalConfig.provider : undefined) || undefined;

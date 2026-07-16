@@ -209,9 +209,11 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       pain_points TEXT,
       interests TEXT,
       source TEXT DEFAULT 'whatsapp',
+      summary TEXT DEFAULT '',
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     )`).run();
+    try { await env.DB.prepare("ALTER TABLE ai_conversations ADD COLUMN summary TEXT DEFAULT ''").run(); } catch {}
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_phone_profiles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       phone TEXT UNIQUE NOT NULL,
