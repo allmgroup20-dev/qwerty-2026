@@ -115,6 +115,27 @@ export default function AISettingsPage() {
     } catch { setMsg("Error toggling key"); }
   };
 
+  const syncFreeModels = async () => {
+    setMsg("");
+    try {
+      const res = await fetch("/api/ai/models", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync_free_models" }),
+      });
+      const data = await res.json() as { success?: boolean; totalFreeModels?: number; newModelsAdded?: number; error?: string };
+      if (data.success) {
+        loadData();
+        setMsg(lang === "bn"
+          ? `${data.totalFreeModels}টি ফ্রি মডেল পাওয়া গেছে, ${data.newModelsAdded}টি নতুন যোগ করা হয়েছে`
+          : `${data.totalFreeModels} free models found, ${data.newModelsAdded} new ones added`
+        );
+      } else {
+        setMsg((data as any).error || "Sync failed");
+      }
+    } catch { setMsg("Error syncing models"); }
+  };
+
   const resetFailover = async () => {
     setMsg("");
     try {
@@ -188,9 +209,14 @@ export default function AISettingsPage() {
           <h2 className="font-bold text-lg text-primary">
             {lang === "bn" ? "API কী যোগ করুন" : "Add API Key"}
           </h2>
-          <button onClick={resetFailover} className="px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-xl hover:bg-orange-100 transition-colors">
-            {lang === "bn" ? "ফেইলওভার রিসেট" : "Reset Failover"}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={syncFreeModels} className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors">
+              {lang === "bn" ? "ফ্রি মডেল সিঙ্ক" : "Sync Free Models"}
+            </button>
+            <button onClick={resetFailover} className="px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-xl hover:bg-orange-100 transition-colors">
+              {lang === "bn" ? "ফেইলওভার রিসেট" : "Reset Failover"}
+            </button>
+          </div>
         </div>
         <div className="flex gap-2">
           <select
@@ -324,34 +350,54 @@ export default function AISettingsPage() {
         </p>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <h3 className="text-sm font-semibold text-primary mb-2">🔵 OpenRouter Chain</h3>
-            <ol className="space-y-1 text-xs text-text-secondary">
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">1</span>openrouter/free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">2</span>llama-3.3-70b-instruct:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">3</span>hermes-3-llama-3.1-405b:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">4</span>nemotron-3-ultra-550b:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">5</span>gemma-4-31b-it:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">6</span>qwen3-next-80b-a3b:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">7</span>nemotron-3-super-120b:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">8</span>gemma-4-26b-a4b-it:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">9</span>nemotron-3-nano-reasoning:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">10</span>nemotron-3-nano-30b:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">11</span>llama-3.2-3b-instruct:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">12</span>nemotron-nano-12b-vl:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">13</span>nemotron-nano-9b-v2:free</li>
-              <li className="flex gap-2"><span className="text-action font-bold min-w-[20px]">14</span>hy3:free</li>
-            </ol>
+            <h3 className="text-sm font-semibold text-primary mb-2">
+              {lang === "bn" ? "🔵 OpenRouter চেইন" : "🔵 OpenRouter Chain"}
+              <span className="ml-2 text-xs font-normal text-text-secondary">({openrouterModels.length})</span>
+            </h3>
+            {openrouterModels.length > 0 ? (
+              <ol className="space-y-1 text-xs text-text-secondary">
+                {openrouterModels.map((m, i) => (
+                  <li key={m.model_id} className="flex gap-2 items-center">
+                    <span className="text-action font-bold min-w-[20px] shrink-0">{i + 1}</span>
+                    <code className={`flex-1 truncate ${m.exhausted ? "text-red-500 line-through" : ""}`}>{m.model_id}</code>
+                    {m.exhausted && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-red-50 text-red-600 shrink-0">
+                        {lang === "bn" ? "নিঃশেষ" : "EX"}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-xs text-text-secondary italic">
+                {lang === "bn" ? "কোনো মডেল নেই" : "No models"}
+              </p>
+            )}
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-primary mb-2">🟣 OpenCode Chain (Fallback)</h3>
-            <ol className="space-y-1 text-xs text-text-secondary">
-              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">1</span>nemotron-3-ultra-free</li>
-              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">2</span>mimo-v2.5-free</li>
-              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">3</span>north-mini-code-free</li>
-              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">4</span>big-pickle</li>
-              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">5</span>hy3-free</li>
-              <li className="flex gap-2"><span className="text-purple-500 font-bold min-w-[20px]">6</span>deepseek-v4-flash-free</li>
-            </ol>
+            <h3 className="text-sm font-semibold text-primary mb-2">
+              {lang === "bn" ? "🟣 OpenCode চেইন (ফলব্যাক)" : "🟣 OpenCode Chain (Fallback)"}
+              <span className="ml-2 text-xs font-normal text-text-secondary">({opencodeModels.length})</span>
+            </h3>
+            {opencodeModels.length > 0 ? (
+              <ol className="space-y-1 text-xs text-text-secondary">
+                {opencodeModels.map((m, i) => (
+                  <li key={m.model_id} className="flex gap-2 items-center">
+                    <span className="text-purple-500 font-bold min-w-[20px] shrink-0">{i + 1}</span>
+                    <code className={`flex-1 truncate ${m.exhausted ? "text-red-500 line-through" : ""}`}>{m.model_id}</code>
+                    {m.exhausted && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-red-50 text-red-600 shrink-0">
+                        {lang === "bn" ? "নিঃশেষ" : "EX"}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-xs text-text-secondary italic">
+                {lang === "bn" ? "কোনো মডেল নেই" : "No models"}
+              </p>
+            )}
           </div>
         </div>
       </div>
