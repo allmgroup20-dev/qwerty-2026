@@ -268,75 +268,39 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       updated_at TEXT DEFAULT (datetime('now'))
     )`).run();
 
-    // Seed default AI models (26 free OpenRouter models)
-    await env.DB.prepare(`INSERT OR IGNORE INTO ai_models (model_id, name, tier) VALUES
-      ('tencent/hunyuan-turbo-s', 'Tencent Hunyuan Turbo S', 1),
-      ('google/gemini-2.0-flash-001', 'Gemini 2.0 Flash', 1),
-      ('meta-llama/llama-4-scout-17b-16e-instruct', 'Llama 4 Scout', 1),
-      ('deepseek/deepseek-chat-v3-0324', 'DeepSeek V3', 1),
-      ('openai/gpt-4o-mini', 'GPT-4o Mini', 1),
-      ('cohere/command-r7b-12-2024', 'Command R7B', 1),
-      ('qwen/qwen2.5-vl-72b-instruct', 'Qwen 2.5 VL 72B', 2),
-      ('deepseek/deepseek-r1-distill-llama-8b', 'DeepSeek R1 8B', 2),
-      ('mistralai/mistral-7b-instruct-v0.3', 'Mistral 7B', 2),
-      ('google/gemini-2.0-flash-lite-001', 'Gemini Flash Lite', 2),
-      ('amazon/nova-micro-v1.0', 'Amazon Nova Micro', 2),
-      ('cohere/command-r-08-2024', 'Command R', 3),
-      ('qwen/qwen-2.5-72b-instruct', 'Qwen 2.5 72B', 3),
-      ('meta-llama/llama-3.3-70b-instruct', 'Llama 3.3 70B', 3),
-      ('mistralai/mistral-small-24b-instruct-2501', 'Mistral Small 24B', 3),
-      ('google/gemini-1.5-flash-002', 'Gemini 1.5 Flash', 3),
-      ('nousresearch/deephermes-3-llama-3-8b-preview', 'DeepHermes 3 8B', 3),
-      ('gryphe/mythomax-l2-13b', 'MythoMax 13B', 4),
-      ('openchat/openchat-7b', 'OpenChat 7B', 4),
-      ('intel/neural-chat-7b-v3-1', 'Intel Neural Chat 7B', 4),
-      ('sophosympatheia/rogue-rose-103b-v0.2', 'Rogue Rose 103B', 4),
-      ('nousresearch/hermes-2-pro-mistral-7b', 'Hermes 2 Pro Mistral 7B', 4),
-      ('huggingfaceh4/zephyr-7b-beta', 'Zephyr 7B Beta', 5),
-      ('microsoft/phi-3-mini-4k-instruct', 'Phi-3 Mini 4K', 5),
-      ('tinyllama/tinyllama-1.1b-chat-v1.0', 'TinyLlama 1.1B', 5),
-      ('openrouter/free', 'Free Router (Auto)', 5)
+    // Seed 100% free AI models — OpenRouter (verified pricing=0) + OpenCode
+    await env.DB.prepare(`INSERT OR IGNORE INTO ai_models (model_id, name, provider, tier) VALUES
+      -- OpenRouter free models (verified 100% free via API)
+      ('openrouter/free',                                'Free Models Router (Auto)',        'openrouter', 1),
+      ('meta-llama/llama-3.3-70b-instruct:free',         'Llama 3.3 70B Instruct Free',      'openrouter', 1),
+      ('nousresearch/hermes-3-llama-3.1-405b:free',      'Hermes 3 405B Instruct Free',      'openrouter', 1),
+      ('nvidia/nemotron-3-ultra-550b-a55b:free',          'Nemotron 3 Ultra 550B Free',       'openrouter', 1),
+      ('google/gemma-4-31b-it:free',                      'Gemma 4 31B Free',                 'openrouter', 2),
+      ('qwen/qwen3-coder:free',                           'Qwen3 Coder 480B A35B Free',       'openrouter', 2),
+      ('qwen/qwen3-next-80b-a3b-instruct:free',           'Qwen3 Next 80B A3B Free',          'openrouter', 2),
+      ('nvidia/nemotron-3-super-120b-a12b:free',          'Nemotron 3 Super 120B Free',       'openrouter', 2),
+      ('google/gemma-4-26b-a4b-it:free',                  'Gemma 4 26B A4B Free',             'openrouter', 3),
+      ('nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', 'Nemotron 3 Nano Omni Free',    'openrouter', 3),
+      ('nvidia/nemotron-3-nano-30b-a3b:free',             'Nemotron 3 Nano 30B Free',         'openrouter', 3),
+      ('cognitivecomputations/dolphin-mistral-24b-venice-edition:free', 'Dolphin Mistral 24B Free', 'openrouter', 3),
+      ('cohere/north-mini-code:free',                     'North Mini Code Free',             'openrouter', 3),
+      ('openai/gpt-oss-20b:free',                         'GPT-OSS 20B Free',                 'openrouter', 3),
+      ('poolside/laguna-m.1:free',                        'Laguna M.1 Free',                  'openrouter', 3),
+      ('meta-llama/llama-3.2-3b-instruct:free',           'Llama 3.2 3B Instruct Free',       'openrouter', 4),
+      ('nvidia/nemotron-nano-12b-v2-vl:free',             'Nemotron Nano 12B VL Free',        'openrouter', 4),
+      ('nvidia/nemotron-nano-9b-v2:free',                 'Nemotron Nano 9B Free',            'openrouter', 4),
+      ('nvidia/nemotron-3.5-content-safety:free',         'Nemotron 3.5 Content Safety Free', 'openrouter', 4),
+      ('poolside/laguna-xs-2.1:free',                     'Laguna XS 2.1 Free',               'openrouter', 4),
+      ('tencent/hy3:free',                                'Tencent Hy3 Free',                 'openrouter', 5)
     `).run();
-
-    // Seed OpenCode Go models
-    await env.DB.prepare(`INSERT OR IGNORE INTO ai_models (model_id, name, tier, provider) VALUES
-      ('opencode/deepseek-v4-flash', 'DeepSeek V4 Flash (OpenCode)', 1, 'opencode'),
-      ('opencode/deepseek-v4-pro', 'DeepSeek V4 Pro (OpenCode)', 2, 'opencode'),
-      ('opencode/qwen3.7-max', 'Qwen 3.7 Max (OpenCode)', 1, 'opencode'),
-      ('opencode/qwen3.7-plus', 'Qwen 3.7 Plus (OpenCode)', 2, 'opencode'),
-      ('opencode/kimi-k2.7-code', 'Kimi K2.7 Code (OpenCode)', 1, 'opencode'),
-      ('opencode/kimi-k2.6', 'Kimi K2.6 (OpenCode)', 2, 'opencode'),
-      ('opencode/glm-5.2', 'GLM 5.2 (OpenCode)', 1, 'opencode'),
-      ('opencode/glm-5.1', 'GLM 5.1 (OpenCode)', 2, 'opencode'),
-      ('opencode/mimo-v2.5', 'MiMo V2.5 (OpenCode)', 2, 'opencode'),
-      ('opencode/mimo-v2.5-pro', 'MiMo V2.5 Pro (OpenCode)', 3, 'opencode'),
-      ('opencode/minimax-m3', 'MiniMax M3 (OpenCode)', 2, 'opencode'),
-      ('opencode/minimax-m2.7', 'MiniMax M2.7 (OpenCode)', 3, 'opencode')
-    `).run();
-
-    // Seed verified free failover models (used by callAI in router.ts)
-    await env.DB.prepare(`INSERT OR IGNORE INTO ai_models (model_id, name, tier, provider) VALUES
-      ('meta-llama/llama-3.3-70b-instruct:free', 'Llama 3.3 70B Free', 1, 'openrouter'),
-      ('nousresearch/hermes-3-llama-3.1-405b:free', 'Hermes 3 405B Free', 1, 'openrouter'),
-      ('nvidia/nemotron-3-ultra-550b-a55b:free', 'Nemotron Ultra 550B Free', 1, 'openrouter'),
-      ('google/gemma-4-31b-it:free', 'Gemma 4 31B Free', 2, 'openrouter'),
-      ('qwen/qwen3-next-80b-a3b-instruct:free', 'Qwen3 Next 80B Free', 2, 'openrouter'),
-      ('nvidia/nemotron-3-super-120b-a12b:free', 'Nemotron Super 120B Free', 2, 'openrouter'),
-      ('google/gemma-4-26b-a4b-it:free', 'Gemma 4 26B Free', 3, 'openrouter'),
-      ('nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', 'Nemotron Nano Reasoning Free', 3, 'openrouter'),
-      ('nvidia/nemotron-3-nano-30b-a3b:free', 'Nemotron Nano 30B Free', 3, 'openrouter'),
-      ('meta-llama/llama-3.2-3b-instruct:free', 'Llama 3.2 3B Free', 4, 'openrouter'),
-      ('nvidia/nemotron-nano-12b-v2-vl:free', 'Nemotron Nano 12B VL Free', 4, 'openrouter'),
-      ('nvidia/nemotron-nano-9b-v2:free', 'Nemotron Nano 9B Free', 4, 'openrouter'),
-      ('tencent/hy3:free', 'Tencent Hy3 Free', 5, 'openrouter')
-    `).run();
-    await env.DB.prepare(`INSERT OR IGNORE INTO ai_models (model_id, name, tier, provider) VALUES
-      ('nemotron-3-ultra-free', 'Nemotron Ultra Free (OpenCode)', 1, 'opencode'),
-      ('mimo-v2.5-free', 'MiMo V2.5 Free (OpenCode)', 2, 'opencode'),
-      ('north-mini-code-free', 'North Mini Code Free (OpenCode)', 3, 'opencode'),
-      ('big-pickle', 'Big Pickle (OpenCode)', 4, 'opencode'),
-      ('hy3-free', 'Hy3 Free (OpenCode)', 5, 'opencode'),
-      ('deepseek-v4-flash-free', 'DeepSeek V4 Flash Free (OpenCode)', 5, 'opencode')
+    // OpenCode free models
+    await env.DB.prepare(`INSERT OR IGNORE INTO ai_models (model_id, name, provider, tier) VALUES
+      ('deepseek-v4-flash-free',   'DeepSeek V4 Flash Free (OpenCode)',  'opencode', 1),
+      ('nemotron-3-ultra-free',    'Nemotron 3 Ultra Free (OpenCode)',   'opencode', 2),
+      ('mimo-v2.5-free',           'MiMo V2.5 Free (OpenCode)',          'opencode', 3),
+      ('north-mini-code-free',     'North Mini Code Free (OpenCode)',    'opencode', 3),
+      ('hy3-free',                 'Hy3 Free (OpenCode)',                'opencode', 4),
+      ('big-pickle',               'Big Pickle Free (OpenCode)',         'opencode', 4)
     `).run();
 
     // Seed default personas

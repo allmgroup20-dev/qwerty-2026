@@ -32,33 +32,39 @@ const PROVIDER_ENDPOINTS: Record<string, string> = {
 };
 
 const FREE_MODEL_ORDER: Record<string, string[]> = {
-  // OpenRouter free models — verified working as of July 2026
+  // OpenRouter free models — verified 100% free via API (July 2026, pricing=0)
   // Ordered by capability (best first), auto-failover on exhaustion
   openrouter: [
-    "openrouter/free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "nousresearch/hermes-3-llama-3.1-405b:free",
-    "nvidia/nemotron-3-ultra-550b-a55b:free",
-    "google/gemma-4-31b-it:free",
-    "qwen/qwen3-next-80b-a3b-instruct:free",
-    "nvidia/nemotron-3-super-120b-a12b:free",
-    "google/gemma-4-26b-a4b-it:free",
-    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-    "nvidia/nemotron-3-nano-30b-a3b:free",
-    "meta-llama/llama-3.2-3b-instruct:free",
-    "nvidia/nemotron-nano-12b-v2-vl:free",
-    "nvidia/nemotron-nano-9b-v2:free",
-    "tencent/hy3:free",
+    "openrouter/free",                                // Auto-routes to any available free model
+    "meta-llama/llama-3.3-70b-instruct:free",         // 131K ctx — best overall quality
+    "nousresearch/hermes-3-llama-3.1-405b:free",      // 131K ctx — strong reasoning
+    "nvidia/nemotron-3-ultra-550b-a55b:free",          // 1M ctx — very capable
+    "google/gemma-4-31b-it:free",                      // 262K ctx — strong general
+    "qwen/qwen3-coder:free",                           // 1M ctx ★ NEW — excellent at coding
+    "qwen/qwen3-next-80b-a3b-instruct:free",           // 262K ctx — good general
+    "nvidia/nemotron-3-super-120b-a12b:free",          // 1M ctx — strong
+    "google/gemma-4-26b-a4b-it:free",                  // 262K ctx — balanced
+    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", // 256K ctx — reasoning
+    "nvidia/nemotron-3-nano-30b-a3b:free",             // 256K ctx — fast
+    "cognitivecomputations/dolphin-mistral-24b-venice-edition:free", // 32K ctx ★ NEW
+    "cohere/north-mini-code:free",                     // 256K ctx ★ NEW
+    "openai/gpt-oss-20b:free",                         // 131K ctx ★ NEW
+    "poolside/laguna-m.1:free",                        // 262K ctx ★ NEW
+    "meta-llama/llama-3.2-3b-instruct:free",           // 131K ctx — lightweight
+    "nvidia/nemotron-nano-12b-v2-vl:free",             // 128K ctx
+    "nvidia/nemotron-nano-9b-v2:free",                 // 128K ctx
+    "nvidia/nemotron-3.5-content-safety:free",         // 128K ctx ★ NEW
+    "poolside/laguna-xs-2.1:free",                     // 262K ctx ★ NEW
+    "tencent/hy3:free",                                // 262K ctx — last resort
   ],
-  // OpenCode Zen free models — verified via live API testing (July 2026)
-  // Ordered by reliability; models 2-5 need ~500 tokens, deepseek needs ~2000
+  // OpenCode Zen free models — verified via live API (July 2026)
   opencode: [
-    "nemotron-3-ultra-free",       // ✅ Best: normal content, fast, any token count
-    "mimo-v2.5-free",              // ✅ Verified: works with 500+ tokens
-    "north-mini-code-free",        // ✅ Verified: works with 500+ tokens
-    "big-pickle",                  // ✅ Verified: works with 500+ tokens
-    "hy3-free",                    // ✅ Verified: works with 500+ tokens
-    "deepseek-v4-flash-free",      // ✅ Verified: works but needs 2000+ tokens (reasoning model)
+    "deepseek-v4-flash-free",      // Best quality (needs ~2000 tokens — reasoning model)
+    "nemotron-3-ultra-free",       // Strong general, fast
+    "mimo-v2.5-free",              // Balanced
+    "north-mini-code-free",        // Good for coding
+    "hy3-free",                    // General
+    "big-pickle",                  // Fallback
   ],
 };
 
@@ -158,6 +164,24 @@ async function tryModel(
   }
 }
 
+// ─── DB-Driven Model List ──────────────────────────────
+
+async function getDBModelList(db: D1Database, provider: string): Promise<string[] | null> {
+  const rows = await query<{ model_id: string }>(
+    { DB: db },
+    "SELECT model_id FROM ai_models WHERE provider = ? AND is_active = 1 ORDER BY tier ASC, model_id ASC",
+    [provider]
+  );
+  if (rows.length > 0) return rows.map((r) => r.model_id);
+  return null;
+}
+
+async function resolveModelList(db: D1Database, provider: string): Promise<string[]> {
+  const dbModels = await getDBModelList(db, provider);
+  if (dbModels) return dbModels;
+  return FREE_MODEL_ORDER[provider] || [];
+}
+
 // ─── Core Failover Logic ────────────────────────────────
 //
 // Chain of execution:
@@ -206,8 +230,8 @@ export async function callAI(
     // Skip if this provider is not in our order
     if (!providerOrder.includes(provider)) continue;
 
-    // Get the model list for this provider
-    const modelList = FREE_MODEL_ORDER[provider] || [];
+    // Get the model list — prefer DB (user-configurable), fall back to hardcoded
+    const modelList = await resolveModelList(db, provider);
     if (modelList.length === 0) continue;
 
     // If preferredModel is given, try it first within this key
