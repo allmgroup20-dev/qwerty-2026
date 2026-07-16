@@ -117,7 +117,9 @@ export async function POST(request: NextRequest) {
       if (keywords.length >= 2 && reply.length > 10) {
         await saveSkill(keywords, text, reply, "auto_learned");
       }
-    } catch {}
+    } catch (e) {
+      console.error("[Skills] Failed to auto-save:", (e as Error)?.message);
+    }
 
     // Record platform preference — user replied on Telegram
     await recordPlatformActivity(phone, "telegram");

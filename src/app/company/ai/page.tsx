@@ -18,7 +18,7 @@ const TABS: { id: TabId; icon: string; en: string; bn: string }[] = [
   { id: "brain", icon: "🧬", en: "Brain", bn: "মস্তিষ্ক" },
   { id: "employees", icon: "👥", en: "Employees", bn: "কর্মচারী" },
   { id: "insights", icon: "📊", en: "Insights", bn: "ইনসাইটস" },
-  { id: "skills", icon: "📈", en: "Skills", bn: "স্কিল" },
+  { id: "skills", icon: "📈", en: "Skills", bn: "দক্ষতা" },
 ];
 
 // ─── Interfaces ──────────────────────────────────────────
@@ -1658,7 +1658,7 @@ export default function AIHubPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                 <div className="card p-4 text-center"><div className="text-xl font-bold text-primary">{skillsStats?.responses.total || 0}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "মোট রেসপন্স" : "Total Responses"}</div></div>
                 <div className="card p-4 text-center"><div className="text-xl font-bold text-green-600">{skillsStats?.responses.today || 0}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "আজকের রেসপন্স" : "Today"}</div></div>
-                <div className="card p-4 text-center"><div className="text-xl font-bold text-amber-600">{skillsStats?.skills || 0}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "স্কিল শিখেছে" : "Skills Learned"}</div></div>
+                <div className="card p-4 text-center">                <div className="text-xl font-bold text-amber-600">{skillsStats?.skills || 0}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "দক্ষতা শিখেছে" : "Skills Learned"}</div></div>
                 <div className="card p-4 text-center"><div className="text-xl font-bold text-indigo-600">{skillsStats?.conversations || 0}</div><div className="text-xs text-text-secondary mt-1">{lang === "bn" ? "কনভারসেশন" : "Conversations"}</div></div>
               </div>
 

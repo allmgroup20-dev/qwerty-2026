@@ -69,7 +69,7 @@ export default function SkillsPage() {
             { label: lang === "bn" ? "আজকের রেসপন্স" : "Today", value: stats?.responses.today || 0, color: "text-green-600" },
             { label: lang === "bn" ? "কনভারসেশন" : "Conversations", value: stats?.conversations || 0, color: "text-blue-600" },
             { label: lang === "bn" ? "প্রোফাইল" : "Profiles", value: stats?.profiles || 0, color: "text-purple-600" },
-            { label: lang === "bn" ? "স্কিল" : "Skills Learned", value: stats?.skills || 0, color: "text-amber-600" },
+            { label: lang === "bn" ? "দক্ষতা" : "Skills Learned", value: stats?.skills || 0, color: "text-amber-600" },
             { label: lang === "bn" ? "একটিভ মডেল" : "Active Models", value: stats?.models.active || 0, color: "text-indigo-600" },
             { label: lang === "bn" ? "একটিভ কী" : "Active API Keys", value: stats?.keys.active || 0, color: "text-teal-600" },
             { label: "AI Models", value: `${stats?.models.active || 0}/${stats?.models.total || 26}`, color: "text-rose-600" },
@@ -149,7 +149,7 @@ export default function SkillsPage() {
                 <div className="text-xs font-medium text-amber-800">
                   {lang === "bn" ? "ক্যাশে" : "Cache"}
                 </div>
-                <div className="text-xs text-amber-600">{stats?.skills || 0} {lang === "bn" ? "স্কিল" : "skills"}</div>
+                <div className="text-xs text-amber-600">{stats?.skills || 0} {lang === "bn" ? "দক্ষতা" : "skills"}</div>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl">
