@@ -52,7 +52,7 @@ function RegisterForm() {
       <div className="w-full max-w-md animate-fade-up">
         <div className="text-center mb-8">
           <div className="w-16 h-16 gradient-premium rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
-            <span className="text-2xl text-white font-bold">JG</span>
+            <span className="text-2xl text-white font-bold">JGC</span>
           </div>
           <h1 className="text-2xl font-bold text-primary">
             {lang === "bn" ? "নিবন্ধন করুন" : "Create Account"}

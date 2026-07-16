@@ -113,7 +113,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-border transform transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="h-16 flex items-center gap-2 px-5 border-b border-border">
-          <div className="w-8 h-8 gradient-premium rounded-lg flex items-center justify-center text-white font-bold text-xs shadow">JG</div>
+          <div className="w-8 h-8 gradient-premium rounded-lg flex items-center justify-center text-white font-bold text-xs shadow">JGC</div>
           <span className="font-bold text-sm text-primary">Company Panel</span>
         </div>
 

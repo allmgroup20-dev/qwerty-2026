@@ -104,7 +104,7 @@ export default function SmartInstall() {
 
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B35] to-[#FFD700] flex items-center justify-center text-white font-bold text-sm">
-            JG
+JGC
           </div>
           <div>
             <div className="text-sm font-bold text-primary">JG Career</div>
