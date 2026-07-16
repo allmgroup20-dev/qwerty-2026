@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const order = await queryFirst<{ payment_status: string; worker_id: string; total_amount: number; currency: string }>(
-      env, "SELECT payment_status, worker_id, total_amount, currency FROM orders WHERE order_id = ?", [orderId]
+    const order = await queryFirst<{ payment_status: string; worker_id: string; total_amount: number; currency: string; product_id: number | null }>(
+      env, "SELECT payment_status, worker_id, total_amount, currency, product_id FROM orders WHERE order_id = ?", [orderId]
     );
 
     if (!order) {
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     );
 
     const sponsorChain = await getSponsorUpline(env, order.worker_id);
-    await distributeCommissions(env, orderId, order.worker_id, order.total_amount, order.currency, sponsorChain);
+    await distributeCommissions(env, orderId, order.worker_id, order.total_amount, order.currency, sponsorChain, order.product_id ?? undefined);
 
     const worker = await queryFirst<{ name: string; phone: string }>(
       env, "SELECT name, phone FROM workers WHERE worker_id = ?", [order.worker_id]

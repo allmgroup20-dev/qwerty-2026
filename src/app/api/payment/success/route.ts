@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const existing = await queryFirst<{ payment_status: string; worker_id: string; total_amount: number; currency: string }>(
-      env, "SELECT payment_status, worker_id, total_amount, currency FROM orders WHERE order_id = ?", [orderId]
+    const existing = await queryFirst<{ payment_status: string; worker_id: string; total_amount: number; currency: string; product_id: number | null }>(
+      env, "SELECT payment_status, worker_id, total_amount, currency, product_id FROM orders WHERE order_id = ?", [orderId]
     );
 
     if (!existing) {
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     if (worker) {
       const sponsorChain = await getSponsorUpline(env, existing.worker_id);
-      await distributeCommissions(env, orderId, existing.worker_id, existing.total_amount, existing.currency, sponsorChain);
+      await distributeCommissions(env, orderId, existing.worker_id, existing.total_amount, existing.currency, sponsorChain, existing.product_id ?? undefined);
 
       try {
         const apiKey = process.env.WHATSAPP_API_KEY || "";
