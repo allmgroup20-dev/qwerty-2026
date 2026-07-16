@@ -7,7 +7,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const body = await request.json() as {
       name?: string; nameBn?: string; description?: string; descriptionBn?: string;
-      price?: number; currency?: string; commissionPercentage?: number; commissionFixed?: number;
+      price?: number; minPrice?: number; maxPrice?: number; aiPriceEnabled?: number;
+      currency?: string; commissionPercentage?: number; commissionFixed?: number;
       imageUrl?: string; category?: string; stock?: number; isActive?: number;
       enableCommission?: number; enableCod?: number; enableSslcommerz?: number;
       images?: string; commissionOverride?: string;
@@ -18,8 +19,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (!existing) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
     await execute(db,
-      `UPDATE products SET name=COALESCE(?,name), name_bn=COALESCE(?,name_bn), description=COALESCE(?,description),
-       description_bn=COALESCE(?,description_bn), price=COALESCE(?,price), currency=COALESCE(?,currency),
+      `UPDATE products SET name=COALESCE(?,name), name_bn=COALESCE(?,name_bn),
+       description=COALESCE(?,description), description_bn=COALESCE(?,description_bn),
+       price=COALESCE(?,price), min_price=COALESCE(?,min_price),
+       max_price=COALESCE(?,max_price), ai_price_enabled=COALESCE(?,ai_price_enabled),
+       currency=COALESCE(?,currency),
        commission_percentage=COALESCE(?,commission_percentage), commission_fixed=COALESCE(?,commission_fixed),
        image_url=COALESCE(?,image_url), category=COALESCE(?,category), stock=COALESCE(?,stock),
        is_active=COALESCE(?,is_active), enable_commission=COALESCE(?,enable_commission),
@@ -27,7 +31,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
        images=COALESCE(?,images), commission_override=COALESCE(?,commission_override)
        WHERE id=?`,
       [body.name ?? null, body.nameBn ?? null, body.description ?? null, body.descriptionBn ?? null,
-       body.price ?? null, body.currency ?? null, body.commissionPercentage ?? null, body.commissionFixed ?? null,
+       body.price ?? null, body.minPrice ?? null, body.maxPrice ?? null, body.aiPriceEnabled ?? null,
+       body.currency ?? null,
+       body.commissionPercentage ?? null, body.commissionFixed ?? null,
        body.imageUrl ?? null, body.category ?? null, body.stock ?? null, body.isActive ?? null,
        body.enableCommission ?? null, body.enableCod ?? null, body.enableSslcommerz ?? null,
        body.images ?? null, body.commissionOverride ?? null, parseInt(id)]

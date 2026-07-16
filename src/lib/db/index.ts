@@ -88,6 +88,9 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     await env.DB.prepare(`ALTER TABLE products ADD COLUMN enable_sslcommerz INTEGER DEFAULT 1`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE products ADD COLUMN images TEXT`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE products ADD COLUMN commission_override TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE products ADD COLUMN min_price REAL DEFAULT 0`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE products ADD COLUMN max_price REAL DEFAULT 0`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE products ADD COLUMN ai_price_enabled INTEGER DEFAULT 1`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id TEXT UNIQUE NOT NULL,
