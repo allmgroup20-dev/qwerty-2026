@@ -282,6 +282,20 @@ export async function callAI(
     const hasFreeRouter = isFreeRouterProvider && modelsToTry.includes("openrouter/free");
     const staticModels = modelsToTry.filter(m => m !== "openrouter/free");
 
+    // 1) Try openrouter/free FIRST (highest priority per plan)
+    if (hasFreeRouter) {
+      for (let i = 0; i < 2; i++) {
+        if (i === 1) await new Promise(r => setTimeout(r, 1_000));
+        const result = await tryModel(apiKey, provider, "openrouter/free", messages, maxTokens, request.temperature);
+        if (result) {
+          await recordSuccess(db);
+          return { text: result.text, model: `${provider}:openrouter/free`, tokens: result.tokens };
+        }
+        console.warn(`[FAILOVER] openrouter/free attempt ${i + 1} — transient, retrying...`);
+      }
+    }
+
+    // 2) Try static models with cooldown
     for (const modelId of staticModels) {
       const modelKey = `k${keyId}|${provider}|${modelId}`;
       if (isOnCooldown(cooldowns, modelKey)) continue;
@@ -296,16 +310,13 @@ export async function callAI(
       console.warn(`[FAILOVER] ${provider} key#${keyId} model ${modelId} — cooling down 5min`);
     }
 
+    // 3) If static models all failed, retry openrouter/free one more time
     if (hasFreeRouter) {
-      for (let i = 0; i < 2; i++) {
-        if (i === 1) await new Promise(r => setTimeout(r, 1_000));
-
-        const result = await tryModel(apiKey, provider, "openrouter/free", messages, maxTokens, request.temperature);
-        if (result) {
-          await recordSuccess(db);
-          return { text: result.text, model: `${provider}:openrouter/free`, tokens: result.tokens };
-        }
-        console.warn(`[FAILOVER] openrouter/free attempt ${i + 1} — transient, retrying...`);
+      await new Promise(r => setTimeout(r, 1_500));
+      const result = await tryModel(apiKey, provider, "openrouter/free", messages, maxTokens, request.temperature);
+      if (result) {
+        await recordSuccess(db);
+        return { text: result.text, model: `${provider}:openrouter/free`, tokens: result.tokens };
       }
     }
 

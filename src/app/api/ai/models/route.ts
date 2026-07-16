@@ -7,7 +7,9 @@ export async function GET() {
     const db = await ensureDB();
     const models = await query<{ model_id: string; name: string; tier: number; is_active: number; provider: string }>(
       { DB: db },
-      "SELECT model_id, name, tier, is_active, provider FROM ai_models ORDER BY provider ASC, tier ASC, model_id ASC"
+      `SELECT model_id, name, tier, is_active, provider FROM ai_models ORDER BY provider ASC,
+        CASE WHEN model_id = 'openrouter/free' THEN 0 ELSE 1 END ASC,
+        tier ASC, model_id ASC`
     );
     const state = await queryFirst<{ exhausted_models: string; total_responses: number; today_responses: number }>(
       { DB: db },
@@ -18,9 +20,19 @@ export async function GET() {
       "SELECT id, key_value, provider, is_active, created_at FROM ai_api_keys ORDER BY provider ASC, id ASC"
     );
 
-    const exhaustedSet = new Set(
-      state?.exhausted_models ? state.exhausted_models.split(",").filter(Boolean) : []
-    );
+    let exhaustedModelsList: string[] = [];
+    const raw = state?.exhausted_models;
+    if (raw) {
+      if (raw.startsWith("{")) {
+        try {
+          exhaustedModelsList = Object.keys(JSON.parse(raw));
+        } catch {
+          exhaustedModelsList = [];
+        }
+      } else {
+        exhaustedModelsList = raw.split(",").filter(Boolean);
+      }
+    }
 
     return NextResponse.json({
       models: models.map((m) => ({
@@ -29,7 +41,7 @@ export async function GET() {
         tier: m.tier,
         is_active: m.is_active,
         provider: m.provider,
-        exhausted: exhaustedSet.has(m.model_id) || [...exhaustedSet].some((e) => e.includes(m.model_id)),
+        exhausted: exhaustedModelsList.some((e) => e.includes(m.model_id)),
       })),
       failoverState: state || { exhausted_models: "", total_responses: 0, today_responses: 0 },
       keys: keys.map((k) => ({ ...k, is_active: !!k.is_active })),
@@ -114,7 +126,7 @@ export async function POST(request: Request) {
       const { execute } = await import("@/lib/db/queries");
       await execute(
         { DB: db },
-        "UPDATE ai_model_failover_state SET exhausted_models = '', updated_at = datetime('now') WHERE id = 1"
+        "UPDATE ai_model_failover_state SET exhausted_models = '{}', updated_at = datetime('now') WHERE id = 1"
       );
       return NextResponse.json({ success: true });
     }
