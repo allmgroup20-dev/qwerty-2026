@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         "SELECT COUNT(*) as c FROM biometric_credentials WHERE worker_id = ? AND user_type = ?",
         [wid, ut]
       );
-      if (!exists[0]?.c) {
+      if (!Number(exists[0]?.c)) {
         return NextResponse.json({ error: "No biometric credentials found" }, { status: 404 });
       }
       const challenge = btoa(crypto.getRandomValues(new Uint8Array(32)).reduce((s, b) => s + String.fromCharCode(b), ""));

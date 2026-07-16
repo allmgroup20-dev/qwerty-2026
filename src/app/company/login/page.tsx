@@ -41,8 +41,12 @@ export default function CompanyLoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "begin", workerId: username, userType: "company" }),
       });
-      const bioData = await bioRes.json() as { error?: string; challenge?: string; credentials?: { id: string; deviceName: string }[] };
-      if (!bioRes.ok) throw new Error(bioData.error || "No biometric setup found");
+      const bioData = await bioRes.json() as { error?: string; challenge?: string };
+      if (!bioRes.ok) throw new Error(
+        bioData.error === "No biometric credentials found"
+          ? (lang === "bn" ? "ফিঙ্গারপ্রিন্ট সেটআপ করা নেই। কোম্পানি > ফিঙ্গারপ্রিন্ট থেকে সেটআপ করুন" : "No fingerprint setup. Go to Company > Fingerprint to set up")
+          : (bioData.error || "Biometric auth failed")
+      );
       if (!window.PublicKeyCredential) {
         throw new Error(lang === "bn" ? "এই ব্রাউজার ফিঙ্গারপ্রিন্ট সাপোর্ট করে না" : "Browser does not support fingerprint");
       }
