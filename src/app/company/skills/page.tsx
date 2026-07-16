@@ -56,6 +56,7 @@ export default function SkillsPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [expandedSkill, setExpandedSkill] = useState<number | null>(null);
+  const [buttonLoading, setButtonLoading] = useState<number | null>(null);
   const [editingSkill, setEditingSkill] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ keywords: "", question: "", answer: "", category: "" });
   const [saving, setSaving] = useState(false);
@@ -104,7 +105,8 @@ export default function SkillsPage() {
     loadStats();
   }
 
-  async function toggleOverride(skillId: number) {
+  async function notifyPsychologist(skillId: number) {
+    setButtonLoading(skillId);
     try {
       const res = await fetch("/api/ai/psychologist", {
         method: "POST",
@@ -119,16 +121,17 @@ export default function SkillsPage() {
         if (data.manual_override) {
           setMsg({ type: "success", text: lang === "bn"
             ? "✅ সাইকোলজিস্টের জন্য রিকোয়েস্ট পাঠানো হয়েছে — এই প্রশ্নের সর্বোত্তম উত্তর নির্ধারণ করবেন"
-            : "✅ Request sent to psychologist — they will determine the best answer for this question" });
+            : "✅ Request sent to psychologist — they will determine the best answer" });
         } else {
           setMsg({ type: "success", text: lang === "bn"
-            ? "✅ ম্যানুয়াল ওভাররাইড বন্ধ — AI আবার উত্তর দেবে"
-            : "✅ Manual override OFF — AI will answer again" });
+            ? "✅ রিকোয়েস্ট ইতিমধ্যেই পাঠানো হয়েছে"
+            : "✅ Request already sent" });
         }
       }
     } catch {
       setMsg({ type: "error", text: lang === "bn" ? "ব্যর্থ" : "Failed" });
     }
+    setButtonLoading(null);
   }
 
   function startEdit(skill: SkillHistoryItem) {
@@ -407,16 +410,23 @@ export default function SkillsPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-text-secondary">
-                        {/* Manual Override Toggle */}
-                        <label className="flex items-center gap-1.5 cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                          <span className="text-[10px]">{lang === "bn" ? "ম্যানুয়াল" : "Manual"}</span>
-                          <div
-                            onClick={() => toggleOverride(skill.id)}
-                            className={`relative w-8 h-4 rounded-full transition-colors ${skill.manual_override === 1 ? "bg-amber-500" : "bg-gray-300"}`}
-                          >
-                            <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${skill.manual_override === 1 ? "translate-x-4" : "translate-x-0.5"}`} />
-                          </div>
-                        </label>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); notifyPsychologist(skill.id); }}
+                          disabled={buttonLoading === skill.id}
+                          className={`px-2 py-1 text-[10px] font-medium rounded-lg transition-all flex items-center gap-1 ${
+                            skill.manual_override === 1
+                              ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          } disabled:opacity-50`}
+                        >
+                          {buttonLoading === skill.id ? (
+                            <><span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> {lang === "bn" ? "পাঠানো হচ্ছে..." : "Sending..."}</>
+                          ) : skill.manual_override === 1 ? (
+                            lang === "bn" ? "✅ সাইকোলজিস্ট রিকোয়েস্টেড" : "✅ Psychologist Requested"
+                          ) : (
+                            lang === "bn" ? "🧠 সাইকোলজিস্টকে জানান" : "🧠 Notify Psychologist"
+                          )}
+                        </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); startEdit(skill); }}
                           className="px-2 py-1 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all"
