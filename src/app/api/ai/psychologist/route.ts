@@ -283,9 +283,9 @@ export async function POST(request: Request) {
       if (!body.skillId) {
         return NextResponse.json({ error: "skillId required" }, { status: 400 });
       }
-      const current = await queryFirst<{ manual_override: number }>(
+      const current = await queryFirst<{ manual_override: number; question: string; keywords: string }>(
         { DB: db },
-        "SELECT manual_override FROM ai_skills WHERE id = ?",
+        "SELECT manual_override, question, keywords FROM ai_skills WHERE id = ?",
         [body.skillId]
       );
       const newVal = current?.manual_override ? 0 : 1;
@@ -294,6 +294,17 @@ export async function POST(request: Request) {
         "UPDATE ai_skills SET manual_override = ?, updated_at = datetime('now') WHERE id = ?",
         [newVal, body.skillId]
       );
+      // When turning ON, immediately create a psychologist feedback request
+      if (newVal === 1 && current) {
+        await execute(
+          { DB: db },
+          `INSERT INTO psychologist_feedback (agent_id, target_phone, issue_type, context, ai_draft, resolved, created_at)
+           VALUES (?, ?, 'manual_override', ?, ?, 0, datetime('now'))`,
+          ["brain", body.phone || "",
+           `Skill #${body.skillId}: "${current.question || current.keywords}" — এই প্রশ্নের জন্য সর্বোত্তম উত্তর নির্ধারণ করুন।`,
+           ""]
+        );
+      }
       return NextResponse.json({ success: true, manual_override: newVal });
     }
 

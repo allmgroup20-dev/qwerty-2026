@@ -116,9 +116,15 @@ export default function SkillsPage() {
         setSkillHistory((prev) =>
           prev.map((s) => (s.id === skillId ? { ...s, manual_override: data.manual_override } : s))
         );
-        setMsg({ type: "success", text: data.manual_override
-          ? (lang === "bn" ? "✅ ম্যানুয়াল ওভাররাইড চালু" : "✅ Manual override ON")
-          : (lang === "bn" ? "✅ ম্যানুয়াল ওভাররাইড বন্ধ" : "✅ Manual override OFF") });
+        if (data.manual_override) {
+          setMsg({ type: "success", text: lang === "bn"
+            ? "✅ সাইকোলজিস্টের জন্য রিকোয়েস্ট পাঠানো হয়েছে — এই প্রশ্নের সর্বোত্তম উত্তর নির্ধারণ করবেন"
+            : "✅ Request sent to psychologist — they will determine the best answer for this question" });
+        } else {
+          setMsg({ type: "success", text: lang === "bn"
+            ? "✅ ম্যানুয়াল ওভাররাইড বন্ধ — AI আবার উত্তর দেবে"
+            : "✅ Manual override OFF — AI will answer again" });
+        }
       }
     } catch {
       setMsg({ type: "error", text: lang === "bn" ? "ব্যর্থ" : "Failed" });

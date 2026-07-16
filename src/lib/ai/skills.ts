@@ -47,22 +47,12 @@ export async function findSkill(text: string, phone = ""): Promise<string | null
       const keywords = skill.keywords.split(",").map((k) => k.trim().toLowerCase());
       let matchCount = 0;
       for (const keyword of keywords) {
+        if (!keyword) continue;
         if (normalizedText.includes(keyword)) matchCount++;
         else if (words.some((w) => w.includes(keyword) || keyword.includes(w))) matchCount++;
       }
-      if (matchCount >= 2) {
-        if (skill.manual_override === 1) {
-          // Log to psychologist feedback instead of auto-answering
-          try {
-            await execute(
-              { DB: db },
-              `INSERT INTO psychologist_feedback (agent_id, target_phone, issue_type, context, ai_draft, resolved, created_at)
-               VALUES (?, ?, 'manual_override', ?, ?, 0, datetime('now'))`,
-              ["brain", phone, `Skill #${skill.id}: ${skill.question}\nUser asked: ${text}`, ""]
-            );
-          } catch {}
-          return null;
-        }
+      const threshold = keywords.filter(Boolean).length === 1 ? 1 : 2;
+      if (matchCount >= threshold) {
         await execute(
           { DB: db },
           "UPDATE ai_skills SET usage_count = usage_count + 1, updated_at = datetime('now') WHERE id = ?",

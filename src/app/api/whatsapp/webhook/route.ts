@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     // Use Premium Employee Brain
     let reply: string | null = null;
 
-    const cachedSkill = await findSkill(text);
+    const cachedSkill = await findSkill(text, phone);
     if (cachedSkill) {
       reply = cachedSkill;
     } else {
