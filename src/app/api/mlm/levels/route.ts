@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query, batch } from "@/lib/db/queries";
+import { query, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 
 interface LevelRow {
@@ -19,6 +19,7 @@ export async function GET() {
     );
     return NextResponse.json({ levels });
   } catch (error) {
+    console.error("GET levels error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -35,26 +36,23 @@ export async function POST(request: NextRequest) {
 
     const db = await getDB();
 
-    const ops = levels.map((l) => ({
-      sql: `INSERT OR REPLACE INTO commission_levels (level_number, level_name, percentage, fixed_amount, currency, is_active)
-            VALUES (?, ?, ?, ?, 'BDT', 1)`,
-      params: [l.levelNumber, l.levelName, l.percentage, l.fixedAmount],
-    }));
+    // Delete all existing levels first, then re-insert
+    await execute(db, "DELETE FROM commission_levels");
 
-    const activeNumbers = levels.map((l) => l.levelNumber);
-    if (activeNumbers.length > 0) {
-      const placeholders = activeNumbers.map(() => "?").join(",");
-      ops.push({
-        sql: `UPDATE commission_levels SET is_active = 0 WHERE level_number NOT IN (${placeholders})`,
-        params: activeNumbers,
-      });
+    for (const l of levels) {
+      await execute(
+        db,
+        `INSERT INTO commission_levels (level_number, level_name, percentage, fixed_amount, currency, is_active)
+         VALUES (?, ?, ?, ?, 'BDT', 1)`,
+        [l.levelNumber, l.levelName, l.percentage, l.fixedAmount]
+      );
     }
-
-    await batch(db, ops);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Save levels error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : "Internal server error"
+    }, { status: 500 });
   }
 }

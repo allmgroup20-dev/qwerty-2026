@@ -17,6 +17,7 @@ export default function CompanyLevelsPage() {
   const [levels, setLevels] = useState<LevelItem[]>([]);
   const [maxLevels, setMaxLevels] = useState(5);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -81,6 +82,7 @@ export default function CompanyLevelsPage() {
   const handleSave = async () => {
     setSaved(false);
     setError("");
+    setSaving(true);
     try {
       const activeLevels = levels.slice(0, maxLevels).map((l, i) => ({
         levelNumber: i + 1,
@@ -96,11 +98,21 @@ export default function CompanyLevelsPage() {
       });
       const data = await res.json() as { error?: string };
       if (!res.ok) throw new Error(data.error || "Save failed");
+
+      // Verify by re-fetching from DB
+      const verifyRes = await fetch("/api/mlm/levels");
+      const verifyData = await verifyRes.json() as { levels?: LevelItem[] };
+      if (!verifyData.levels || verifyData.levels.length === 0) {
+        throw new Error("Data was not persisted in database");
+      }
+
       setLevels(activeLevels);
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setTimeout(() => setSaved(false), 4000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -186,10 +198,12 @@ export default function CompanyLevelsPage() {
           ))}
         </div>
 
-        <Button onClick={handleSave} className="mt-6 w-full !py-4">
-          {saved
-            ? (lang === "bn" ? "✓ ডাটাবেজে সংরক্ষিত হয়েছে" : "✓ Saved to Database")
-            : (lang === "bn" ? "ডাটাবেজে সেভ করুন" : "Save to Database")}
+        <Button onClick={handleSave} disabled={saving} className="mt-6 w-full !py-4 font-semibold">
+          {saving
+            ? (lang === "bn" ? "সংরক্ষণ করা হচ্ছে..." : "Saving...")
+            : saved
+              ? (lang === "bn" ? "✓ ডাটাবেজে সংরক্ষিত হয়েছে" : "✓ Saved to Database")
+              : (lang === "bn" ? "ডাটাবেজে সেভ করুন" : "Save to Database")}
         </Button>
       </div>
     </div>
