@@ -8,6 +8,26 @@ interface Skill {
   answer: string;
   usage_count: number;
   category: string;
+  updated_by: string;
+}
+
+async function logAudit(
+  db: D1Database,
+  skillId: number,
+  action: string,
+  fieldName: string | null,
+  oldValue: string | null,
+  newValue: string | null,
+  updatedBy: string
+): Promise<void> {
+  try {
+    await execute(
+      { DB: db },
+      `INSERT INTO skill_audit_log (skill_id, action, field_name, old_value, new_value, updated_by, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+      [skillId, action, fieldName, oldValue, newValue, updatedBy]
+    );
+  } catch {}
 }
 
 export async function findSkill(text: string): Promise<string | null> {
@@ -49,7 +69,8 @@ export async function saveSkill(
   keywords: string[],
   question: string,
   answer: string,
-  category = "general"
+  category = "general",
+  updatedBy = ""
 ): Promise<void> {
   try {
     const db = await ensureDB();
@@ -57,24 +78,65 @@ export async function saveSkill(
 
     const existing = await queryFirst<Skill>(
       { DB: db },
-      "SELECT id FROM ai_skills WHERE LOWER(question) = ?",
+      "SELECT id, answer, keywords FROM ai_skills WHERE LOWER(question) = ?",
       [normalizedQuestion]
     );
 
     if (existing) {
+      const oldAnswer = existing.answer || "";
+      const oldKeywords = existing.keywords || "";
+      const newKeywordsStr = keywords.join(",");
+
+      if (oldAnswer !== answer) {
+        await logAudit(db, existing.id, "updated", "answer", oldAnswer, answer, updatedBy);
+      }
+      if (oldKeywords !== newKeywordsStr) {
+        await logAudit(db, existing.id, "updated", "keywords", oldKeywords, newKeywordsStr, updatedBy);
+      }
+
       await execute(
         { DB: db },
-        "UPDATE ai_skills SET keywords = ?, answer = ?, usage_count = usage_count + 1, updated_at = datetime('now') WHERE id = ?",
-        [keywords.join(","), answer, existing.id]
+        `UPDATE ai_skills SET keywords = ?, answer = ?, usage_count = usage_count + 1,
+         updated_by = COALESCE(NULLIF(?, ''), updated_by), updated_at = datetime('now') WHERE id = ?`,
+        [newKeywordsStr, answer, updatedBy, existing.id]
       );
     } else {
-      await execute(
+      const result = await execute(
         { DB: db },
-        "INSERT INTO ai_skills (keywords, question, answer, category, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))",
-        [keywords.join(","), question, answer, category]
+        `INSERT INTO ai_skills (keywords, question, answer, category, updated_by, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+        [keywords.join(","), question, answer, category, updatedBy]
       );
+
+      const newId = (result as any)?.meta?.last_row_id || 0;
+      if (newId > 0) {
+        await logAudit(db, newId, "created", null, null, answer, updatedBy);
+      }
     }
   } catch (e) {
     console.error("[Skills] saveSkill error:", (e as Error)?.message);
   }
+}
+
+export async function getSkillHistory(): Promise<any[]> {
+  const db = await ensureDB();
+  const skills = await query<Skill>(
+    { DB: db },
+    "SELECT s.*, COALESCE(u.employee_name, '') as updated_by_name FROM ai_skills s LEFT JOIN (SELECT DISTINCT phone, name as employee_name FROM workers) u ON u.phone = s.updated_by ORDER BY s.updated_at DESC"
+  );
+
+  const result = [];
+  for (const skill of skills) {
+    const auditLog = await query(
+      { DB: db },
+      "SELECT * FROM skill_audit_log WHERE skill_id = ? ORDER BY created_at DESC LIMIT 10",
+      [skill.id]
+    );
+    result.push({
+      ...skill,
+      is_psychologist_updated: skill.updated_by !== "",
+      audit_log: auditLog,
+    });
+  }
+  return result;
 }

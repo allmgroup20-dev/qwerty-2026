@@ -109,6 +109,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ knowledge: allKnowledge });
     }
 
+    // Get skill history with audit log (psychologist updates tracked)
+    if (action === "skill_history") {
+      const { getSkillHistory } = await import("@/lib/ai/skills");
+      const skills = await getSkillHistory();
+      return NextResponse.json({ skills });
+    }
+
     // Get skills editable by psychologist
     if (action === "skills") {
       const skills = await query(
@@ -276,12 +283,20 @@ export async function POST(request: Request) {
       if (!body.skillId) {
         return NextResponse.json({ error: "skillId required" }, { status: 400 });
       }
+      const old = await queryFirst<{ answer: string; keywords: string }>(
+        { DB: db },
+        "SELECT answer, keywords FROM ai_skills WHERE id = ?",
+        [body.skillId]
+      );
       const setClauses: string[] = [];
       const params: any[] = [];
+      const updater = body.updatedBy || body.phone || "";
       if (body.keywords !== undefined) { setClauses.push("keywords = ?"); params.push(body.keywords); }
       if (body.question !== undefined) { setClauses.push("question = ?"); params.push(body.question); }
       if (body.answer !== undefined) { setClauses.push("answer = ?"); params.push(body.answer); }
       if (body.category !== undefined) { setClauses.push("category = ?"); params.push(body.category); }
+      if (updater) { setClauses.push("updated_by = ?"); params.push(updater); }
+      setClauses.push("updated_at = datetime('now')");
       if (setClauses.length > 0) {
         params.push(body.skillId);
         await execute(
@@ -289,6 +304,25 @@ export async function POST(request: Request) {
           `UPDATE ai_skills SET ${setClauses.join(", ")} WHERE id = ?`,
           params
         );
+        // Audit log for changed fields
+        if (old) {
+          if (body.answer !== undefined && old.answer !== body.answer) {
+            await execute(
+              { DB: db },
+              `INSERT INTO skill_audit_log (skill_id, action, field_name, old_value, new_value, updated_by, created_at)
+               VALUES (?, 'updated', 'answer', ?, ?, ?, datetime('now'))`,
+              [body.skillId, old.answer, body.answer, updater]
+            );
+          }
+          if (body.keywords !== undefined && old.keywords !== body.keywords) {
+            await execute(
+              { DB: db },
+              `INSERT INTO skill_audit_log (skill_id, action, field_name, old_value, new_value, updated_by, created_at)
+               VALUES (?, 'updated', 'keywords', ?, ?, ?, datetime('now'))`,
+              [body.skillId, old.keywords, body.keywords, updater]
+            );
+          }
+        }
       }
       return NextResponse.json({ success: true });
     }
@@ -298,12 +332,22 @@ export async function POST(request: Request) {
       if (!body.keywords || !body.question || !body.answer) {
         return NextResponse.json({ error: "keywords, question, answer required" }, { status: 400 });
       }
-      await execute(
+      const updater = body.updatedBy || body.phone || "";
+      const result = await execute(
         { DB: db },
-        `INSERT INTO ai_skills (keywords, question, answer, category, created_at)
-         VALUES (?, ?, ?, ?, datetime('now'))`,
-        [body.keywords, body.question, body.answer, body.category || "psychologist"]
+        `INSERT INTO ai_skills (keywords, question, answer, category, updated_by, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+        [body.keywords, body.question, body.answer, body.category || "psychologist", updater]
       );
+      const newId = (result as any)?.meta?.last_row_id || 0;
+      if (newId > 0) {
+        await execute(
+          { DB: db },
+          `INSERT INTO skill_audit_log (skill_id, action, field_name, old_value, new_value, updated_by, created_at)
+           VALUES (?, 'created', NULL, NULL, ?, ?, datetime('now'))`,
+          [newId, body.answer, updater]
+        );
+      }
       return NextResponse.json({ success: true });
     }
 
