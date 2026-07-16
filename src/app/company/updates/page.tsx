@@ -12,7 +12,7 @@ export default function CompanyUpdatesPage() {
   const [desc, setDesc] = useState("");
 
   const updates = [
-    { version: "1.0.0", desc: "Initial release with MLM, e-commerce, and WhatsApp automation", date: "2026-07-01", status: "active" },
+    { version: "1.0.0", desc: "Initial release with JG Career, e-commerce, and WhatsApp automation", date: "2026-07-01", status: "active" },
     { version: "0.9.0", desc: "Beta testing phase", date: "2026-06-15", status: "superseded" },
   ];
 

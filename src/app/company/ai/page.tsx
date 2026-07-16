@@ -1564,7 +1564,7 @@ export default function AIHubPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                     <div className="p-2 rounded-lg bg-amber-50 text-center"><div className="font-bold text-amber-700">৪</div><div className="text-amber-600">{lang === "bn" ? "টি টিম" : "Teams"}</div></div>
                     <div className="p-2 rounded-lg bg-amber-50 text-center"><div className="font-bold text-amber-700">৮</div><div className="text-amber-600">{lang === "bn" ? "জন এমপ্লয়ী" : "Employees"}</div></div>
-                    <div className="p-2 rounded-lg bg-amber-50 text-center"><div className="font-bold text-amber-700">{lang === "bn" ? "MLM, টাকা, সদস্য" : "MLM, Money, Recruitment"}</div><div className="text-amber-600">{lang === "bn" ? "ট্রিগার ক্যাটাগরি" : "Trigger Categories"}</div></div>
+                    <div className="p-2 rounded-lg bg-amber-50 text-center"><div className="font-bold text-amber-700">{lang === "bn" ? "টাকা, সদস্য, রিক্রুটমেন্ট" : "Money, Recruitment, Growth"}</div><div className="text-amber-600">{lang === "bn" ? "ট্রিগার ক্যাটাগরি" : "Trigger Categories"}</div></div>
                     <div className="p-2 rounded-lg bg-amber-50 text-center"><div className="font-bold text-amber-700">{lang === "bn" ? "প্রতি কনভারসেশনে" : "Every Conversation"}</div><div className="text-amber-600">{lang === "bn" ? "অটো-স্ক্যান" : "Auto-scan"}</div></div>
                   </div>
                 </div>

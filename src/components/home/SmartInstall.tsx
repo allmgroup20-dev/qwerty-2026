@@ -7,76 +7,128 @@ export default function SmartInstall() {
   const { lang } = useLanguageStore();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [installed, setInstalled] = useState(false);
-  const [showIOS, setShowIOS] = useState(false);
-  const isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(true);
 
   useEffect(() => {
-    const handler = (e: Event) => {
+    // Check if already installed
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setIsInstalled(true);
+      return;
+    }
+
+    // iOS detection
+    const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    setIsIOS(iOS);
+
+    // Check dismiss cookie
+    try {
+      const dismissed = localStorage.getItem("pwa_dismissed");
+      if (dismissed) {
+        const daysAgo = (Date.now() - parseInt(dismissed)) / 86400000;
+        if (daysAgo < 7) return;
+        localStorage.removeItem("pwa_dismissed");
+      }
+    } catch {}
+    setIsDismissed(false);
+
+    // Listen for beforeinstallprompt (Chrome/Edge/Android)
+    const handlePrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowPrompt(true);
     };
-    window.addEventListener("beforeinstallprompt", handler);
-    window.addEventListener("appinstalled", () => setInstalled(true));
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
 
-  const handleInstall = async () => {
-    if (isIOS) { setShowIOS(true); return; }
+    // Listen for app installed
+    const handleInstalled = () => {
+      setIsInstalled(true);
+      setShowPrompt(false);
+      try { localStorage.setItem("pwa_installed", "1"); } catch {}
+    };
+
+    window.addEventListener("beforeinstallprompt", handlePrompt);
+    window.addEventListener("appinstalled", handleInstalled);
+
+    // For iOS and desktop, show after a delay if no beforeinstallprompt
+    if (!window.matchMedia("(display-mode: browser)").matches) return;
+    
+    const timer = setTimeout(() => {
+      if (!deferredPrompt && !isInstalled && !isIOS) {
+        // Desktop Chrome shows install icon in address bar automatically
+        // Just show the guide banner
+      }
+      if (isIOS) {
+        setShowPrompt(true); // Show iOS guide
+      }
+    }, 5000);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handlePrompt);
+      window.removeEventListener("appinstalled", handleInstalled);
+      clearTimeout(timer);
+    };
+  }, [deferredPrompt, isInstalled, isIOS]);
+
+  function handleInstall() {
     if (deferredPrompt) {
       deferredPrompt.prompt();
-      const result = await deferredPrompt.userChoice;
-      if (result.outcome === "accepted") {
-        setInstalled(true);
+      deferredPrompt.userChoice.then((choice: { outcome: string }) => {
+        if (choice.outcome === "accepted") {
+          setIsInstalled(true);
+        }
+        setDeferredPrompt(null);
         setShowPrompt(false);
-      }
-      setDeferredPrompt(null);
-    } else {
-      setShowIOS(true);
+      });
     }
-  };
+  }
 
-  if (installed || (!showPrompt && !showIOS)) return null;
+  function handleDismiss() {
+    setShowPrompt(false);
+    setDeferredPrompt(null);
+    try { localStorage.setItem("pwa_dismissed", String(Date.now())); } catch {}
+  }
+
+  if (isInstalled || !showPrompt) return null;
 
   return (
-    <div className="fixed bottom-[72px] left-1/2 -translate-x-1/2 z-[9999] w-[92%] max-w-[380px]">
-      {showPrompt && (
-        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-primary-dark/95 backdrop-blur-md border border-white/10 shadow-xl">
-          <div className="w-[42px] h-[42px] rounded-lg bg-gradient-to-br from-info to-accent flex items-center justify-center text-white font-black text-sm flex-shrink-0">JG</div>
-          <div className="flex-1 min-w-0">
-            <div className="text-white text-xs font-extrabold truncate">Jobayer Group Career</div>
-            <div className="text-text-secondary text-[10px] font-semibold">{lang === "bn" ? "অ্যাপ হিসেবে ইনস্টল করুন" : "Install as App"}</div>
+    <div className="fixed bottom-20 left-4 right-4 z-50 md:bottom-8 md:left-auto md:right-8 md:w-80 animate-slide-up">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 relative">
+        <button
+          onClick={handleDismiss}
+          className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-all"
+          aria-label="Close"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B35] to-[#FFD700] flex items-center justify-center text-white font-bold text-sm">
+            JG
           </div>
-          <button onClick={handleInstall} className="px-4 py-2 rounded-lg bg-gradient-to-r from-info to-accent text-white text-xs font-extrabold border-none cursor-pointer shadow-md hover:brightness-110 transition-all">⚡ {lang === "bn" ? "ইনস্টল" : "Install"}</button>
-          <button onClick={() => setShowPrompt(false)} className="text-text-secondary text-sm border-none bg-transparent cursor-pointer hover:text-white transition-colors">✕</button>
-        </div>
-      )}
-      {showIOS && (
-        <div className="p-4 rounded-xl bg-primary-dark/95 backdrop-blur-md border border-white/10 shadow-xl">
-          <div className="flex items-start justify-between mb-2.5">
-            <h4 className="text-white font-extrabold text-sm">📱 {lang === "bn" ? "ইনস্টল করার নিয়ম" : "Installation Guide"}</h4>
-            <button onClick={() => setShowIOS(false)} className="text-text-secondary text-sm border-none bg-transparent cursor-pointer hover:text-white">✕</button>
-          </div>
-          <p className="text-text-secondary text-xs font-semibold mb-3 leading-relaxed">
-            {lang === "bn" ? "আপনার ব্রাউজারে নিচের ধাপগুলো ফলো করুন:" : "Follow these steps in your browser:"}
-          </p>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2.5 text-xs text-text-secondary">
-              <span className="w-[26px] h-[26px] rounded-full bg-info/20 flex items-center justify-center text-info font-black flex-shrink-0">১</span>
-              <span>{lang === "bn" ? "শেয়ার আইকন" : "Share icon"} <span className="inline-block px-2 py-0.5 rounded bg-white/10 text-white font-bold">⎙</span> {lang === "bn" ? "ট্যাপ করুন" : "tap"}</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-xs text-text-secondary">
-              <span className="w-[26px] h-[26px] rounded-full bg-info/20 flex items-center justify-center text-info font-black flex-shrink-0">২</span>
-              <span>&ldquo;{lang === "bn" ? "হোম স্ক্রিনে যোগ করুন" : "Add to Home Screen"}&rdquo; {lang === "bn" ? "নির্বাচন করুন" : "select"}</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-xs text-text-secondary">
-              <span className="w-[26px] h-[26px] rounded-full bg-info/20 flex items-center justify-center text-info font-black flex-shrink-0">৩</span>
-              <span>&ldquo;{lang === "bn" ? "যোগ করুন" : "Add"}&rdquo; {lang === "bn" ? "বাটনে ক্লিক করুন ✅" : "button ✅"}</span>
+          <div>
+            <div className="text-sm font-bold text-primary">JG Career</div>
+            <div className="text-[10px] text-text-secondary">
+              {lang === "bn" ? "অ্যাপ হিসেবে ব্যবহার করুন" : "Use as App"}
             </div>
           </div>
         </div>
-      )}
+
+        {isIOS ? (
+          <div className="text-xs text-text-secondary leading-relaxed">
+            {lang === "bn"
+              ? "iOS এ Safari → শেয়ার বাটন → হোম স্ক্রিনে যোগ করুন"
+              : "iOS: Safari → Share button → Add to Home Screen"}
+          </div>
+        ) : (
+          <button
+            onClick={handleInstall}
+            className="w-full py-2.5 bg-gradient-to-r from-[#FF6B35] to-[#FF8C00] text-white text-sm font-bold rounded-xl hover:from-[#e55a2b] hover:to-[#e67e00] transition-all shadow-lg shadow-orange-200 active:scale-95"
+          >
+            {lang === "bn" ? "⚡ এখনই ইনস্টল করুন" : "⚡ Install Now"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

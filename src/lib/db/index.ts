@@ -167,7 +167,7 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     `).run();
     await env.DB.prepare(`INSERT OR IGNORE INTO company_settings (setting_key, setting_value, setting_type) VALUES
       ('company_name', 'Jobayer Group Career', 'text'),
-      ('site_description', 'A premium MLM and e-commerce platform for career growth', 'text')
+      ('site_description', 'A premium JG Career and e-commerce platform for career growth', 'text')
     `).run();
     await env.DB.prepare(`INSERT OR IGNORE INTO company_users (username, password, name, role) VALUES
       ('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'Company Admin', 'superadmin')

@@ -1,4 +1,4 @@
-# Jobayer Group Career — Complete MLM + E-commerce Platform
+# Jobayer Group Career — Complete JG Career + E-commerce Platform
 
 ## 🚀 Quick Start
 
@@ -71,7 +71,7 @@ src/
 
 ## 🌐 Features
 
-- **Unilevel MLM** — Configurable levels with percentage + fixed commission
+- **Unilevel Partnership** — Configurable levels with percentage + fixed commission
 - **E-commerce** — Products, cart, SSLCommerz/bKash payment
 - **Multi-currency** — BDT, USD, INR, EUR, GBP, MYR, SAR, AED
 - **Bilingual** — English + Bengali (1-click switch)

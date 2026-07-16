@@ -43,7 +43,22 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js");
+      navigator.serviceWorker.register("/sw.js", { scope: "/" })
+        .then((reg) => {
+          console.log("SW registered:", reg.scope);
+          reg.addEventListener("updatefound", () => {
+            const newSW = reg.installing;
+            if (newSW) {
+              newSW.addEventListener("statechange", () => {
+                if (newSW.state === "installed" && navigator.serviceWorker.controller) {
+                  // New version available
+                  console.log("New SW version available");
+                }
+              });
+            }
+          });
+        })
+        .catch((err) => console.warn("SW registration failed:", err));
     }
   }, []);
 

@@ -84,7 +84,7 @@ export const sales: DepartmentDef = {
           department: "sales", team: "product_pitch",
           description: "Matches customer needs to the right product",
           descriptionBn: "গ্রাহকের চাহিদার সাথে সঠিক পণ্য ম্যাচ করে",
-          expertise: "You understand all products (MLM packages, courses, memberships) and match them to customer needs.",
+          expertise: "You understand all products (starter packages, courses, memberships) and match them to customer needs.",
           promptTemplate: "Based on message, suggest the most relevant product. Consider: budget ('কম দাম'), goal ('আয়', 'business'), status ('ছাত্র', 'চাকরি'). Return product name + 1-line reason in {{language}}.",
           primaryModel: "llama-3.3-70b", fallbackModels: ["hermes-3-405b", "nemotron-3-ultra"],
           tier: 1, priority: 95, when: "intent === 'product_inquiry' || intent === 'price_inquiry'",

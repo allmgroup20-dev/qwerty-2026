@@ -256,7 +256,7 @@ export const operations: DepartmentDef = {
           department: "operations", team: "quality_assurance",
           description: "Checks regulatory and policy compliance",
           descriptionBn: "নিয়ম ও নীতি মেনে চলছে কিনা চেক করে",
-          expertise: "You check compliance: data protection, consumer rights, MLM regulations, payment security, content guidelines.",
+          expertise: "You check compliance: data protection, consumer rights, business regulations, payment security, content guidelines.",
           promptTemplate: "Compliance check: area={{area}}, practice={{practice}}. Status: compliant/violation/caution. Remediation steps if violation. Language: {{language}}.",
           primaryModel: "nemotron-3-super", fallbackModels: ["deepseek-v4-flash-free"],
           tier: 2, priority: 90, when: "true",
