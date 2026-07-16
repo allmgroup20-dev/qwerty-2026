@@ -1,6 +1,8 @@
 import { callAI } from "../router";
 import type { AgentDef, AgentOutput } from "./types";
 import { getConversationRules } from "../conversation-rules";
+import { execute } from "@/lib/db/queries";
+import { ensureDB } from "@/lib/db";
 
 // Tier-based model preference hints.
 // Router.ts handles full key-by-key + model-by-model failover automatically.
@@ -32,7 +34,15 @@ export async function executeAgent(
       model: result.model,
       tokens: result.tokens,
     };
-  } catch {
+  } catch (e) {
+    try {
+      const db = await ensureDB();
+      await execute({ DB: db },
+        `INSERT INTO psychologist_feedback (agent_id, issue_type, context, resolved, created_at)
+         VALUES (?, 'model_exhausted', ?, 0, datetime('now'))`,
+        [agent.id, JSON.stringify({ userMessage: userMessage.slice(0, 500), error: (e as Error)?.message || "" })]
+      );
+    } catch {}
     return {
       agentId: agent.id,
       text: `[Service temporarily unavailable for ${agent.name}. Please try again later.]`,

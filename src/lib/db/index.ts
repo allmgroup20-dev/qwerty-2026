@@ -280,6 +280,30 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       agent_name TEXT DEFAULT '',
       knowledge TEXT NOT NULL,
       source TEXT DEFAULT 'brain',
+      version INTEGER DEFAULT 1,
+      updated_by TEXT DEFAULT '',
+      psychologist_notes TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    // Employee roles (psychologist = highest priority)
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS employee_roles (
+      phone TEXT PRIMARY KEY,
+      role TEXT NOT NULL DEFAULT 'employee',
+      priority INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    // Psychologist feedback — auto-logged when AI fails
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS psychologist_feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id TEXT NOT NULL,
+      target_phone TEXT DEFAULT '',
+      issue_type TEXT NOT NULL,
+      context TEXT DEFAULT '',
+      ai_draft TEXT DEFAULT '',
+      suggested_fix TEXT DEFAULT '',
+      resolved INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
 
