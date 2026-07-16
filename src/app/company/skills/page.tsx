@@ -18,19 +18,32 @@ interface ConsolidationResult {
   shortcuts: number;
 }
 
+interface AuditLogEntry {
+  action: string;
+  field_name: string | null;
+  old_value: string | null;
+  new_value: string | null;
+  updated_by: string;
+  created_at: string;
+  details: string | null;
+}
+
 interface SkillHistoryItem {
   id: number;
   name: string;
   category: string;
   keywords: string;
-  response: string;
+  question: string;
+  answer: string;
   version: number;
+  usage_count: number;
   updated_by: string | null;
   updated_at: string;
   created_at: string;
   psychologist_notes: string | null;
   is_psychologist_updated: boolean;
-  audit_log: { action: string; changed_by: string; changed_at: string; details: string }[];
+  manual_override: number;
+  audit_log: AuditLogEntry[];
 }
 
 export default function SkillsPage() {
@@ -43,6 +56,13 @@ export default function SkillsPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [expandedSkill, setExpandedSkill] = useState<number | null>(null);
+  const [editingSkill, setEditingSkill] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ keywords: "", question: "", answer: "", category: "" });
+  const [saving, setSaving] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addForm, setAddForm] = useState({ keywords: "", question: "", answer: "", category: "general" });
+  const [addSaving, setAddSaving] = useState(false);
+  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   async function loadStats() {
     setLoading(true);
@@ -68,6 +88,10 @@ export default function SkillsPage() {
 
   useEffect(() => { if (showHistory) loadSkillHistory(); }, [showHistory, loadSkillHistory]);
 
+  useEffect(() => {
+    if (msg) { const t = setTimeout(() => setMsg(null), 3000); return () => clearTimeout(t); }
+  }, [msg]);
+
   async function runConsolidation() {
     setConsolidating(true);
     setResult(null);
@@ -78,6 +102,87 @@ export default function SkillsPage() {
     } catch {}
     setConsolidating(false);
     loadStats();
+  }
+
+  async function toggleOverride(skillId: number) {
+    try {
+      const res = await fetch("/api/ai/psychologist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle_override", skillId }),
+      });
+      const data: { success: boolean; manual_override: number } = await res.json();
+      if (data.success) {
+        setSkillHistory((prev) =>
+          prev.map((s) => (s.id === skillId ? { ...s, manual_override: data.manual_override } : s))
+        );
+        setMsg({ type: "success", text: data.manual_override
+          ? (lang === "bn" ? "✅ ম্যানুয়াল ওভাররাইড চালু" : "✅ Manual override ON")
+          : (lang === "bn" ? "✅ ম্যানুয়াল ওভাররাইড বন্ধ" : "✅ Manual override OFF") });
+      }
+    } catch {
+      setMsg({ type: "error", text: lang === "bn" ? "ব্যর্থ" : "Failed" });
+    }
+  }
+
+  function startEdit(skill: SkillHistoryItem) {
+    setEditingSkill(skill.id);
+    setEditForm({
+      keywords: skill.keywords || "",
+      question: skill.question || "",
+      answer: skill.answer || "",
+      category: skill.category || "general",
+    });
+  }
+
+  async function saveEdit(skillId: number) {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/ai/psychologist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_skill", skillId, ...editForm }),
+      });
+      const data: { success: boolean; error?: string } = await res.json();
+      if (data.success) {
+        setMsg({ type: "success", text: lang === "bn" ? "✅ আপডেট হয়েছে" : "✅ Updated" });
+        setEditingSkill(null);
+        loadSkillHistory();
+      } else {
+        setMsg({ type: "error", text: data.error || "Failed" });
+      }
+    } catch {
+      setMsg({ type: "error", text: lang === "bn" ? "ব্যর্থ" : "Failed" });
+    }
+    setSaving(false);
+  }
+
+  async function addSkill() {
+    if (!addForm.keywords || !addForm.question || !addForm.answer) {
+      setMsg({ type: "error", text: lang === "bn" ? "কীওয়ার্ড, প্রশ্ন ও উত্তর প্রয়োজন" : "Keywords, question & answer required" });
+      return;
+    }
+    setAddSaving(true);
+    try {
+      const res = await fetch("/api/ai/psychologist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add_skill", ...addForm, updatedBy: "manual" }),
+      });
+      const data: { success: boolean; error?: string } = await res.json();
+      if (data.success) {
+        setMsg({ type: "success", text: lang === "bn" ? "✅ নতুন দক্ষতা যোগ হয়েছে" : "✅ Skill added" });
+        setAddForm({ keywords: "", question: "", answer: "", category: "general" });
+        setShowAddForm(false);
+        loadStats();
+        if (showHistory) loadSkillHistory();
+      } else {
+        setMsg({ type: "error", text: data.error || "Failed" });
+      }
+    } catch {
+      setMsg({ type: "error", text: lang === "bn" ? "ব্যর্থ" : "Failed" });
+    }
+    setAddSaving(false);
   }
 
   const topPainPoints = stats ? Object.entries(stats.painPointFrequency).sort(([, a], [, b]) => b - a).slice(0, 10) : [];
@@ -93,6 +198,12 @@ export default function SkillsPage() {
             {lang === "bn" ? "এআই দক্ষতা একত্রীকরণ ও সিস্টেম অ্যানালিটিক্স" : "AI skill consolidation & system analytics"}
           </p>
         </div>
+
+        {msg && (
+          <div className={`mb-4 px-4 py-2 rounded-xl text-sm font-medium ${
+            msg.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"
+          }`}>{msg.text}</div>
+        )}
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
@@ -119,8 +230,8 @@ export default function SkillsPage() {
             </h3>
             <p className="text-xs text-text-secondary mb-4">
               {lang === "bn"
-                ? "স্বয়ংক্রিয়ভাবে WhatsApp কথোপকথন বিশ্লেষণ করে বারবার আসা প্রশ্নগুলোকে দক্ষতা হিসেবে সংরক্ষণ করে। ৩+ বার আসা প্রশ্ন জিরো-টোকেন শর্টকাট হয়, ২+ বার FAQ হয়।"
-                : "Automatically analyzes WhatsApp conversations and saves repeated questions as skills. 3+ occurrences become zero-token shortcuts, 2+ become FAQs."}
+                ? "স্বয়ংক্রিয়ভাবে WhatsApp কথোপকথন বিশ্লেষণ করে বারবার আসা প্রশ্নগুলোকে দক্ষতা হিসেবে সংরক্ষণ করে।"
+                : "Automatically analyzes WhatsApp conversations and saves repeated questions as skills."}
             </p>
             {result && (
               <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-3 text-xs text-green-800">
@@ -195,6 +306,54 @@ export default function SkillsPage() {
           </div>
         </div>
 
+        {/* ══════════════ ADD NEW SKILL ══════════════ */}
+        <div className="card p-5 mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-primary text-sm">
+              {lang === "bn" ? "নতুন দক্ষতা যোগ করুন" : "Add New Skill"}
+            </h3>
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-xl hover:bg-primary/90 transition-all"
+            >
+              {showAddForm ? (lang === "bn" ? "বন্ধ করুন" : "Close") : (lang === "bn" ? "➕ যোগ করুন" : "➕ Add")}
+            </button>
+          </div>
+          {showAddForm && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-text-secondary block mb-1">{lang === "bn" ? "কীওয়ার্ড (কমা দিয়ে আলাদা):" : "Keywords (comma-separated):"}</label>
+                <input type="text" value={addForm.keywords} onChange={(e) => setAddForm({ ...addForm, keywords: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              <div>
+                <label className="text-xs text-text-secondary block mb-1">{lang === "bn" ? "প্রশ্ন:" : "Question:"}</label>
+                <input type="text" value={addForm.question} onChange={(e) => setAddForm({ ...addForm, question: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              <div>
+                <label className="text-xs text-text-secondary block mb-1">{lang === "bn" ? "উত্তর:" : "Answer:"}</label>
+                <textarea value={addForm.answer} onChange={(e) => setAddForm({ ...addForm, answer: e.target.value })} rows={3}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              <div>
+                <label className="text-xs text-text-secondary block mb-1">{lang === "bn" ? "বিভাগ:" : "Category:"}</label>
+                <select value={addForm.category} onChange={(e) => setAddForm({ ...addForm, category: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <option value="general">{lang === "bn" ? "সাধারণ" : "General"}</option>
+                  <option value="psychologist">{lang === "bn" ? "সাইকোলজিস্ট" : "Psychologist"}</option>
+                  <option value="faq">{lang === "bn" ? "FAQ" : "FAQ"}</option>
+                  <option value="auto_learn">{lang === "bn" ? "অটো লার্ন" : "Auto Learn"}</option>
+                </select>
+              </div>
+              <button onClick={addSkill} disabled={addSaving}
+                className="px-4 py-2 text-xs font-medium bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 transition-all">
+                {addSaving ? (lang === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving...") : (lang === "bn" ? "✅ সংরক্ষণ করুন" : "✅ Save Skill")}
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* ══════════════ SKILL HISTORY ══════════════ */}
         <div className="card p-5 mt-6">
           <div className="flex items-center justify-between mb-3">
@@ -219,15 +378,22 @@ export default function SkillsPage() {
             ) : (
               <div className="space-y-2">
                 {skillHistory.map((skill) => (
-                  <div key={skill.id} className="border border-gray-100 rounded-xl overflow-hidden">
-                    <div
-                      onClick={() => setExpandedSkill(expandedSkill === skill.id ? null : skill.id)}
-                      className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className={`w-2 h-2 rounded-full ${skill.is_psychologist_updated ? "bg-purple-500" : "bg-gray-300"}`} />
-                        <span className="text-sm font-medium text-primary truncate">{skill.name}</span>
-                        <span className="text-xs text-text-secondary">v{skill.version}</span>
+                  <div key={skill.id} className={`border rounded-xl overflow-hidden ${
+                    skill.manual_override === 1 ? "border-amber-300 bg-amber-50/30" : "border-gray-100"
+                  }`}>
+                    <div className="flex items-center justify-between p-3">
+                      <div
+                        onClick={() => setExpandedSkill(expandedSkill === skill.id ? null : skill.id)}
+                        className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer hover:opacity-80"
+                      >
+                        <span className={`w-2 h-2 rounded-full ${skill.is_psychologist_updated ? "bg-purple-500" : skill.manual_override === 1 ? "bg-amber-500" : "bg-gray-300"}`} />
+                        <span className="text-sm font-medium text-primary truncate">{skill.question || skill.name || `Skill #${skill.id}`}</span>
+                        <span className="text-xs text-text-secondary">v{skill.version || 0}</span>
+                        {skill.manual_override === 1 && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
+                            {lang === "bn" ? "ম্যানুয়াল" : "Manual"}
+                          </span>
+                        )}
                         {skill.is_psychologist_updated && (
                           <span className="text-[10px] px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium">
                             {lang === "bn" ? "সাইকোলজিস্ট" : "Psychologist"}
@@ -235,18 +401,102 @@ export default function SkillsPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-text-secondary">
+                        {/* Manual Override Toggle */}
+                        <label className="flex items-center gap-1.5 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-[10px]">{lang === "bn" ? "ম্যানুয়াল" : "Manual"}</span>
+                          <div
+                            onClick={() => toggleOverride(skill.id)}
+                            className={`relative w-8 h-4 rounded-full transition-colors ${skill.manual_override === 1 ? "bg-amber-500" : "bg-gray-300"}`}
+                          >
+                            <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${skill.manual_override === 1 ? "translate-x-4" : "translate-x-0.5"}`} />
+                          </div>
+                        </label>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); startEdit(skill); }}
+                          className="px-2 py-1 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all"
+                        >
+                          {lang === "bn" ? "এডিট" : "Edit"}
+                        </button>
                         <span>{new Date(skill.updated_at).toLocaleDateString()}</span>
                         <span className={`transition-transform ${expandedSkill === skill.id ? "rotate-180" : ""}`}>▼</span>
                       </div>
                     </div>
 
-                    {expandedSkill === skill.id && (
+                    {/* Edit Mode */}
+                    {editingSkill === skill.id && (
+                      <div className="px-3 pb-3 space-y-2 text-xs border-t border-gray-100 pt-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-text-secondary block mb-0.5">{lang === "bn" ? "কীওয়ার্ড:" : "Keywords:"}</label>
+                            <input type="text" value={editForm.keywords} onChange={(e) => setEditForm({ ...editForm, keywords: e.target.value })}
+                              className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          </div>
+                          <div>
+                            <label className="text-text-secondary block mb-0.5">{lang === "bn" ? "বিভাগ:" : "Category:"}</label>
+                            <select value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                              className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/30">
+                              <option value="general">General</option>
+                              <option value="psychologist">Psychologist</option>
+                              <option value="faq">FAQ</option>
+                              <option value="auto_learn">Auto Learn</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-text-secondary block mb-0.5">{lang === "bn" ? "প্রশ্ন:" : "Question:"}</label>
+                          <input type="text" value={editForm.question} onChange={(e) => setEditForm({ ...editForm, question: e.target.value })}
+                            className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                        </div>
+                        <div>
+                          <label className="text-text-secondary block mb-0.5">{lang === "bn" ? "উত্তর:" : "Answer:"}</label>
+                          <textarea value={editForm.answer} onChange={(e) => setEditForm({ ...editForm, answer: e.target.value })} rows={3}
+                            className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => saveEdit(skill.id)} disabled={saving}
+                            className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
+                            {saving ? (lang === "bn" ? "সংরক্ষণ..." : "Saving...") : (lang === "bn" ? "✅ সংরক্ষণ" : "✅ Save")}
+                          </button>
+                          <button onClick={() => setEditingSkill(null)}
+                            className="px-3 py-1.5 text-xs font-medium bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                            {lang === "bn" ? "বাতিল" : "Cancel"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Expanded Details */}
+                    {expandedSkill === skill.id && editingSkill !== skill.id && (
                       <div className="px-3 pb-3 space-y-2 text-xs">
                         <div className="grid grid-cols-2 gap-2 p-2 bg-gray-50 rounded-lg">
                           <div><span className="text-text-secondary">{lang === "bn" ? "বিভাগ:" : "Category:"}</span> {skill.category || "-"}</div>
                           <div><span className="text-text-secondary">{lang === "bn" ? "কীওয়ার্ড:" : "Keywords:"}</span> {skill.keywords?.slice(0, 100) || "-"}</div>
                           <div><span className="text-text-secondary">{lang === "bn" ? "আপডেট করেছেন:" : "Updated by:"}</span> {skill.updated_by || "system"}</div>
                           <div><span className="text-text-secondary">{lang === "bn" ? "তৈরি:" : "Created:"}</span> {new Date(skill.created_at).toLocaleDateString()}</div>
+                          <div><span className="text-text-secondary">{lang === "bn" ? "ব্যবহার:" : "Usage:"}</span> {skill.usage_count || 0}x</div>
+                          <div><span className="text-text-secondary">{lang === "bn" ? "ম্যানুয়াল:" : "Manual:"}</span>
+                            <span className={skill.manual_override === 1 ? "text-amber-600 font-medium" : ""}>
+                              {skill.manual_override === 1 ? (lang === "bn" ? "চালু" : "ON") : (lang === "bn" ? "বন্ধ" : "OFF")}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="text-xs font-medium text-text-secondary mt-2 mb-1">
+                            {lang === "bn" ? "প্রশ্ন:" : "Question:"}
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded-lg text-primary whitespace-pre-wrap">
+                            {skill.question || "-"}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="text-xs font-medium text-text-secondary mt-2 mb-1">
+                            {lang === "bn" ? "উত্তর:" : "Answer:"}
+                          </div>
+                          <div className="p-2 bg-gray-50 rounded-lg text-text-secondary whitespace-pre-wrap max-h-32 overflow-y-auto">
+                            {skill.answer?.slice(0, 1000) || "-"}
+                          </div>
                         </div>
 
                         {skill.psychologist_notes && (
@@ -255,13 +505,6 @@ export default function SkillsPage() {
                             <p className="mt-0.5 text-purple-600">{skill.psychologist_notes}</p>
                           </div>
                         )}
-
-                        <div className="text-xs font-medium text-text-secondary mt-2 mb-1">
-                          {lang === "bn" ? "রেসপন্স:" : "Response:"}
-                        </div>
-                        <div className="p-2 bg-gray-50 rounded-lg text-text-secondary whitespace-pre-wrap max-h-24 overflow-y-auto">
-                          {skill.response?.slice(0, 500) || "-"}
-                        </div>
 
                         {skill.audit_log && skill.audit_log.length > 0 && (
                           <>
@@ -273,12 +516,18 @@ export default function SkillsPage() {
                                 <div key={li} className="flex items-center gap-2 p-1.5 bg-gray-50 rounded-lg">
                                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                                     log.action === "update" ? "bg-amber-100 text-amber-700" :
-                                    log.action === "create" ? "bg-green-100 text-green-700" :
+                                    log.action === "created" || log.action === "create" ? "bg-green-100 text-green-700" :
                                     "bg-blue-100 text-blue-700"
-                                  }`}>{log.action}</span>
-                                  <span className="text-text-secondary">{log.changed_by}</span>
-                                  <span className="text-text-secondary/60">{new Date(log.changed_at).toLocaleDateString()}</span>
-                                  {log.details && <span className="text-text-secondary/60 truncate">- {log.details}</span>}
+                                  }`}>{log.action}{log.field_name ? `:${log.field_name}` : ""}</span>
+                                  <span className="text-text-secondary">{log.updated_by}</span>
+                                  <span className="text-text-secondary/60">{new Date(log.created_at).toLocaleDateString()}</span>
+                                  {(log.old_value || log.new_value) && (
+                                    <span className="text-text-secondary/60 truncate max-w-[200px]">
+                                      {log.old_value ? `"${log.old_value.slice(0, 30)}"` : ""}
+                                      {log.old_value && log.new_value ? " → " : ""}
+                                      {log.new_value ? `"${log.new_value.slice(0, 30)}"` : ""}
+                                    </span>
+                                  )}
                                 </div>
                               ))}
                             </div>

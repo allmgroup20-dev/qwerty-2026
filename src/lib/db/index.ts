@@ -244,6 +244,7 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       updated_at TEXT DEFAULT (datetime('now'))
     )`).run();
     try { await env.DB.prepare("ALTER TABLE ai_skills ADD COLUMN updated_by TEXT DEFAULT ''").run(); } catch {}
+    try { await env.DB.prepare("ALTER TABLE ai_skills ADD COLUMN manual_override INTEGER DEFAULT 0").run(); } catch {}
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS skill_audit_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       skill_id INTEGER NOT NULL,

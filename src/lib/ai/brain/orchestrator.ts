@@ -300,7 +300,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         const contextVars = buildContext(ctx, intent, chainContext, memories);
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
-        const output = await executeAgent(agent, agentPrompt, ctx.text);
+        const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
         chainContext += `\n[${agent.name} (${agentData.department})]\n${output.text}`;
         agentsUsed.push(agent.id);
         if (!departmentsUsed.includes(agentData.department)) {
@@ -334,7 +334,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         const contextVars = buildContext(ctx, intent, chainContext, memories);
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
-        const output = await executeAgent(agent, agentPrompt, ctx.text);
+        const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
         chainContext += `\n[${agent.name}]\n${output.text}`;
         agentsUsed.push(agent.id);
         // Write agent output to memory
@@ -360,7 +360,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         const contextVars = buildContext(ctx, intent, chainContext, memories);
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
-        const output = await executeAgent(agent, agentPrompt, ctx.text);
+        const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
         if (output.text && !output.text.includes("[Service temporarily unavailable")) {
           negativityFindings += `\n[${agent.name}]: ${output.text}`;
           agentsUsed.push(agent.id);
@@ -386,7 +386,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
           const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, memories), previousOutput: chainContext, negativityFindings };
           const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
           const agentPrompt = buildAgentPrompt(agent, ctxWithFindings, promptOverride || undefined);
-          const output = await executeAgent(agent, agentPrompt, ctx.text);
+          const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
           if (output.text && !output.text.includes("[Service temporarily unavailable")) {
             advisoryNotes += `\n[${agent.name}]: ${output.text}`;
             agentsUsed.push(agent.id);
@@ -407,7 +407,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, memories), previousOutput: chainContext, negativityFindings };
         const promptOverride = await getActivePromptOverride(db, agent.id).catch(() => null);
         const agentPrompt = buildAgentPrompt(agent, ctxWithFindings, promptOverride || undefined);
-        const output = await executeAgent(agent, agentPrompt, ctx.text);
+        const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
         if (output.text && !output.text.includes("[Service temporarily unavailable")) {
           // Store insight in memory
           setMemory(db, ctx.phone, kbAgentId, `insight_${Date.now()}`, output.text.slice(0, 1000), "negativity_insight", 1, 43200).catch(() => {});

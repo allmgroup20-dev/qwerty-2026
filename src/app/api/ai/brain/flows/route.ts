@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
             previousOutput: chainContext,
           };
           const agentPrompt = buildAgentPrompt(agent, contextVars);
-          const output = await executeAgent(agent, agentPrompt, body.text);
+          const output = await executeAgent(agent, agentPrompt, body.text, body.phone || "");
 
           chainContext += `\n[${agent.name}]\n${output.text}`;
           agentsUsed.push(agent.id);

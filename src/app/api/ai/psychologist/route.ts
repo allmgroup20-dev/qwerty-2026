@@ -278,6 +278,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
+    // Toggle manual override on skill
+    if (body.action === "toggle_override") {
+      if (!body.skillId) {
+        return NextResponse.json({ error: "skillId required" }, { status: 400 });
+      }
+      const current = await queryFirst<{ manual_override: number }>(
+        { DB: db },
+        "SELECT manual_override FROM ai_skills WHERE id = ?",
+        [body.skillId]
+      );
+      const newVal = current?.manual_override ? 0 : 1;
+      await execute(
+        { DB: db },
+        "UPDATE ai_skills SET manual_override = ?, updated_at = datetime('now') WHERE id = ?",
+        [newVal, body.skillId]
+      );
+      return NextResponse.json({ success: true, manual_override: newVal });
+    }
+
     // Edit skill
     if (body.action === "update_skill") {
       if (!body.skillId) {

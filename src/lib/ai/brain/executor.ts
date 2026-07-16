@@ -17,10 +17,11 @@ export async function executeAgent(
   agent: AgentDef,
   systemPrompt: string,
   userMessage: string,
+  phone = "",
 ): Promise<AgentOutput> {
   // 1) Skill match — 0 tokens, highest priority
   try {
-    const skillAnswer = await findSkill(userMessage);
+    const skillAnswer = await findSkill(userMessage, phone);
     if (skillAnswer) {
       return { agentId: agent.id, text: skillAnswer, model: "skill-cache", tokens: 0 };
     }

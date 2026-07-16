@@ -9,6 +9,7 @@ interface Skill {
   usage_count: number;
   category: string;
   updated_by: string;
+  manual_override: number;
 }
 
 async function logAudit(
@@ -30,7 +31,7 @@ async function logAudit(
   } catch {}
 }
 
-export async function findSkill(text: string): Promise<string | null> {
+export async function findSkill(text: string, phone = ""): Promise<string | null> {
   try {
     const db = await ensureDB();
     const skills = await query<Skill>(
@@ -50,6 +51,18 @@ export async function findSkill(text: string): Promise<string | null> {
         else if (words.some((w) => w.includes(keyword) || keyword.includes(w))) matchCount++;
       }
       if (matchCount >= 2) {
+        if (skill.manual_override === 1) {
+          // Log to psychologist feedback instead of auto-answering
+          try {
+            await execute(
+              { DB: db },
+              `INSERT INTO psychologist_feedback (agent_id, target_phone, issue_type, context, ai_draft, resolved, created_at)
+               VALUES (?, ?, 'manual_override', ?, ?, 0, datetime('now'))`,
+              ["brain", phone, `Skill #${skill.id}: ${skill.question}\nUser asked: ${text}`, ""]
+            );
+          } catch {}
+          return null;
+        }
         await execute(
           { DB: db },
           "UPDATE ai_skills SET usage_count = usage_count + 1, updated_at = datetime('now') WHERE id = ?",
@@ -135,6 +148,7 @@ export async function getSkillHistory(): Promise<any[]> {
     result.push({
       ...skill,
       is_psychologist_updated: skill.updated_by !== "",
+      manual_override: skill.manual_override || 0,
       audit_log: auditLog,
     });
   }
