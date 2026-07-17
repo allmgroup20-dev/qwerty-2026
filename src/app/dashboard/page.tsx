@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useLanguageStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
 import { Card, StatCard } from "@/components/ui/Card";
@@ -48,6 +49,13 @@ export default function WorkerDashboard() {
     workerId ? `/api/workers/profile?workerId=${workerId}` : null,
     { ttlMs: 180_000, cacheKey: `profile_${workerId}` }
   );
+
+  const router = useRouter();
+  useEffect(() => {
+    if (profileData && !(profileData as any).profileCompleted) {
+      router.replace("/onboarding");
+    }
+  }, [profileData, router]);
 
   const { data: settingsData } = useSWRFetch<{ settings?: Record<string, string> } | null>(
     "/api/company/settings",
@@ -208,18 +216,7 @@ export default function WorkerDashboard() {
           </div>
         )}
 
-        {/* Profile completeness prompt */}
-        {!worker.goal && !worker.ageGroup && !worker.occupation && (
-          <div className="mb-8 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3">
-            <span className="text-xl">📋</span>
-            <p className="text-sm text-amber-800 flex-1">
-              {lang === "bn" ? "আপনার প্রোফাইল কমপ্লিট করুন — তাহলে আমরা আপনার জন্য সঠিক কোর্স সুপারিশ করতে পারব" : "Complete your profile so we can recommend the right courses for you"}
-            </p>
-            <Link href="/onboarding" className="px-4 py-2 text-xs font-semibold rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-all shrink-0">
-              {lang === "bn" ? "প্রোফাইল কমপ্লিট করুন" : "Complete Profile"}
-            </Link>
-          </div>
-        )}
+        {/* Profile completeness check moved to server redirect above */}
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Link href="/dashboard/tree" className="card hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
