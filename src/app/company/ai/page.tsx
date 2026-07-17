@@ -2,12 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useLanguageStore } from "@/lib/store";
-import AgentTree from "@/components/agents/AgentTree";
-import AgentCard from "@/components/agents/AgentCard";
-import ActivityLog from "@/components/agents/ActivityLog";
-import ConfigPanel from "@/components/agents/ConfigPanel";
-import AgentDetailDrawer from "@/components/agents/AgentDetailDrawer";
-import GlobalModelSelector from "@/components/agents/GlobalModelSelector";
 import type { Agent, AgentTreeNode, AgentReport, AgentSubmission, AgentLog, AgentStats, GlobalAgentConfig } from "@/lib/ai/agents";
 
 type TabId = "dashboard" | "settings" | "brain" | "employees" | "insights" | "skills";
