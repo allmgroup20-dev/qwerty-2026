@@ -14,7 +14,6 @@ const menuItems = [
   { key: "nav_trainers", en: "Trainers", bn: "প্রশিক্ষক", href: "/trainers" },
   { key: "nav_faq", en: "FAQ", bn: "FAQ", href: "/faq" },
   { key: "nav_app", en: "Get App", bn: "অ্যাপ", href: "/app-install" },
-  { key: "nav_company", en: "Company", bn: "কোম্পানি", href: "/company" },
 ];
 
 export default function Navbar() {
@@ -35,14 +34,14 @@ export default function Navbar() {
   }, []);
 
   const showSolid = !isHome || scrolled;
-  const isLoggedIn = workerLoggedIn || companyLoggedIn;
 
   const handleLogout = async () => {
     if (localStorage.getItem("worker_token")) {
       localStorage.removeItem("worker_token");
       localStorage.removeItem("worker_id");
       localStorage.removeItem("worker_name");
-    } else {
+    }
+    if (document.cookie.includes("company_user")) {
       await fetch("/api/auth/company-logout", { method: "POST" });
     }
     window.location.href = "/";
@@ -91,23 +90,51 @@ export default function Navbar() {
             <div className="flex items-center gap-3">
               <LanguageSwitcher showSolid={showSolid} />
 
-              {!isLoggedIn && (
+              {/* Not logged in */}
+              {!workerLoggedIn && !companyLoggedIn && (
                 <Link href="/login" className={`hidden sm:inline-flex ${btnBase} ${btnPrimary}`}>
                   {lang === "bn" ? "লগইন" : "Login"}
                 </Link>
               )}
-              {workerLoggedIn && (
-                <Link href="/dashboard" className={`hidden sm:inline-flex ${btnBase} ${btnPrimary}`}>
-                  {lang === "bn" ? "ড্যাশবোর্ড" : "Dashboard"}
-                </Link>
+              {/* Worker only */}
+              {workerLoggedIn && !companyLoggedIn && (
+                <>
+                  <Link href="/dashboard" className={`hidden sm:inline-flex ${btnBase} ${btnPrimary}`}>
+                    {lang === "bn" ? "ইউজার ড্যাশবোর্ড" : "User Dashboard"}
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className={`hidden sm:inline-flex ${btnBase} border border-red-300 text-red-600 hover:bg-red-50`}
+                  >
+                    {lang === "bn" ? "লগআউট" : "Logout"}
+                  </button>
+                </>
               )}
-              {companyLoggedIn && (
+              {/* Company only */}
+              {!workerLoggedIn && companyLoggedIn && (
                 <>
                   <Link href="/login" className={`hidden sm:inline-flex ${btnBase} ${btnPrimary}`}>
                     {lang === "bn" ? "লগইন" : "Login"}
                   </Link>
                   <Link href="/company" className={`hidden sm:inline-flex ${btnBase} ${btnPrimary}`}>
-                    {lang === "bn" ? "ড্যাশবোর্ড" : "Dashboard"}
+                    {lang === "bn" ? "কোম্পানি ড্যাশবোর্ড" : "Company Dashboard"}
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className={`hidden sm:inline-flex ${btnBase} border border-red-300 text-red-600 hover:bg-red-50`}
+                  >
+                    {lang === "bn" ? "লগআউট" : "Logout"}
+                  </button>
+                </>
+              )}
+              {/* Both logged in */}
+              {workerLoggedIn && companyLoggedIn && (
+                <>
+                  <Link href="/dashboard" className={`hidden sm:inline-flex ${btnBase} ${btnPrimary}`}>
+                    {lang === "bn" ? "ইউজার ড্যাশবোর্ড" : "User Dashboard"}
+                  </Link>
+                  <Link href="/company" className={`hidden sm:inline-flex ${btnBase} border border-accent/40 text-accent hover:bg-accent/5`}>
+                    {lang === "bn" ? "কোম্পানি ড্যাশবোর্ড" : "Company Dashboard"}
                   </Link>
                   <button
                     onClick={handleLogout}
@@ -153,7 +180,7 @@ export default function Navbar() {
               ))}
               <div className="h-px bg-border my-2" />
 
-              {!isLoggedIn && (
+              {!workerLoggedIn && !companyLoggedIn && (
                 <>
                   <Link href="/login" onClick={() => setMobileOpen(false)} className="btn-primary text-center text-sm">
                     {lang === "bn" ? "লগইন" : "Login"}
@@ -163,10 +190,10 @@ export default function Navbar() {
                   </Link>
                 </>
               )}
-              {workerLoggedIn && (
+              {workerLoggedIn && !companyLoggedIn && (
                 <>
                   <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="btn-primary text-center text-sm">
-                    {lang === "bn" ? "ড্যাশবোর্ড" : "Dashboard"}
+                    {lang === "bn" ? "ইউজার ড্যাশবোর্ড" : "User Dashboard"}
                   </Link>
                   <button
                     onClick={() => { setMobileOpen(false); handleLogout(); }}
@@ -176,13 +203,29 @@ export default function Navbar() {
                   </button>
                 </>
               )}
-              {companyLoggedIn && (
+              {!workerLoggedIn && companyLoggedIn && (
                 <>
                   <Link href="/login" onClick={() => setMobileOpen(false)} className="btn-primary text-center text-sm">
                     {lang === "bn" ? "লগইন" : "Login"}
                   </Link>
                   <Link href="/company" onClick={() => setMobileOpen(false)} className="btn-primary text-center text-sm !bg-accent/10 !text-accent !border-accent/30">
-                    {lang === "bn" ? "কোম্পানি" : "Company"}
+                    {lang === "bn" ? "কোম্পানি ড্যাশবোর্ড" : "Company Dashboard"}
+                  </Link>
+                  <button
+                    onClick={() => { setMobileOpen(false); handleLogout(); }}
+                    className="btn-secondary text-center text-sm border-red-200 text-red-600 hover:bg-red-50"
+                  >
+                    {lang === "bn" ? "লগআউট" : "Logout"}
+                  </button>
+                </>
+              )}
+              {workerLoggedIn && companyLoggedIn && (
+                <>
+                  <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="btn-primary text-center text-sm">
+                    {lang === "bn" ? "ইউজার ড্যাশবোর্ড" : "User Dashboard"}
+                  </Link>
+                  <Link href="/company" onClick={() => setMobileOpen(false)} className="btn-primary text-center text-sm !bg-accent/10 !text-accent !border-accent/30">
+                    {lang === "bn" ? "কোম্পানি ড্যাশবোর্ড" : "Company Dashboard"}
                   </Link>
                   <button
                     onClick={() => { setMobileOpen(false); handleLogout(); }}
