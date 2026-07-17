@@ -43,7 +43,7 @@ export default function CompanyLevelsPage() {
   const [error, setError] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [overrideLevels, setOverrideLevels] = useState<{ levelNumber: number; percentage: number; fixedAmount: number }[]>([]);
+  const [overrideLevels, setOverrideLevels] = useState<{ levelNumber: number; percentage: number; fixedAmount: number; commissionType: string }[]>([]);
   const [globalLevelsRef, setGlobalLevelsRef] = useState<{ levelNumber: number; percentage: number; fixedAmount: number }[]>([]);
   const [overrideSaving, setOverrideSaving] = useState(false);
   const [overrideSaved, setOverrideSaved] = useState(false);
@@ -153,17 +153,36 @@ export default function CompanyLevelsPage() {
     setOverrideError("");
     if (product.commissionOverride) {
       try {
-        setOverrideLevels(JSON.parse(product.commissionOverride));
+        const parsed = JSON.parse(product.commissionOverride) as { levelNumber: number; percentage: number; fixedAmount: number }[];
+        setOverrideLevels(parsed.map((l) => {
+          const usePct = l.percentage > 0;
+          const useFixed = l.fixedAmount > 0;
+          const ct = usePct && useFixed ? "both" : usePct ? "percentage" : useFixed ? "fixed" : "both";
+          return { ...l, commissionType: ct };
+        }));
       } catch {
-        setOverrideLevels(globalLevelsRef.map((g) => ({ ...g })));
+        setOverrideLevels(globalLevelsRef.map((g) => ({ ...g, commissionType: "both" })));
       }
     } else {
-      setOverrideLevels(globalLevelsRef.map((g) => ({ ...g })));
+      setOverrideLevels(globalLevelsRef.map((g) => ({ ...g, commissionType: "both" })));
     }
   };
 
   const syncWithGlobal = () => {
-    setOverrideLevels(globalLevelsRef.map((g) => ({ ...g })));
+    setOverrideLevels(globalLevelsRef.map((g) => ({ ...g, commissionType: "both" })));
+  };
+
+  const toggleOverrideType = (index: number, type: "pct" | "fixed") => {
+    setOverrideLevels((prev) => {
+      const updated = [...prev];
+      const ct = updated[index].commissionType;
+      if (type === "pct") {
+        updated[index] = { ...updated[index], commissionType: ct === "both" ? "fixed" : ct === "percentage" ? "both" : "percentage" };
+      } else {
+        updated[index] = { ...updated[index], commissionType: ct === "both" ? "percentage" : ct === "fixed" ? "both" : "fixed" };
+      }
+      return updated;
+    });
   };
 
   const handleOverrideChange = (index: number, field: "percentage" | "fixedAmount", value: number) => {
@@ -200,7 +219,9 @@ export default function CompanyLevelsPage() {
     setOverrideSaved(false);
     setOverrideError("");
     try {
-      const active = overrideLevels.filter((l) => l.percentage > 0 || l.fixedAmount > 0);
+      const active = overrideLevels
+        .filter((l) => l.commissionType === "both" || l.commissionType === "percentage" || l.commissionType === "fixed")
+        .map((l) => ({ levelNumber: l.levelNumber, percentage: l.commissionType !== "fixed" ? l.percentage : 0, fixedAmount: l.commissionType !== "percentage" ? l.fixedAmount : 0 }));
       const res = await fetch("/api/company/commissions", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -491,36 +512,54 @@ export default function CompanyLevelsPage() {
                   )}
 
                   <div className="space-y-2">
-                    {overrideLevels.map((level, i) => (
-                      <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-gray-50">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
-                          L{level.levelNumber}
+                    {overrideLevels.map((level, i) => {
+                      const usePct = level.commissionType === "percentage" || level.commissionType === "both";
+                      const useFixed = level.commissionType === "fixed" || level.commissionType === "both";
+                      return (
+                        <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-gray-50">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                            L{level.levelNumber}
+                          </div>
+                          <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={usePct}
+                              onChange={() => toggleOverrideType(i, "pct")}
+                              className="w-4 h-4 accent-primary"
+                            />
+                            <input
+                              type="number"
+                              value={level.percentage}
+                              onChange={(e) => handleOverrideChange(i, "percentage", parseFloat(e.target.value) || 0)}
+                              disabled={!usePct}
+                              className={`w-14 input-field !py-1 text-xs text-center ${!usePct ? "opacity-40" : ""}`}
+                              min="0"
+                              max="100"
+                              step="0.5"
+                            />
+                            <span className="text-xs font-medium text-text-secondary">%</span>
+                          </label>
+                          <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={useFixed}
+                              onChange={() => toggleOverrideType(i, "fixed")}
+                              className="w-4 h-4 accent-primary"
+                            />
+                            <input
+                              type="number"
+                              value={level.fixedAmount}
+                              onChange={(e) => handleOverrideChange(i, "fixedAmount", parseFloat(e.target.value) || 0)}
+                              disabled={!useFixed}
+                              className={`w-14 input-field !py-1 text-xs text-center ${!useFixed ? "opacity-40" : ""}`}
+                              min="0"
+                              step="1"
+                            />
+                            <span className="text-xs font-medium text-text-secondary">৳</span>
+                          </label>
                         </div>
-                        <div className="flex items-center gap-1.5 flex-1">
-                          <input
-                            type="number"
-                            value={level.percentage}
-                            onChange={(e) => handleOverrideChange(i, "percentage", parseFloat(e.target.value) || 0)}
-                            className="w-16 input-field !py-1.5 text-xs text-center"
-                            min="0"
-                            max="100"
-                            step="0.5"
-                          />
-                          <span className="text-xs font-medium text-text-secondary">%</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="number"
-                            value={level.fixedAmount}
-                            onChange={(e) => handleOverrideChange(i, "fixedAmount", parseFloat(e.target.value) || 0)}
-                            className="w-16 input-field !py-1.5 text-xs text-center"
-                            min="0"
-                            step="1"
-                          />
-                          <span className="text-xs font-medium text-text-secondary">৳</span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <div className="flex gap-2 mt-4 pt-4 border-t border-border">
