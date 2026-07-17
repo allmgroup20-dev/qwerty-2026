@@ -226,7 +226,7 @@ export default function CompanyDashboard() {
         {linkGroups.map((group) => (
           <div key={group.label.en} className="mb-8">
             <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span className="w-6 h-px bg-border" />
+              <span className="w-6 h-px bg-gray-200" />
               {lang === "bn" ? group.label.bn : group.label.en}
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
