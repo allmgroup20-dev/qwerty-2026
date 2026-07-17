@@ -70,6 +70,7 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN interests_updated_at TEXT`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN commission_type TEXT DEFAULT 'both'`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN min_referral_base INTEGER DEFAULT 3`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN level_name_bn TEXT`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -837,6 +838,37 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       converted_at TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
+
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS notification_preferences (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      category TEXT NOT NULL,
+      enabled INTEGER DEFAULT 1,
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      message TEXT,
+      type TEXT DEFAULT 'info',
+      link TEXT,
+      is_read INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    // Insert default notification preferences for all workers (idempotent)
+    await env.DB.prepare(`INSERT OR IGNORE INTO notification_preferences (worker_id, channel, category, enabled)
+      SELECT w.worker_id, 'whatsapp', 'promotional', 1 FROM workers w
+    `).run().catch(() => {});
+    await env.DB.prepare(`INSERT OR IGNORE INTO notification_preferences (worker_id, channel, category, enabled)
+      SELECT w.worker_id, 'whatsapp', 'transactional', 1 FROM workers w
+    `).run().catch(() => {});
+    await env.DB.prepare(`INSERT OR IGNORE INTO notification_preferences (worker_id, channel, category, enabled)
+      SELECT w.worker_id, 'push', 'reminder', 1 FROM workers w
+    `).run().catch(() => {});
 
     g[DONE_FLAG] = true;
   } catch (e) {

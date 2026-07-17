@@ -1,156 +1,136 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/Button";
+import { useState, useEffect } from "react";
+import { useLanguageStore } from "@/lib/store";
+import { Card } from "@/components/ui/Card";
 
-interface PlatformUser {
-  phone: string;
-  preferred_platform: string;
-  last_active_platform: string | null;
-  platforms_tried: string;
-  last_active_at: string | null;
+interface Preference {
+  id: number;
+  worker_id: string;
+  channel: string;
+  category: string;
+  enabled: number;
 }
 
-export default function PlatformsPage() {
-  const [users, setUsers] = useState<PlatformUser[]>([]);
+const CHANNELS = ["whatsapp", "push", "email"];
+const CATEGORIES = ["promotional", "transactional", "reminder"];
+
+const CHANNEL_LABELS: Record<string, [string, string]> = {
+  whatsapp: ["WhatsApp", "হোয়াটসঅ্যাপ"],
+  push: ["In-App", "অ্যাপ"],
+  email: ["Email", "ইমেইল"],
+};
+
+const CATEGORY_LABELS: Record<string, [string, string]> = {
+  promotional: ["Promotional", "প্রচারণামূলক"],
+  transactional: ["Transactional", "লেনদেন"],
+  reminder: ["Reminder", "রিমাইন্ডার"],
+};
+
+export default function NotificationPreferencesPage() {
+  const { lang } = useLanguageStore();
+  const [prefs, setPrefs] = useState<Preference[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-  const [editPlatform, setEditPlatform] = useState("whatsapp");
+  const [message, setMessage] = useState("");
 
-  const loadUsers = useCallback(async (q?: string) => {
+  const workerId = typeof window !== "undefined" ? localStorage.getItem("worker_id") || "" : "";
+
+  const load = async () => {
+    if (!workerId) return;
     setLoading(true);
-    const url = q ? `/api/platform-prefs?search=${encodeURIComponent(q)}` : "/api/platform-prefs";
-    const res = await fetch(url);
-    const data = await res.json() as any;
-    setUsers(data?.data || (Array.isArray(data) ? data : []));
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { loadUsers(); }, [loadUsers]);
-
-  const handleSearch = () => { loadUsers(search); };
-
-  const handleUpdate = async () => {
-    await fetch("/api/platform-prefs", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: editPhone, platform: editPlatform }),
-    });
-    setEditPhone("");
-    loadUsers(search);
+    try {
+      const res = await fetch(`/api/notifications/preferences?workerId=${workerId}`);
+      const data = await res.json() as { preferences: Preference[] };
+      setPrefs(data.preferences || []);
+    } catch {} finally { setLoading(false); }
   };
 
-  const handleDelete = async (phone: string) => {
-    await fetch(`/api/platform-prefs?phone=${encodeURIComponent(phone)}`, { method: "DELETE" });
-    loadUsers(search);
+  useEffect(() => { load(); }, [workerId]);
+
+  const toggle = async (channel: string, category: string, current: number) => {
+    const enabled = current ? 0 : 1;
+    setMessage("");
+    try {
+      const res = await fetch("/api/notifications/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workerId, channel, category, enabled }),
+      });
+      if (res.ok) {
+        setPrefs(prev => prev.map(p => p.channel === channel && p.category === category ? { ...p, enabled } : p));
+        setMessage(lang === "bn" ? "আপডেট করা হয়েছে" : "Updated");
+      }
+    } catch { setMessage(lang === "bn" ? "ব্যর্থ" : "Failed"); }
   };
 
-  const platformBadge = (p: string) => {
-    const colors: Record<string, string> = {
-      whatsapp: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      messenger: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      telegram: "bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200",
-    };
-    return <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[p] || "bg-gray-100"}`}>{p}</span>;
-  };
+  const getPref = (ch: string, cat: string) => prefs.find(p => p.channel === ch && p.category === cat);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-2">Platform Preferences</h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Each user&apos;s preferred communication platform is auto-detected from their replies.
-      </p>
-
-      {/* Search */}
-      <div className="flex gap-2 mb-6">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          placeholder="Search by phone ID..."
-          className="flex-1 px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-        />
-        <Button onClick={handleSearch}>Search</Button>
-      </div>
-
-      {/* Manual override */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 shadow flex gap-3 items-end flex-wrap">
+    <div className="min-h-screen py-24 px-4 bg-gray-50">
+      <div className="max-w-3xl mx-auto space-y-6">
         <div>
-          <label className="text-xs text-gray-500 block mb-1">Phone ID</label>
-          <input
-            type="text"
-            value={editPhone}
-            onChange={(e) => setEditPhone(e.target.value)}
-            placeholder="88017... / tg_... / fb_..."
-            className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 w-60"
-          />
+          <h1 className="text-2xl font-bold text-primary">
+            {lang === "bn" ? "বিজ্ঞপ্তি পছন্দ" : "Notification Preferences"}
+          </h1>
+          <p className="text-sm text-text-secondary mt-1">
+            {lang === "bn" ? "কোন ধরনের বিজ্ঞপ্তি কোন মাধ্যমে পেতে চান তা নির্বাচন করুন" : "Choose which notifications you want on each channel"}
+          </p>
         </div>
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Preferred Platform</label>
-          <select
-            value={editPlatform}
-            onChange={(e) => setEditPlatform(e.target.value)}
-            className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-          >
-            <option value="whatsapp">WhatsApp</option>
-            <option value="messenger">Messenger</option>
-            <option value="telegram">Telegram</option>
-          </select>
-        </div>
-        <Button onClick={handleUpdate}>Set Preference</Button>
-      </div>
 
-      {/* Table */}
-      {loading ? (
-        <p className="text-gray-500">Loading...</p>
-      ) : users.length === 0 ? (
-        <p className="text-gray-500">No users found.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b dark:border-gray-700">
-                <th className="text-left py-2 px-2">Phone ID</th>
-                <th className="text-left py-2 px-2">Preferred</th>
-                <th className="text-left py-2 px-2">Last Active</th>
-                <th className="text-left py-2 px-2">Platforms Tried</th>
-                <th className="text-left py-2 px-2">Last Active</th>
-                <th className="py-2 px-2">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.phone} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
-                  <td className="py-2 px-2 font-mono text-xs">{u.phone}</td>
-                  <td className="py-2 px-2">{platformBadge(u.preferred_platform)}</td>
-                  <td className="py-2 px-2">
-                    {u.last_active_platform ? platformBadge(u.last_active_platform) : "—"}
-                  </td>
-                  <td className="py-2 px-2 text-xs">
-                    {(JSON.parse(u.platforms_tried || "[]") as string[]).map((p) => (
-                      <span key={p} className="mr-1">{platformBadge(p)}</span>
+        {message && (
+          <div className="p-3 bg-green-50 rounded-xl text-sm text-green-700">{message}</div>
+        )}
+
+        {loading ? (
+          <div className="text-center py-12 text-text-secondary">{lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}</div>
+        ) : (
+          <Card className="!p-0 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-border">
+                    <th className="p-4 text-left text-sm font-semibold text-primary">{lang === "bn" ? "বিভাগ" : "Category"}</th>
+                    {CHANNELS.map(ch => (
+                      <th key={ch} className="p-4 text-center text-sm font-semibold text-primary">
+                        {CHANNEL_LABELS[ch]?.[lang === "bn" ? 1 : 0] || ch}
+                      </th>
                     ))}
-                  </td>
-                  <td className="py-2 px-2 text-xs text-gray-500">
-                    {u.last_active_at ? new Date(u.last_active_at + "Z").toLocaleString() : "—"}
-                  </td>
-                  <td className="py-2 px-2 text-center">
-                    <button
-                      onClick={() => handleDelete(u.phone)}
-                      className="text-red-500 hover:text-red-700 text-xs"
-                      title="Reset preference"
-                    >
-                      ✕
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CATEGORIES.map(cat => (
+                    <tr key={cat} className="border-b border-border last:border-0">
+                      <td className="p-4 text-sm font-medium text-primary">
+                        {CATEGORY_LABELS[cat]?.[lang === "bn" ? 1 : 0] || cat}
+                      </td>
+                      {CHANNELS.map(ch => {
+                        const pref = getPref(ch, cat);
+                        const enabled = pref?.enabled ?? 1;
+                        return (
+                          <td key={ch} className="p-4 text-center">
+                            <button
+                              onClick={() => toggle(ch, cat, enabled)}
+                              className={`relative w-12 h-6 rounded-full transition-all ${enabled ? "bg-primary" : "bg-gray-200"}`}
+                            >
+                              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${enabled ? "left-6" : "left-0.5"}`} />
+                            </button>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+
+        <div className="text-xs text-text-secondary space-y-1">
+          <p>💬 <strong>WhatsApp</strong> — {lang === "bn" ? "হোয়াটসঅ্যাপে বার্তা" : "Messages via WhatsApp"}</p>
+          <p>🔔 <strong>In-App</strong> — {lang === "bn" ? "সাইটের ভিতরে বিজ্ঞপ্তি" : "On-site notification bell"}</p>
+          <p>📧 <strong>Email</strong> — {lang === "bn" ? "ইমেইলে নোটিফিকেশন" : "Email notifications"}</p>
         </div>
-      )}
+      </div>
     </div>
   );
 }

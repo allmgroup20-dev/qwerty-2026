@@ -58,6 +58,8 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/company/payment-gateway", en: "Payment Gateway", bn: "পেমেন্ট গেটওয়ে", icon: "💳" },
       { href: "/company/settings", en: "Settings", bn: "সেটিংস", icon: "⚙️" },
       { href: "/company/users", en: "Users", bn: "ব্যবহারকারী", icon: "🔐" },
+      { href: "/company/reviews", en: "Reviews", bn: "রিভিউ", icon: "⭐" },
+      { href: "/company/notifications", en: "Notifications", bn: "বিজ্ঞপ্তি", icon: "🔔" },
       { href: "/company/translations", en: "Translations", bn: "অনুবাদ", icon: "🌐" },
       { href: "/company/fingerprint", en: "Fingerprint", bn: "ফিঙ্গারপ্রিন্ট", icon: "🔐" },
       { href: "/company/test-mode", en: "Test Mode", bn: "টেস্ট মোড", icon: "🧪" },

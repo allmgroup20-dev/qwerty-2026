@@ -52,6 +52,7 @@ export const commissionLevels = sqliteTable("commission_levels", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   levelNumber: integer("level_number").unique().notNull(),
   levelName: text("level_name").notNull(),
+  levelNameBn: text("level_name_bn"),
   percentage: real("percentage").default(0),
   fixedAmount: real("fixed_amount").default(0),
   currency: text("currency").default("BDT"),
@@ -534,6 +535,28 @@ export const attributionLog = sqliteTable("attribution_log", {
   firstVisitAt: text("first_visit_at"),
   converted: integer("converted").default(0),
   convertedAt: text("converted_at"),
+  createdAt: text("created_at"),
+});
+
+// ── Phase 11: Notification Preferences ──
+export const notificationPreferences = sqliteTable("notification_preferences", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  channel: text("channel").notNull(),
+  category: text("category").notNull(),
+  enabled: integer("enabled").default(1),
+  updatedAt: text("updated_at"),
+});
+
+// ── Phase 11: On-Site Notifications ──
+export const notifications = sqliteTable("notifications", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  title: text("title").notNull(),
+  message: text("message"),
+  type: text("type").default("info"),
+  link: text("link"),
+  isRead: integer("is_read").default(0),
   createdAt: text("created_at"),
 });
 

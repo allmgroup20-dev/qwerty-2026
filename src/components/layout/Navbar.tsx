@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguageStore } from "@/lib/store";
 import LanguageSwitcher from "./LanguageSwitcher";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const menuItems = [
   { key: "nav_home", en: "Home", bn: "হোম", href: "/" },
@@ -103,6 +104,7 @@ export default function Navbar() {
               {/* Worker only */}
               {workerLoggedIn && !companyLoggedIn && (
                 <>
+                  <div className="hidden sm:block"><NotificationBell /></div>
                   <Link href="/dashboard" className={`hidden sm:inline-flex ${btnBase} ${btnPrimary}`}>
                     {lang === "bn" ? "ইউজার ড্যাশবোর্ড" : "User Dashboard"}
                   </Link>
@@ -134,6 +136,7 @@ export default function Navbar() {
               {/* Both logged in */}
               {workerLoggedIn && companyLoggedIn && (
                 <>
+                  <div className="hidden sm:block"><NotificationBell /></div>
                   <Link href="/dashboard" className={`hidden sm:inline-flex ${btnBase} ${btnPrimary}`}>
                     {lang === "bn" ? "ইউজার ড্যাশবোর্ড" : "User Dashboard"}
                   </Link>

@@ -19,7 +19,7 @@ export async function GET() {
 
     const rows = await query<any>(
       db,
-      "SELECT level_number as levelNumber, level_name as levelName, percentage, fixed_amount as fixedAmount, currency, is_active as isActive, COALESCE(commission_type, 'both') as commissionType, COALESCE(min_referral_base, 3) as minReferralBase FROM commission_levels ORDER BY level_number ASC"
+      "SELECT level_number as levelNumber, level_name as levelName, level_name_bn as levelNameBn, percentage, fixed_amount as fixedAmount, currency, is_active as isActive, COALESCE(commission_type, 'both') as commissionType, COALESCE(min_referral_base, 3) as minReferralBase FROM commission_levels ORDER BY level_number ASC"
     );
 
     const base = rows.length > 0 ? (rows[0].minReferralBase || 3) : 3;
@@ -33,6 +33,7 @@ export async function GET() {
       return {
         levelNumber: r.levelNumber,
         levelName: r.levelName,
+        levelNameBn: r.levelNameBn || null,
         percentage: r.percentage || 0,
         fixedAmount: r.fixedAmount || 0,
         commissionType: ct,
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
       levels: {
         levelNumber: number;
         levelName: string;
+        levelNameBn?: string | null;
         percentage: number;
         fixedAmount: number;
         commissionType: string;
@@ -76,9 +78,9 @@ export async function POST(request: NextRequest) {
       const ct = l.commissionType || "both";
       await execute(
         db,
-        `INSERT INTO commission_levels (level_number, level_name, percentage, fixed_amount, currency, is_active, commission_type, min_referral_base)
-         VALUES (?, ?, ?, ?, 'BDT', 1, ?, ?)`,
-        [l.levelNumber, l.levelName, l.percentage || 0, l.fixedAmount || 0, ct, base]
+        `INSERT INTO commission_levels (level_number, level_name, level_name_bn, percentage, fixed_amount, currency, is_active, commission_type, min_referral_base)
+         VALUES (?, ?, ?, ?, ?, 'BDT', 1, ?, ?)`,
+        [l.levelNumber, l.levelName, l.levelNameBn || null, l.percentage || 0, l.fixedAmount || 0, ct, base]
       );
     }
 

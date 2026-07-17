@@ -17,6 +17,7 @@ interface Product {
 interface LevelItem {
   levelNumber: number;
   levelName: string;
+  levelNameBn?: string | null;
   percentage: number;
   fixedAmount: number;
   commissionType: string;
@@ -25,11 +26,11 @@ interface LevelItem {
 }
 
 const defaultLevels: LevelItem[] = [
-  { levelNumber: 1, levelName: "Level 1", percentage: 10, fixedAmount: 0, commissionType: "both" },
-  { levelNumber: 2, levelName: "Level 2", percentage: 5, fixedAmount: 0, commissionType: "both" },
-  { levelNumber: 3, levelName: "Level 3", percentage: 3, fixedAmount: 0, commissionType: "both" },
-  { levelNumber: 4, levelName: "Level 4", percentage: 2, fixedAmount: 0, commissionType: "both" },
-  { levelNumber: 5, levelName: "Level 5", percentage: 1, fixedAmount: 0, commissionType: "both" },
+  { levelNumber: 1, levelName: "Level 1", levelNameBn: "লেভেল ১", percentage: 10, fixedAmount: 0, commissionType: "both" },
+  { levelNumber: 2, levelName: "Level 2", levelNameBn: "লেভেল ২", percentage: 5, fixedAmount: 0, commissionType: "both" },
+  { levelNumber: 3, levelName: "Level 3", levelNameBn: "লেভেল ৩", percentage: 3, fixedAmount: 0, commissionType: "both" },
+  { levelNumber: 4, levelName: "Level 4", levelNameBn: "লেভেল ৪", percentage: 2, fixedAmount: 0, commissionType: "both" },
+  { levelNumber: 5, levelName: "Level 5", levelNameBn: "লেভেল ৫", percentage: 1, fixedAmount: 0, commissionType: "both" },
 ];
 
 export default function CompanyLevelsPage() {
@@ -59,6 +60,7 @@ export default function CompanyLevelsPage() {
           const mapped = data.levels.map((l: any) => ({
             levelNumber: l.levelNumber,
             levelName: l.levelName || `Level ${l.levelNumber}`,
+            levelNameBn: l.levelNameBn || null,
             percentage: l.percentage || 0,
             fixedAmount: l.fixedAmount || 0,
             commissionType: l.commissionType || "both",
@@ -119,6 +121,7 @@ export default function CompanyLevelsPage() {
       const activeLevels = levels.slice(0, maxLevels).map((l, i) => ({
         levelNumber: i + 1,
         levelName: l.levelName || `Level ${i + 1}`,
+        levelNameBn: l.levelNameBn || null,
         percentage: typeof l.percentage === "number" ? l.percentage : parseFloat(l.percentage as any) || 0,
         fixedAmount: typeof l.fixedAmount === "number" ? l.fixedAmount : parseFloat(l.fixedAmount as any) || 0,
         commissionType: l.commissionType || "both",
@@ -316,13 +319,22 @@ export default function CompanyLevelsPage() {
                   <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0 text-sm">
                     {i + 1}
                   </div>
-                  <input
-                    type="text"
-                    value={level.levelName}
-                    onChange={(e) => handleChange(i, "levelName", e.target.value)}
-                    className="input-field flex-1 !py-1.5 text-sm font-semibold"
-                    placeholder={lang === "bn" ? `লেভেল ${i + 1} এর নাম` : `Level ${i + 1} name`}
-                  />
+                  <div className="flex-1 grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={level.levelName}
+                      onChange={(e) => handleChange(i, "levelName", e.target.value)}
+                      className="input-field w-full !py-1.5 text-sm font-semibold"
+                      placeholder={`EN: Level ${i + 1}`}
+                    />
+                    <input
+                      type="text"
+                      value={level.levelNameBn || ""}
+                      onChange={(e) => handleChange(i, "levelNameBn", e.target.value)}
+                      className="input-field w-full !py-1.5 text-sm"
+                      placeholder={`BN: লেভেল ${i + 1}`}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-4 flex-wrap">
