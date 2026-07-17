@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useLanguageStore } from "@/lib/store";
-import { trainers, courseCategories } from "@/data/landing-page-data";
+import { trainers, courseCategories, platforms } from "@/data/landing-page-data";
 
 export default function TrainersPage() {
   const { lang } = useLanguageStore();
@@ -48,6 +48,26 @@ export default function TrainersPage() {
               </div>
             );
           })}
+        </div>
+
+        {/* Participating Platforms */}
+        <div className="rounded-2xl p-5 bg-white border border-border mt-6">
+          <div className="badge mx-auto mb-3">🏛️ {lang === "bn" ? "আমাদের প্রতিষ্ঠানসমূহ" : "Our Institutions"}</div>
+          <p className="text-sm font-bold text-text-secondary text-center -mt-2 mb-4">
+            {lang === "bn"
+              ? "যেসব প্ল্যাটফর্ম ও প্রতিষ্ঠানের কোর্স আপনি ফ্রিতে পাচ্ছেন"
+              : "Courses you get for free from these platforms & institutions"}
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {platforms.map((p) => (
+              <div key={p.name} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-bg border border-border min-w-[80px]">
+                <div className="w-10 h-10 rounded-lg overflow-hidden bg-white relative flex items-center justify-center">
+                  <Image src={p.logo} alt={p.nameBn} width={36} height={36} className="object-contain" />
+                </div>
+                <span className="text-[10px] font-bold text-text text-center leading-tight">{lang === "bn" ? p.nameBn : p.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="mt-10 text-center p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-info/5 border border-primary/20">

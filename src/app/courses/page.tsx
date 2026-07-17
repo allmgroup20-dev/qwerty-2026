@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useLanguageStore } from "@/lib/store";
-import { courseCategories, trainers, platforms, bundlePricingData, tab0OverviewItems, googleDriveData } from "@/data/landing-page-data";
+import { courseCategories, trainers, bundlePricingData, tab0OverviewItems, googleDriveData } from "@/data/landing-page-data";
 import TrainerPhotoGrid from "@/components/home/TrainerPhotoGrid";
 
 function getTrainer(name: string) {
@@ -28,26 +28,6 @@ export default function CoursesPage() {
               ? "দেশের সেরা ১২ জন প্রশিক্ষকের কোর্স। সব কোর্সে আজীবন অ্যাক্সেস। পছন্দ না হলে ২৪ ঘণ্টায় টাকা ফেরত।"
               : "Courses from Bangladesh's top 12 trainers. Lifetime access. 24h money-back guarantee."}
           </p>
-        </div>
-
-        {/* Participating Platforms */}
-        <div className="rounded-2xl p-5 bg-white border border-border">
-          <div className="badge mx-auto mb-3">🏛️ {lang === "bn" ? "আমাদের প্রতিষ্ঠানসমূহ" : "Our Institutions"}</div>
-          <p className="text-sm font-bold text-text-secondary text-center -mt-2 mb-4">
-            {lang === "bn"
-              ? "যেসব প্ল্যাটফর্ম ও প্রতিষ্ঠানের কোর্স আপনি ফ্রিতে পাচ্ছেন"
-              : "Courses you get for free from these platforms & institutions"}
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            {platforms.map((p) => (
-              <div key={p.name} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-bg border border-border min-w-[80px]">
-                <div className="w-10 h-10 rounded-lg overflow-hidden bg-white relative flex items-center justify-center">
-                  <Image src={p.logo} alt={p.nameBn} width={36} height={36} className="object-contain" />
-                </div>
-                <span className="text-[10px] font-bold text-text text-center leading-tight">{lang === "bn" ? p.nameBn : p.name}</span>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Tab Buttons */}
