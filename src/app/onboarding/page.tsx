@@ -208,16 +208,29 @@ export default function OnboardingPage() {
                 <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "ধর্ম" : "Religion"}</label>
                 <select value={religion} onChange={e => setReligion(e.target.value)} className="input-field">
                   <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
-                  <option value="islam">{lang === "bn" ? "ইসলাম" : "Islam"}</option>
-                  <option value="hindu">{lang === "bn" ? "হিন্দু" : "Hindu"}</option>
-                  <option value="buddhist">{lang === "bn" ? "বৌদ্ধ" : "Buddhist"}</option>
-                  <option value="christian">{lang === "bn" ? "খ্রিস্টান" : "Christian"}</option>
+                  <option value="islam">{lang === "bn" ? "▸ ইসলাম" : "▸ Islam"}</option>
+                  <option value="islam_sunni">{lang === "bn" ? "  সুন্নি" : "  Sunni"}</option>
+                  <option value="islam_shia">{lang === "bn" ? "  শিয়া" : "  Shia"}</option>
+                  <option value="islam_ahle_sunnat">{lang === "bn" ? "  আহলে সুন্নাত ওয়াল জামাত" : "  Ahle Sunnat Wal Jamaat"}</option>
+                  <option value="islam_ahle_hadith">{lang === "bn" ? "  আহলে হাদীস" : "  Ahle Hadith"}</option>
+                  <option value="islam_ahle_quran">{lang === "bn" ? "  আহলে কোরআন" : "  Ahle Quran"}</option>
+                  <option value="islam_sufi">{lang === "bn" ? "  সুফি" : "  Sufi"}</option>
+                  <option value="islam_deobandi">{lang === "bn" ? "  দেওবন্দি" : "  Deobandi"}</option>
+                  <option value="islam_ismaili">{lang === "bn" ? "  ইসমাইলি" : "  Ismaili"}</option>
+                  <option value="hindu">{lang === "bn" ? "▸ হিন্দু" : "▸ Hindu"}</option>
+                  <option value="hindu_vaishnav">{lang === "bn" ? "  বৈষ্ণব" : "  Vaishnav"}</option>
+                  <option value="hindu_shaiva">{lang === "bn" ? "  শৈব" : "  Shaiva"}</option>
+                  <option value="hindu_shakta">{lang === "bn" ? "  শাক্ত" : "  Shakta"}</option>
+                  <option value="buddhist">{lang === "bn" ? "▸ বৌদ্ধ" : "▸ Buddhist"}</option>
+                  <option value="buddhist_theravada">{lang === "bn" ? "  থেরবাদ" : "  Theravada"}</option>
+                  <option value="buddhist_mahayana">{lang === "bn" ? "  মহাযান" : "  Mahayana"}</option>
+                  <option value="christian">{lang === "bn" ? "▸ খ্রিস্টান" : "▸ Christian"}</option>
+                  <option value="christian_catholic">{lang === "bn" ? "  ক্যাথলিক" : "  Catholic"}</option>
+                  <option value="christian_orthodox">{lang === "bn" ? "  অর্থোডক্স" : "  Orthodox"}</option>
+                  <option value="christian_protestant">{lang === "bn" ? "  প্রোটেস্ট্যান্ট" : "  Protestant"}</option>
                   <option value="atheist">{lang === "bn" ? "নাস্তিক" : "Atheist"}</option>
                   <option value="agnostic">{lang === "bn" ? "সঞ্চয়বাদী" : "Agnostic"}</option>
                   <option value="sanatan">{lang === "bn" ? "সনাতন" : "Sanatan"}</option>
-                  <option value="seventh_day_adventist">{lang === "bn" ? "সেভেনডে অ্যাডভেন্টিস্ট" : "Seventh-day Adventist"}</option>
-                  <option value="tawhidi">{lang === "bn" ? "তাওহীদি" : "Tawhidi"}</option>
-                  <option value="quran_sunnah">{lang === "bn" ? "কোরান-সুন্নাহ" : "Quran Sunnah"}</option>
                   <option value="sarbabadi">{lang === "bn" ? "সর্ববাদী" : "Sarbabadi"}</option>
                   <option value="lgbtq">{lang === "bn" ? "এলজিবিটি" : "LGBTQ+"}</option>
                   <option value="other">{lang === "bn" ? "অন্যান্য" : "Other"}</option>
