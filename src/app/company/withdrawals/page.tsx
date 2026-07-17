@@ -106,7 +106,7 @@ function WithdrawalRequestsTab({ lang }: { lang: string }) {
         ids.map(async (id) => {
           try {
             const r = await fetch(`/api/workers/profile?workerId=${id}`);
-            const d = await r.json();
+            const d = await r.json() as { name?: string; workerId?: string };
             nameMap[id] = d.name || d.workerId || id;
           } catch { nameMap[id] = id; }
         })
