@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useLanguageStore, useCartStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { ReviewList } from "@/components/reviews/ReviewList";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
+import { getCached, setCached } from "@/lib/client-cache";
 
 interface Product {
   id: number; name: string; nameBn: string | null; price: number;
@@ -31,38 +33,38 @@ const emojiFallback: Record<string, string> = {
 export default function ProductsPage() {
   const { lang } = useLanguageStore();
   const addItem = useCartStore((s) => s.addItem);
-  const [products, setProducts] = useState<Product[]>([]);
+  const { data: productsData, loading: productsLoading } = useSWRFetch<{ products?: Product[] }>(
+    "/api/products",
+    { ttlMs: 300_000 }
+  );
+  const products = productsData?.products ?? [];
   const [selectedCat, setSelectedCat] = useState("all");
   const [addedMsg, setAddedMsg] = useState<number | null>(null);
   const [reviewProduct, setReviewProduct] = useState<Product | null>(null);
   const [aiPrices, setAiPrices] = useState<Record<number, { aiPrice: number; basePrice: number; message: string }>>({});
   const [priceLoading, setPriceLoading] = useState(true);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    fetch("/api/products")
-      .then(r => r.json() as Promise<{ products?: Product[] }>)
-      .then(data => {
-        if (data.products) {
-          setProducts(data.products);
-          const wid = localStorage.getItem("worker_id");
-          if (wid) {
-            const ids = data.products.map((p: Product) => p.id);
-            fetch("/api/ai-price", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ workerId: wid, productIds: ids }),
-            })
-              .then(r => r.json() as Promise<{ prices?: Record<number, { aiPrice: number; basePrice: number; message: string }> }>)
-              .then(d => { if (d.prices) setAiPrices(d.prices); })
-              .catch(() => {})
-              .finally(() => setPriceLoading(false));
-          } else {
-            setPriceLoading(false);
-          }
-        }
-      })
-      .catch(() => { setPriceLoading(false); });
-  }, []);
+    if (fetchedRef.current || products.length === 0) return;
+    fetchedRef.current = true;
+    const wid = localStorage.getItem("worker_id");
+    if (!wid) { setPriceLoading(false); return; }
+    const cacheKey = "ai_price_" + wid;
+    getCached<Record<number, { aiPrice: number; basePrice: number; message: string }>>(cacheKey, 300_000).then((cached) => {
+      if (cached) { setAiPrices(cached); setPriceLoading(false); return; }
+    });
+    const ids = products.map(p => p.id);
+    fetch("/api/ai-price", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workerId: wid, productIds: ids }),
+    })
+      .then(r => r.json() as Promise<{ prices?: Record<number, { aiPrice: number; basePrice: number; message: string }> }>)
+      .then(d => { if (d.prices) { setAiPrices(d.prices); setCached(cacheKey, d.prices); } })
+      .catch(() => {})
+      .finally(() => setPriceLoading(false));
+  }, [products]);
 
   const getWorkerId = () => { try { return localStorage.getItem("worker_id") || ""; } catch { return ""; } };
 
@@ -188,8 +190,15 @@ export default function ProductsPage() {
             </div>
           ))}
           {filtered.length === 0 && (
-            <div className="col-span-full text-center py-16 text-text-secondary">
-              {lang === "bn" ? "কোনো পণ্য পাওয়া যায়নি" : "No products found"}
+            <div className="col-span-full text-center py-16">
+              {productsLoading ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin w-8 h-8 border-4 border-action border-t-transparent rounded-full" />
+                  <p className="text-text-secondary text-sm">{lang === "bn" ? "পণ্য লোড হচ্ছে..." : "Loading products..."}</p>
+                </div>
+              ) : (
+                <p className="text-text-secondary">{lang === "bn" ? "কোনো পণ্য পাওয়া যায়নি" : "No products found"}</p>
+              )}
             </div>
           )}
         </div>

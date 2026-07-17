@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
 
 interface Product {
   id: number;
@@ -40,23 +41,17 @@ const emptyForm = () => ({
 
 export default function CompanyProductsPage() {
   const { lang } = useLanguageStore();
-  const [products, setProducts] = useState<Product[]>([]);
+  const { data, loading, refresh } = useSWRFetch<{ products?: Product[] }>(
+    "/api/products",
+    { ttlMs: 300_000 }
+  );
+  const products = data?.products ?? [];
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [expandedDesc, setExpandedDesc] = useState<number | null>(null);
-
-  const loadProducts = async () => {
-    try {
-      const res = await fetch("/api/products");
-      const data = await res.json() as { products?: Product[] };
-      if (data.products) setProducts(data.products);
-    } catch {}
-  };
-
-  useEffect(() => { loadProducts(); }, []);
 
   const resetForm = () => {
     setForm(emptyForm()); setEditingId(null); setShowAdd(false); setError("");
@@ -95,7 +90,7 @@ export default function CompanyProductsPage() {
       const data = await res.json() as { error?: string };
       if (!res.ok) throw new Error(data.error || "Save failed");
 
-      await loadProducts(); resetForm();
+      refresh(); resetForm();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally { setSaving(false); }
@@ -103,12 +98,12 @@ export default function CompanyProductsPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm(lang === "bn" ? "নিশ্চিতভাবে ডিলিট করবেন?" : "Are you sure you want to delete?")) return;
-    try { const res = await fetch(`/api/products/${id}`, { method: "DELETE" }); if (res.ok) await loadProducts(); } catch {}
+    try { const res = await fetch(`/api/products/${id}`, { method: "DELETE" }); if (res.ok) refresh(); } catch {}
   };
 
   const toggleField = (id: number, field: string, value: number) => {
     fetch(`/api/products/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [field]: value }) })
-      .then(() => loadProducts()).catch(() => {});
+      .then(() => refresh()).catch(() => {});
   };
 
   return (
