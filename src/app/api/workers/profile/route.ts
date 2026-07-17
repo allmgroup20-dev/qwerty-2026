@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
               w.level, w.join_date, w.balance, w.total_earned, w.total_spent,
               w.total_team_members, w.membership_status, w.preferred_language,
               w.age_group, w.occupation, w.education_level, w.avatar_url,
+              w.gender, w.country, w.city, w.goal, w.preferred_learning_time,
               w.interests_updated_at, w.created_at, w.updated_at,
               cl.level_name, cl.level_name_bn
        FROM workers w
@@ -51,6 +52,11 @@ export async function GET(request: NextRequest) {
       occupation: worker.occupation || null,
       educationLevel: worker.education_level || null,
       avatarUrl: worker.avatar_url || null,
+      gender: worker.gender || null,
+      country: worker.country || null,
+      city: worker.city || null,
+      goal: worker.goal || null,
+      preferredLearningTime: worker.preferred_learning_time || null,
       profileCompleted: !!(worker.name && !worker.name.startsWith("User") && (worker.age_group || worker.occupation || worker.education_level)),
     });
   } catch (error) {
@@ -82,6 +88,11 @@ export async function PUT(request: NextRequest) {
     if (body.occupation) { updates.push("occupation = ?"); params.push(body.occupation); }
     if (body.educationLevel) { updates.push("education_level = ?"); params.push(body.educationLevel); }
     if (body.avatarUrl) { updates.push("avatar_url = ?"); params.push(body.avatarUrl); }
+    if (body.gender) { updates.push("gender = ?"); params.push(body.gender); }
+    if (body.country) { updates.push("country = ?"); params.push(body.country); }
+    if (body.city) { updates.push("city = ?"); params.push(body.city); }
+    if (body.goal) { updates.push("goal = ?"); params.push(body.goal); }
+    if (body.preferredLearningTime) { updates.push("preferred_learning_time = ?"); params.push(body.preferredLearningTime); }
 
     if (updates.length === 0) {
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 });

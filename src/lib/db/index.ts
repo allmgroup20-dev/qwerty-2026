@@ -68,6 +68,11 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN occupation TEXT`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN education_level TEXT`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN interests_updated_at TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN gender TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN country TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN city TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN goal TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN preferred_learning_time TEXT`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN commission_type TEXT DEFAULT 'both'`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN min_referral_base INTEGER DEFAULT 3`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN level_name_bn TEXT`).run().catch(() => {});

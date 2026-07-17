@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 
 export default function ProfilePage() {
   const { lang } = useLanguageStore();
-  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", workerId: "", ageGroup: "", occupation: "", educationLevel: "", preferredLanguage: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", workerId: "", ageGroup: "", occupation: "", educationLevel: "", preferredLanguage: "", gender: "", country: "", city: "", goal: "", preferredLearningTime: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -24,7 +24,7 @@ export default function ProfilePage() {
       .then((r) => r.json() as Promise<{ workerId?: string; name?: string; phone?: string; email?: string; membershipStatus?: string }>)
       .then((data: any) => {
         if (data.workerId) {
-          setForm({ name: data.name || "", phone: data.phone || "", email: data.email || "", password: "", workerId: data.workerId, ageGroup: data.ageGroup || "", occupation: data.occupation || "", educationLevel: data.educationLevel || "", preferredLanguage: data.preferredLanguage || "bn" });
+          setForm({ name: data.name || "", phone: data.phone || "", email: data.email || "", password: "", workerId: data.workerId, ageGroup: data.ageGroup || "", occupation: data.occupation || "", educationLevel: data.educationLevel || "", preferredLanguage: data.preferredLanguage || "bn", gender: data.gender || "", country: data.country || "", city: data.city || "", goal: data.goal || "", preferredLearningTime: data.preferredLearningTime || "" });
           if (data.membershipStatus) setMembershipStatus(data.membershipStatus);
         }
       })
@@ -50,6 +50,11 @@ export default function ProfilePage() {
     if (form.occupation) body.occupation = form.occupation;
     if (form.educationLevel) body.educationLevel = form.educationLevel;
     if (form.preferredLanguage) body.preferredLanguage = form.preferredLanguage;
+    if (form.gender) body.gender = form.gender;
+    if (form.country) body.country = form.country;
+    if (form.city) body.city = form.city;
+    if (form.goal) body.goal = form.goal;
+    if (form.preferredLearningTime) body.preferredLearningTime = form.preferredLearningTime;
     try {
       const res = await fetch("/api/workers/profile", {
         method: "PUT",
@@ -229,6 +234,50 @@ export default function ProfilePage() {
                   <option value="bachelor">{lang === "bn" ? "স্নাতক" : "Bachelor's"}</option>
                   <option value="master">{lang === "bn" ? "স্নাতকোত্তর" : "Master's"}</option>
                   <option value="phd">PhD</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "লিঙ্গ" : "Gender"}</label>
+                <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="male">{lang === "bn" ? "পুরুষ" : "Male"}</option>
+                  <option value="female">{lang === "bn" ? "মহিলা" : "Female"}</option>
+                  <option value="other">{lang === "bn" ? "অন্যান্য" : "Other"}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "কেন এই কোর্স? (লক্ষ্য)" : "Your Goal"}</label>
+                <select value={form.goal} onChange={(e) => setForm({ ...form, goal: e.target.value })} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="career">{lang === "bn" ? "ক্যারিয়ার গড়তে" : "Build a Career"}</option>
+                  <option value="freelancing">{lang === "bn" ? "ফ্রিল্যান্সিং শুরু করতে" : "Start Freelancing"}</option>
+                  <option value="business">{lang === "bn" ? "ব্যবসা করতে" : "Start a Business"}</option>
+                  <option value="skill">{lang === "bn" ? "স্কিল ডেভেলপ করতে" : "Develop Skills"}</option>
+                  <option value="job">{lang === "bn" ? "চাকরি পেতে" : "Get a Job"}</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "দেশ" : "Country"}</label>
+                  <input type="text" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} className="input-field" placeholder={lang === "bn" ? "যেমন: বাংলাদেশ" : "e.g. Bangladesh"} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "শহর" : "City"}</label>
+                  <input type="text" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="input-field" placeholder={lang === "bn" ? "যেমন: ঢাকা" : "e.g. Dhaka"} />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "পছন্দের পড়ার সময়" : "Preferred Learning Time"}</label>
+                <select value={form.preferredLearningTime} onChange={(e) => setForm({ ...form, preferredLearningTime: e.target.value })} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="morning">{lang === "bn" ? "সকাল" : "Morning"}</option>
+                  <option value="afternoon">{lang === "bn" ? "দুপুর" : "Afternoon"}</option>
+                  <option value="evening">{lang === "bn" ? "বিকেল" : "Evening"}</option>
+                  <option value="night">{lang === "bn" ? "রাত" : "Night"}</option>
                 </select>
               </div>
 

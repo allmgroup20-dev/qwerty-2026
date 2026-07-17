@@ -28,6 +28,11 @@ export default function OnboardingPage() {
   const [ageGroup, setAgeGroup] = useState("");
   const [occupation, setOccup] = useState("");
   const [educationLevel, setEdu] = useState("");
+  const [gender, setGender] = useState("");
+  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
+  const [goal, setGoal] = useState("");
+  const [preferredLearningTime, setLearningTime] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -38,7 +43,14 @@ export default function OnboardingPage() {
     // Pre-fill existing name
     fetch(`/api/workers/profile?workerId=${wid}`)
       .then(r => r.json())
-      .then((d: any) => { if (d.name && !d.name.startsWith("User")) setName(d.name); })
+      .then((d: any) => {
+        if (d.name && !d.name.startsWith("User")) setName(d.name);
+        if (d.gender) setGender(d.gender);
+        if (d.country) setCountry(d.country);
+        if (d.city) setCity(d.city);
+        if (d.goal) setGoal(d.goal);
+        if (d.preferredLearningTime) setLearningTime(d.preferredLearningTime);
+      })
       .catch(() => {});
   }, [router]);
 
@@ -54,6 +66,11 @@ export default function OnboardingPage() {
       if (ageGroup) body.ageGroup = ageGroup;
       if (occupation) body.occupation = occupation;
       if (educationLevel) body.educationLevel = educationLevel;
+      if (gender) body.gender = gender;
+      if (country) body.country = country;
+      if (city) body.city = city;
+      if (goal) body.goal = goal;
+      if (preferredLearningTime) body.preferredLearningTime = preferredLearningTime;
 
       if (Object.keys(body).length > 1) {
         await fetch("/api/workers/profile", {
@@ -130,16 +147,27 @@ export default function OnboardingPage() {
           {step === 1 && (
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-primary">{lang === "bn" ? "আপনার সম্পর্কে কিছু তথ্য" : "Tell us about yourself"}</h2>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "বয়স গ্রুপ" : "Age Group"}</label>
-                <select value={ageGroup} onChange={e => setAgeGroup(e.target.value)} className="input-field">
-                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
-                  <option value="under_18">Under 18</option>
-                  <option value="18_24">18-24</option>
-                  <option value="25_34">25-34</option>
-                  <option value="35_44">35-44</option>
-                  <option value="45_plus">45+</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "বয়স গ্রুপ" : "Age Group"}</label>
+                  <select value={ageGroup} onChange={e => setAgeGroup(e.target.value)} className="input-field">
+                    <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                    <option value="under_18">Under 18</option>
+                    <option value="18_24">18-24</option>
+                    <option value="25_34">25-34</option>
+                    <option value="35_44">35-44</option>
+                    <option value="45_plus">45+</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "লিঙ্গ" : "Gender"}</label>
+                  <select value={gender} onChange={e => setGender(e.target.value)} className="input-field">
+                    <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                    <option value="male">{lang === "bn" ? "পুরুষ" : "Male"}</option>
+                    <option value="female">{lang === "bn" ? "মহিলা" : "Female"}</option>
+                    <option value="other">{lang === "bn" ? "অন্যান্য" : "Other"}</option>
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "পেশা" : "Occupation"}</label>
@@ -161,6 +189,37 @@ export default function OnboardingPage() {
                   <option value="bachelor">{lang === "bn" ? "স্নাতক" : "Bachelor's"}</option>
                   <option value="master">{lang === "bn" ? "স্নাতকোত্তর" : "Master's"}</option>
                   <option value="phd">PhD</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "কেন এই কোর্স? (আপনার লক্ষ্য)" : "Why this course? (Your Goal)"}</label>
+                <select value={goal} onChange={e => setGoal(e.target.value)} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="career">{lang === "bn" ? "ক্যারিয়ার গড়তে" : "Build a Career"}</option>
+                  <option value="freelancing">{lang === "bn" ? "ফ্রিল্যান্সিং শুরু করতে" : "Start Freelancing"}</option>
+                  <option value="business">{lang === "bn" ? "ব্যবসা করতে" : "Start a Business"}</option>
+                  <option value="skill">{lang === "bn" ? "স্কিল ডেভেলপ করতে" : "Develop Skills"}</option>
+                  <option value="job">{lang === "bn" ? "চাকরি পেতে" : "Get a Job"}</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "দেশ" : "Country"}</label>
+                  <input type="text" value={country} onChange={e => setCountry(e.target.value)} className="input-field" placeholder={lang === "bn" ? "যেমন: বাংলাদেশ" : "e.g. Bangladesh"} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "শহর" : "City"}</label>
+                  <input type="text" value={city} onChange={e => setCity(e.target.value)} className="input-field" placeholder={lang === "bn" ? "যেমন: ঢাকা" : "e.g. Dhaka"} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "কখন পড়তে পছন্দ করেন?" : "Preferred Learning Time"}</label>
+                <select value={preferredLearningTime} onChange={e => setLearningTime(e.target.value)} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="morning">{lang === "bn" ? "সকাল" : "Morning"}</option>
+                  <option value="afternoon">{lang === "bn" ? "দুপুর" : "Afternoon"}</option>
+                  <option value="evening">{lang === "bn" ? "বিকেল" : "Evening"}</option>
+                  <option value="night">{lang === "bn" ? "রাত" : "Night"}</option>
                 </select>
               </div>
               <button onClick={saveAndNext} disabled={saving} className="btn-primary w-full">
