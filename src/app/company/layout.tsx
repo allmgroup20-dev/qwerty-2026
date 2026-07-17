@@ -16,6 +16,7 @@ interface SidebarLink {
   en: string;
   bn: string;
   icon: string;
+  desc: string;
 }
 
 interface SidebarGroup {
@@ -31,11 +32,11 @@ const sidebarGroups: SidebarGroup[] = [
     bn: "ওভারভিউ",
     icon: "📊",
     links: [
-      { href: "/company", en: "Dashboard", bn: "ড্যাশবোর্ড", icon: "📊" },
-      { href: "/company/analytics", en: "Analytics", bn: "অ্যানালিটিক্স", icon: "📊" },
-      { href: "/company/funnel", en: "Funnel", bn: "ফানেল", icon: "🔄" },
-      { href: "/company/events", en: "Events", bn: "ইভেন্ট", icon: "📋" },
-      { href: "/company/sessions", en: "Sessions", bn: "সেশন", icon: "🕒" },
+      { href: "/company", en: "Dashboard", bn: "ড্যাশবোর্ড", icon: "📊", desc: "কম্পানি ড্যাশবোর্ড — সার্বিক পরিসংখ্যান ও প্রেডিকশন" },
+      { href: "/company/analytics", en: "Analytics", bn: "অ্যানালিটিক্স", icon: "📊", desc: "বিস্তারিত বিশ্লেষণ — ইউজার, সেশন, ইভেন্ট ও সেগমেন্ট" },
+      { href: "/company/funnel", en: "Funnel", bn: "ফানেল", icon: "🔄", desc: "গ্রাহক ফানেল — ভিজিট→সাইনআপ→অর্ডার→পুনরায় ক্রয়" },
+      { href: "/company/events", en: "Events", bn: "ইভেন্ট", icon: "📋", desc: "সকল ইভেন্ট লগ — পেজ ভিজিট, ক্লিক, সার্চ ইত্যাদি" },
+      { href: "/company/sessions", en: "Sessions", bn: "সেশন", icon: "🕒", desc: "সেশন টাইমলাইন — লগইন থেকে লগআউট পর্যন্ত কার্যকলাপ" },
     ],
   },
   {
@@ -43,10 +44,10 @@ const sidebarGroups: SidebarGroup[] = [
     bn: "সদস্য",
     icon: "👥",
     links: [
-      { href: "/company/members", en: "Members", bn: "সদস্য", icon: "👥" },
-      { href: "/company/customers", en: "Customers", bn: "গ্রাহক", icon: "👤" },
-      { href: "/company/users", en: "Users", bn: "ব্যবহারকারী", icon: "🔐" },
-      { href: "/company/notifications", en: "Notifications", bn: "বিজ্ঞপ্তি", icon: "🔔" },
+      { href: "/company/members", en: "Members", bn: "সদস্য", icon: "👥", desc: "সকল মেম্বার — MLM ট্রি, রেফারেল ও বিস্তারিত তথ্য" },
+      { href: "/company/customers", en: "Customers", bn: "গ্রাহক", icon: "👤", desc: "গ্রাহক তালিকা — প্রোফাইল, অর্ডার ও ৩৬০° ভিউ" },
+      { href: "/company/users", en: "Users", bn: "ব্যবহারকারী", icon: "🔐", desc: "কম্পানি ইউজার — অ্যাডমিন অ্যাকাউন্ট ও অনুমতি" },
+      { href: "/company/notifications", en: "Notifications", bn: "বিজ্ঞপ্তি", icon: "🔔", desc: "সকল বিজ্ঞপ্তি — ইউজারদের পাঠানো নোটিফিকেশন দেখুন" },
     ],
   },
   {
@@ -54,13 +55,13 @@ const sidebarGroups: SidebarGroup[] = [
     bn: "পণ্য ও বিক্রয়",
     icon: "📦",
     links: [
-      { href: "/company/products", en: "Products", bn: "পণ্য", icon: "📦" },
-      { href: "/company/orders", en: "Orders", bn: "অর্ডার", icon: "📋" },
-      { href: "/company/reviews", en: "Reviews", bn: "রিভিউ", icon: "⭐" },
-      { href: "/company/levels", en: "Commission Levels", bn: "কমিশন লেভেল", icon: "📊" },
-      { href: "/company/finance", en: "Finance", bn: "অর্থ", icon: "💰" },
-      { href: "/company/currencies", en: "Currencies", bn: "মুদ্রা", icon: "💵" },
-      { href: "/company/payment-gateway", en: "Payment Gateway", bn: "পেমেন্ট", icon: "💳" },
+      { href: "/company/products", en: "Products", bn: "পণ্য", icon: "📦", desc: "পণ্য ব্যবস্থাপনা — কোর্স/প্রোডাক্ট যোগ, সম্পাদনা, সক্রিয়/নিষ্ক্রিয়" },
+      { href: "/company/orders", en: "Orders", bn: "অর্ডার", icon: "📋", desc: "অর্ডার তালিকা — স্ট্যাটাস আপডেট, পেমেন্ট ভেরিফিকেশন" },
+      { href: "/company/reviews", en: "Reviews", bn: "রিভিউ", icon: "⭐", desc: "গ্রাহক রিভিউ — মডারেট ও অনুমোদন" },
+      { href: "/company/levels", en: "Commission Levels", bn: "কমিশন লেভেল", icon: "📊", desc: "কমিশন সেটিংস — লেভেলভিত্তিক কমিশন ও বোনাস কনফিগার" },
+      { href: "/company/finance", en: "Finance", bn: "অর্থ", icon: "💰", desc: "আর্থিক প্রতিবেদন — আয়, ব্যয়, কমিশন ও উইথড্রয়াল" },
+      { href: "/company/currencies", en: "Currencies", bn: "মুদ্রা", icon: "💵", desc: "মুদ্রা ব্যবস্থাপনা — একাধিক কারেন্সি ও রেট কনফিগার" },
+      { href: "/company/payment-gateway", en: "Payment Gateway", bn: "পেমেন্ট", icon: "💳", desc: "পেমেন্ট গেটওয়ে — SSLCommerz, COD ইত্যাদি সেটিংস" },
     ],
   },
   {
@@ -68,11 +69,11 @@ const sidebarGroups: SidebarGroup[] = [
     bn: "এআই ও অটোমেশন",
     icon: "🤖",
     links: [
-      { href: "/company/ai", en: "AI Hub", bn: "এআই হাব", icon: "🤖" },
-      { href: "/company/automation", en: "Automation", bn: "অটোমেশন", icon: "⚡" },
-      { href: "/company/sentiment", en: "Sentiment", bn: "সেন্টিমেন্ট", icon: "📈" },
-      { href: "/company/skills", en: "Skills", bn: "দক্ষতা", icon: "🧠" },
-      { href: "/company/ai-conversations", en: "Conversations", bn: "কথোপকথন", icon: "💬" },
+      { href: "/company/ai", en: "AI Hub", bn: "এআই হাব", icon: "🤖", desc: "এআই কন্ট্রোল সেন্টার — এজেন্ট, ব্রেইন, স্কিলস আরও অনেক কিছু" },
+      { href: "/company/automation", en: "Automation", bn: "অটোমেশন", icon: "⚡", desc: "ট্রিগার-ভিত্তিক অটোমেশন — নির্দিষ্ট ইভেন্টে অটো অ্যাকশন" },
+      { href: "/company/sentiment", en: "Sentiment", bn: "সেন্টিমেন্ট", icon: "📈", desc: "সেন্টিমেন্ট এনালাইসিস — ইউজার মেসেজের অনুভূতি বিশ্লেষণ" },
+      { href: "/company/skills", en: "Skills", bn: "দক্ষতা", icon: "🧠", desc: "এআই স্কিলস — কীওয়ার্ড-ভিত্তিক স্বয়ংক্রিয় উত্তর" },
+      { href: "/company/ai-conversations", en: "Conversations", bn: "কথোপকথন", icon: "💬", desc: "এআই কনভার্সেশন — ইউজারদের সাথে এআই-এর কথোপকথনের লগ" },
     ],
   },
   {
@@ -80,11 +81,11 @@ const sidebarGroups: SidebarGroup[] = [
     bn: "যোগাযোগ",
     icon: "💬",
     links: [
-      { href: "/company/whatsapp", en: "WhatsApp", bn: "হোয়াটসঅ্যাপ", icon: "💬" },
-      { href: "/dashboard/messenger", en: "Messenger", bn: "মেসেঞ্জার", icon: "💬" },
-      { href: "/dashboard/telegram", en: "Telegram", bn: "টেলিগ্রাম", icon: "✈️" },
-      { href: "/dashboard/platforms", en: "Platforms", bn: "প্ল্যাটফর্ম", icon: "🔄" },
-      { href: "/company/translations", en: "Translations", bn: "অনুবাদ", icon: "🌐" },
+      { href: "/company/whatsapp", en: "WhatsApp", bn: "হোয়াটসঅ্যাপ", icon: "💬", desc: "হোয়াটসঅ্যাপ হাব — মেসেজ, ক্যাম্পেইন, টেমপ্লেট ও অ্যাকাউন্ট" },
+      { href: "/dashboard/messenger", en: "Messenger", bn: "মেসেঞ্জার", icon: "💬", desc: "ফেসবুক মেসেঞ্জার — পেজ কানেক্ট ও অটো রিপ্লাই" },
+      { href: "/dashboard/telegram", en: "Telegram", bn: "টেলিগ্রাম", icon: "✈️", desc: "টেলিগ্রাম বট — বট কানেক্ট ও মেসেজিং" },
+      { href: "/dashboard/platforms", en: "Platforms", bn: "প্ল্যাটফর্ম", icon: "🔄", desc: "প্ল্যাটফর্ম প্রেফারেন্স — ইউজারের পছন্দের মাধ্যম নির্ধারণ" },
+      { href: "/company/translations", en: "Translations", bn: "অনুবাদ", icon: "🌐", desc: "অনুবাদ ম্যানেজার — সাইটের বাংলা/ইংরেজি টেক্সট কাস্টমাইজ" },
     ],
   },
   {
@@ -92,11 +93,11 @@ const sidebarGroups: SidebarGroup[] = [
     bn: "সিস্টেম",
     icon: "⚙️",
     links: [
-      { href: "/company/settings", en: "Settings", bn: "সেটিংস", icon: "⚙️" },
-      { href: "/company/fingerprint", en: "Fingerprint", bn: "ফিঙ্গারপ্রিন্ট", icon: "🔐" },
-      { href: "/company/privacy", en: "Privacy", bn: "প্রাইভেসি", icon: "🔒" },
-      { href: "/company/test-mode", en: "Test Mode", bn: "টেস্ট মোড", icon: "🧪" },
-      { href: "/company/updates", en: "Updates", bn: "আপডেট", icon: "🔄" },
+      { href: "/company/settings", en: "Settings", bn: "সেটিংস", icon: "⚙️", desc: "সাইট সেটিংস — কোম্পানির নাম, বিবরণ, কনফিগারেশন" },
+      { href: "/company/fingerprint", en: "Fingerprint", bn: "ফিঙ্গারপ্রিন্ট", icon: "🔐", desc: "বায়োমেট্রিক — ফিঙ্গারপ্রিন্ট লগইন রেকর্ড ও ব্যবস্থাপনা" },
+      { href: "/company/privacy", en: "Privacy", bn: "প্রাইভেসি", icon: "🔒", desc: "গোপনীয়তা — ইউজার কনসেন্ট ও ডেটা সুরক্ষা তথ্য" },
+      { href: "/company/test-mode", en: "Test Mode", bn: "টেস্ট মোড", icon: "🧪", desc: "টেস্ট মোড — মক ডেটা দিয়ে ফিচার টেস্টিং" },
+      { href: "/company/updates", en: "Updates", bn: "আপডেট", icon: "🔄", desc: "আপডেট লগ — প্ল্যাটফর্মের নতুন ফিচার ও চেঞ্জলগ" },
     ],
   },
 ];
@@ -213,15 +214,19 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
                         <Link
                           key={link.href}
                           href={link.href}
+                          title={link.desc}
                           onClick={() => setSidebarOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                          className={`group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                             isActive
                               ? "bg-primary/10 text-primary"
                               : "text-text-secondary hover:bg-primary/5 hover:text-primary"
                           }`}
                         >
                           <span className="text-base">{link.icon}</span>
-                          <span>{link.en}</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="block truncate">{link.en}</span>
+                            <span className="block text-[10px] text-gray-400 truncate group-hover:text-gray-500 transition-colors">{link.desc}</span>
+                          </div>
                         </Link>
                       );
                     })}
