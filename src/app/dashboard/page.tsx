@@ -123,6 +123,17 @@ export default function WorkerDashboard() {
     <div className="min-h-screen py-24 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-fade-up">
+          {/* Onboarding prompt for new users */}
+          {worker.name.startsWith("User") && (
+            <Link href="/onboarding" className="col-span-full p-4 rounded-xl bg-gradient-to-r from-action/10 to-secondary/10 border border-action/20 flex items-center gap-3 hover:shadow-lg transition-all">
+              <span className="text-2xl">👋</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-primary">{lang === "bn" ? "আপনার প্রোফাইল কমপ্লিট করুন" : "Complete Your Profile"}</p>
+                <p className="text-xs text-text-secondary">{lang === "bn" ? "নাম, পেশা ও আগ্রহ দিন — আপনার জন্য ব্যক্তিগতকৃত অভিজ্ঞতা তৈরি হবে" : "Add your name, occupation & interests for a personalized experience"}</p>
+              </div>
+              <span className="text-sm font-semibold text-action">{lang === "bn" ? "স্টার্ট" : "Start"} →</span>
+            </Link>
+          )}
           <div>
             <h1 className="text-2xl font-bold text-primary flex items-center gap-3">
               {lang === "bn" ? "স্বাগতম" : "Welcome"}, {worker.name}

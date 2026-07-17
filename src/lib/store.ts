@@ -21,6 +21,7 @@ interface CartItem {
   currency: string;
   quantity: number;
   imageUrl?: string;
+  productType?: string;
 }
 
 interface CartState {

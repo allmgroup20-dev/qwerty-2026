@@ -9,7 +9,7 @@ export default function RegisterPage() {
   const { lang } = useLanguageStore();
   const router = useRouter();
 
-  const [form, setForm] = useState({ phone: "", password: "", confirmPassword: "", referralCode: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", confirmPassword: "", referralCode: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +36,9 @@ export default function RegisterPage() {
     }
 
     const payload = {
+      name: form.name || undefined,
       phone: form.phone,
+      email: form.email || undefined,
       password: form.password,
       referralCode: form.referralCode || undefined,
     };
@@ -168,7 +170,7 @@ export default function RegisterPage() {
             <div className="flex-1 h-px bg-border" />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
             {form.referralCode && (
               <div className="p-3 bg-accent/5 border border-accent/20 rounded-xl text-sm text-accent">
                 {lang === "bn"
@@ -179,9 +181,20 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">
-                {lang === "bn"
-                  ? "আপনার হোয়াটসঅ্যাপ নাম্বার দিন"
-                  : "Your WhatsApp Number"}
+                {lang === "bn" ? "আপনার নাম" : "Your Name"}
+              </label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="input-field"
+                placeholder={lang === "bn" ? "আপনার নাম লিখুন" : "Enter your name"}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                {lang === "bn" ? "আপনার হোয়াটসঅ্যাপ নাম্বার দিন" : "Your WhatsApp Number"}
               </label>
               <input
                 type="tel"
@@ -190,6 +203,17 @@ export default function RegisterPage() {
                 className="input-field"
                 placeholder="01XXXXXXXXX"
                 required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">Email</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="input-field"
+                placeholder={lang === "bn" ? "ইমেইল (ঐচ্ছিক)" : "Email (optional)"}
               />
             </div>
 

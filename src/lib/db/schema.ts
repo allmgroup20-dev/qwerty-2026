@@ -74,6 +74,7 @@ export const products = sqliteTable("products", {
   category: text("category"),
   stock: integer("stock").default(-1),
   isActive: integer("is_active").default(1),
+  productType: text("product_type").default("physical"),
   createdAt: text("created_at"),
 });
 

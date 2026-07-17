@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 
 export default function ProfilePage() {
   const { lang } = useLanguageStore();
-  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", workerId: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", workerId: "", ageGroup: "", occupation: "", educationLevel: "", preferredLanguage: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -22,9 +22,9 @@ export default function ProfilePage() {
     if (!workerId) { setLoading(false); return; }
     fetch(`/api/workers/profile?workerId=${workerId}`)
       .then((r) => r.json() as Promise<{ workerId?: string; name?: string; phone?: string; email?: string; membershipStatus?: string }>)
-      .then((data) => {
+      .then((data: any) => {
         if (data.workerId) {
-          setForm({ name: data.name || "", phone: data.phone || "", email: data.email || "", password: "", workerId: data.workerId });
+          setForm({ name: data.name || "", phone: data.phone || "", email: data.email || "", password: "", workerId: data.workerId, ageGroup: data.ageGroup || "", occupation: data.occupation || "", educationLevel: data.educationLevel || "", preferredLanguage: data.preferredLanguage || "bn" });
           if (data.membershipStatus) setMembershipStatus(data.membershipStatus);
         }
       })
@@ -46,6 +46,10 @@ export default function ProfilePage() {
     if (form.name) body.name = form.name;
     if (form.email !== undefined) body.email = form.email;
     if (form.password) body.password = form.password;
+    if (form.ageGroup) body.ageGroup = form.ageGroup;
+    if (form.occupation) body.occupation = form.occupation;
+    if (form.educationLevel) body.educationLevel = form.educationLevel;
+    if (form.preferredLanguage) body.preferredLanguage = form.preferredLanguage;
     try {
       const res = await fetch("/api/workers/profile", {
         method: "PUT",
@@ -182,6 +186,52 @@ export default function ProfilePage() {
                 <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "নতুন পাসওয়ার্ড" : "New Password"}</label>
                 <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="input-field" placeholder={lang === "bn" ? "ফাঁকা রাখলে অপরিবর্তিত" : "Leave blank to keep current"} />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "পছন্দের ভাষা" : "Preferred Language"}</label>
+                <select value={form.preferredLanguage} onChange={(e) => setForm({ ...form, preferredLanguage: e.target.value })} className="input-field">
+                  <option value="bn">বাংলা</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "বয়স গ্রুপ" : "Age Group"}</label>
+                <select value={form.ageGroup} onChange={(e) => setForm({ ...form, ageGroup: e.target.value })} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="under_18">Under 18</option>
+                  <option value="18_24">18-24</option>
+                  <option value="25_34">25-34</option>
+                  <option value="35_44">35-44</option>
+                  <option value="45_plus">45+</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "পেশা" : "Occupation"}</label>
+                <select value={form.occupation} onChange={(e) => setForm({ ...form, occupation: e.target.value })} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="student">{lang === "bn" ? "ছাত্র/ছাত্রী" : "Student"}</option>
+                  <option value="employed">{lang === "bn" ? "চাকরিজীবী" : "Employed"}</option>
+                  <option value="freelancer">{lang === "bn" ? "ফ্রিল্যান্সার" : "Freelancer"}</option>
+                  <option value="business">{lang === "bn" ? "ব্যবসায়ী" : "Business Owner"}</option>
+                  <option value="homemaker">{lang === "bn" ? "গৃহিণী" : "Homemaker"}</option>
+                  <option value="unemployed">{lang === "bn" ? "বেকার" : "Unemployed"}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "শিক্ষাগত যোগ্যতা" : "Education Level"}</label>
+                <select value={form.educationLevel} onChange={(e) => setForm({ ...form, educationLevel: e.target.value })} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="ssc">SSC / O-Level</option>
+                  <option value="hsc">HSC / A-Level</option>
+                  <option value="bachelor">{lang === "bn" ? "স্নাতক" : "Bachelor's"}</option>
+                  <option value="master">{lang === "bn" ? "স্নাতকোত্তর" : "Master's"}</option>
+                  <option value="phd">PhD</option>
+                </select>
+              </div>
+
               <Button onClick={handleSave} disabled={saving} className="w-full">
                 {saving ? (lang === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving...") : saved ? (lang === "bn" ? "✓ সংরক্ষিত" : "✓ Saved") : (lang === "bn" ? "আপডেট করুন" : "Update Profile")}
               </Button>

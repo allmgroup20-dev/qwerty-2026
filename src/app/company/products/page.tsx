@@ -26,6 +26,7 @@ interface Product {
   enableCod: number;
   enableSslcommerz: number;
   premiumMembership: number;
+  productType: string;
   createdAt: string;
 }
 
@@ -33,7 +34,7 @@ const emptyForm = () => ({
   name: "", nameBn: "", description: "", descriptionBn: "", price: "", minPrice: "", maxPrice: "", aiPriceEnabled: 1,
   currency: "BDT", category: "business", stock: "-1",
   enableCommission: 1, enableCod: 1, enableSslcommerz: 1, imageUrl: "", images: "[]",
-  premiumMembership: 0,
+  premiumMembership: 0, productType: "physical",
 });
 
 export default function CompanyProductsPage() {
@@ -68,7 +69,7 @@ export default function CompanyProductsPage() {
       category: p.category || "business", stock: String(p.stock),
       enableCommission: p.enableCommission, enableCod: p.enableCod, enableSslcommerz: p.enableSslcommerz,
       imageUrl: p.imageUrl || "", images: p.images || "[]",
-      premiumMembership: p.premiumMembership,
+      premiumMembership: p.premiumMembership, productType: p.productType || "physical",
     });
     setEditingId(p.id); setShowAdd(true); setError("");
   };
@@ -84,7 +85,7 @@ export default function CompanyProductsPage() {
         currency: form.currency, category: form.category || null,
         stock: parseInt(form.stock) || -1, imageUrl: form.imageUrl || null, images: form.images || null,
         enableCommission: form.enableCommission, enableCod: form.enableCod, enableSslcommerz: form.enableSslcommerz,
-        premiumMembership: form.premiumMembership,
+        premiumMembership: form.premiumMembership, productType: form.productType,
       };
 
       const url = editingId ? `/api/products/${editingId}` : "/api/products";
@@ -141,6 +142,10 @@ export default function CompanyProductsPage() {
                 <option value="education">{lang === "bn" ? "শিক্ষা" : "Education"}</option>
               </select>
               <input type="text" placeholder={lang === "bn" ? "ছবির URL" : "Image URL"} value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} className="input-field" />
+              <select value={form.productType} onChange={(e) => setForm({ ...form, productType: e.target.value })} className="input-field">
+                <option value="physical">{lang === "bn" ? "ফিজিক্যাল (ডেলিভারি প্রয়োজন)" : "Physical (Delivery needed)"}</option>
+                <option value="virtual">{lang === "bn" ? "ভার্চুয়াল (ডেলিভারি প্রয়োজন নেই)" : "Virtual (No delivery)"}</option>
+              </select>
             </div>
 
             <div className="border-t border-border pt-4 mb-4">
@@ -234,6 +239,13 @@ export default function CompanyProductsPage() {
                         {p.imageUrl && <img src={p.imageUrl} alt="" className="w-8 h-8 rounded object-cover" />}
                         <div>
                           <span>{lang === "bn" && p.nameBn ? p.nameBn : p.name}</span>
+                          <span className={`ml-2 inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                            p.productType === "virtual" ? "bg-purple-50 text-purple-600" : "bg-blue-50 text-blue-600"
+                          }`}>
+                            {p.productType === "virtual"
+                              ? (lang === "bn" ? "ভার্চুয়াল" : "Virtual")
+                              : (lang === "bn" ? "ফিজিক্যাল" : "Physical")}
+                          </span>
                           {p.description && (
                             <button onClick={() => setExpandedDesc(expandedDesc === p.id ? null : p.id)} className="block text-xs text-blue-500 hover:underline mt-0.5">
                               {expandedDesc === p.id ? (lang === "bn" ? "বন্ধ" : "Hide") : (lang === "bn" ? "বিবরণ দেখুন" : "View desc.")}

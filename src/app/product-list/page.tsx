@@ -9,18 +9,18 @@ import { ReviewList } from "@/components/reviews/ReviewList";
 import { StarDisplay } from "@/components/reviews/StarRating";
 
 const sampleProducts = [
-  { id: 1, name: "Starter Business Kit", nameBn: "স্টার্টার বিজনেস কিট", price: 2990, currency: "BDT", category: "business", image: "📦", commission: 10, premium: false },
-  { id: 2, name: "Premium Career Package", nameBn: "প্রিমিয়াম ক্যারিয়ার প্যাকেজ", price: 9990, currency: "BDT", category: "career", image: "🎯", commission: 15, premium: true },
-  { id: 3, name: "Elite Success Bundle", nameBn: "এলিট সাকসেস বান্ডেল", price: 24990, currency: "BDT", category: "elite", image: "👑", commission: 20, premium: true },
-  { id: 4, name: "Digital Marketing Course", nameBn: "ডিজিটাল মার্কেটিং কোর্স", price: 1990, currency: "BDT", category: "education", image: "📚", commission: 25, premium: false },
-  { id: 5, name: "Team Building Workshop", nameBn: "টিম বিল্ডিং ওয়ার্কশপ", price: 4990, currency: "BDT", category: "business", image: "🤝", commission: 12, premium: false },
-  { id: 6, name: "Leadership Program", nameBn: "লিডারশিপ প্রোগ্রাম", price: 14990, currency: "BDT", category: "career", image: "⭐", commission: 18, premium: true },
-  { id: 7, name: "Smart Business Pack", nameBn: "স্মার্ট বিজনেস প্যাক", price: 7990, currency: "BDT", category: "business", image: "💼", commission: 15, premium: false },
-  { id: 8, name: "Annual Membership", nameBn: "বার্ষিক মেম্বারশিপ", price: 19990, currency: "BDT", category: "elite", image: "🏆", commission: 22, premium: true },
-  { id: 9, name: "Communication Skills Pro", nameBn: "কমিউনিকেশন স্কিলস প্রো", price: 3990, currency: "BDT", category: "education", image: "🎤", commission: 20, premium: false },
-  { id: 10, name: "Global Business Access", nameBn: "গ্লোবাল বিজনেস অ্যাক্সেস", price: 49990, currency: "BDT", category: "elite", image: "🌍", commission: 30, premium: true },
-  { id: 11, name: "Facebook Ads Mastery", nameBn: "ফেসবুক এডস মাস্টারি", price: 5990, currency: "BDT", category: "education", image: "📱", commission: 20, premium: false },
-  { id: 12, name: "Entrepreneur Starter", nameBn: "এন্টারপ্রেনার স্টার্টার", price: 999, currency: "BDT", category: "business", image: "🚀", commission: 10, premium: false },
+  { id: 1, name: "Starter Business Kit", nameBn: "স্টার্টার বিজনেস কিট", price: 2990, currency: "BDT", category: "business", image: "📦", commission: 10, premium: false, productType: "physical" },
+  { id: 2, name: "Premium Career Package", nameBn: "প্রিমিয়াম ক্যারিয়ার প্যাকেজ", price: 9990, currency: "BDT", category: "career", image: "🎯", commission: 15, premium: true, productType: "physical" },
+  { id: 3, name: "Elite Success Bundle", nameBn: "এলিট সাকসেস বান্ডেল", price: 24990, currency: "BDT", category: "elite", image: "👑", commission: 20, premium: true, productType: "physical" },
+  { id: 4, name: "Digital Marketing Course", nameBn: "ডিজিটাল মার্কেটিং কোর্স", price: 1990, currency: "BDT", category: "education", image: "📚", commission: 25, premium: false, productType: "virtual" },
+  { id: 5, name: "Team Building Workshop", nameBn: "টিম বিল্ডিং ওয়ার্কশপ", price: 4990, currency: "BDT", category: "business", image: "🤝", commission: 12, premium: false, productType: "physical" },
+  { id: 6, name: "Leadership Program", nameBn: "লিডারশিপ প্রোগ্রাম", price: 14990, currency: "BDT", category: "career", image: "⭐", commission: 18, premium: true, productType: "physical" },
+  { id: 7, name: "Smart Business Pack", nameBn: "স্মার্ট বিজনেস প্যাক", price: 7990, currency: "BDT", category: "business", image: "💼", commission: 15, premium: false, productType: "physical" },
+  { id: 8, name: "Annual Membership", nameBn: "বার্ষিক মেম্বারশিপ", price: 19990, currency: "BDT", category: "elite", image: "🏆", commission: 22, premium: true, productType: "virtual" },
+  { id: 9, name: "Communication Skills Pro", nameBn: "কমিউনিকেশন স্কিলস প্রো", price: 3990, currency: "BDT", category: "education", image: "🎤", commission: 20, premium: false, productType: "virtual" },
+  { id: 10, name: "Global Business Access", nameBn: "গ্লোবাল বিজনেস অ্যাক্সেস", price: 49990, currency: "BDT", category: "elite", image: "🌍", commission: 30, premium: true, productType: "virtual" },
+  { id: 11, name: "Facebook Ads Mastery", nameBn: "ফেসবুক এডস মাস্টারি", price: 5990, currency: "BDT", category: "education", image: "📱", commission: 20, premium: false, productType: "virtual" },
+  { id: 12, name: "Entrepreneur Starter", nameBn: "এন্টারপ্রেনার স্টার্টার", price: 999, currency: "BDT", category: "business", image: "🚀", commission: 10, premium: false, productType: "virtual" },
 ];
 
 export default function ProductsPage() {
@@ -49,6 +49,7 @@ export default function ProductsPage() {
       price: product.price,
       currency: product.currency,
       quantity: 1,
+      productType: product.productType,
     });
     setAddedMsg(product.id);
     setTimeout(() => setAddedMsg(null), 2000);
@@ -90,6 +91,11 @@ export default function ProductsPage() {
                 {product.premium && (
                   <span className="absolute -top-2 -right-2 bg-amber-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
                     ⭐ PREMIUM
+                  </span>
+                )}
+                {product.productType === "virtual" && (
+                  <span className="absolute -bottom-2 -left-2 bg-purple-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                    {lang === "bn" ? "ডিজিটাল" : "DIGITAL"}
                   </span>
                 )}
               </div>

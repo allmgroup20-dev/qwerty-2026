@@ -12,18 +12,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const worker = await queryFirst<{
-      worker_id: string; name: string; phone: string; email: string;
-      sponsor_id: string; sponsor_name: string; level: number;
-      join_date: string; balance: number; total_earned: number;
-      total_spent: number; total_team_members: number; membership_status: string;
-      level_name: string | null;
-      level_name_bn: string | null;
-    }>(
+    const worker = await queryFirst<Record<string, any>>(
       await getDB(),
       `SELECT w.worker_id, w.name, w.phone, w.email, w.sponsor_id, w.sponsor_name,
               w.level, w.join_date, w.balance, w.total_earned, w.total_spent,
-              w.total_team_members, w.membership_status,
+              w.total_team_members, w.membership_status, w.preferred_language,
+              w.age_group, w.occupation, w.education_level, w.avatar_url,
+              w.interests_updated_at, w.created_at, w.updated_at,
               cl.level_name, cl.level_name_bn
        FROM workers w
        LEFT JOIN commission_levels cl ON cl.level_number = w.level AND cl.is_active = 1
@@ -51,6 +46,12 @@ export async function GET(request: NextRequest) {
       totalSpent: worker.total_spent,
       totalTeamMembers: worker.total_team_members,
       membershipStatus: worker.membership_status,
+      preferredLanguage: worker.preferred_language || "bn",
+      ageGroup: worker.age_group || null,
+      occupation: worker.occupation || null,
+      educationLevel: worker.education_level || null,
+      avatarUrl: worker.avatar_url || null,
+      profileCompleted: !!(worker.name && !worker.name.startsWith("User") && (worker.age_group || worker.occupation || worker.education_level)),
     });
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -59,9 +60,8 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { workerId, name, email, password } = await request.json() as {
-      workerId: string; name?: string; email?: string; password?: string;
-    };
+    const body = await request.json() as Record<string, any>;
+    const { workerId } = body;
     if (!workerId) {
       return NextResponse.json({ error: "workerId required" }, { status: 400 });
     }
@@ -70,13 +70,18 @@ export async function PUT(request: NextRequest) {
     const updates: string[] = [];
     const params: unknown[] = [];
 
-    if (name) { updates.push("name = ?"); params.push(name); }
-    if (email !== undefined) { updates.push("email = ?"); params.push(email || null); }
-    if (password) {
-      const hashed = await hashWorkerPassword(password);
+    if (body.name) { updates.push("name = ?"); params.push(body.name); }
+    if (body.email !== undefined) { updates.push("email = ?"); params.push(body.email || null); }
+    if (body.password) {
+      const hashed = await hashWorkerPassword(body.password);
       updates.push("password = ?");
       params.push(hashed);
     }
+    if (body.preferredLanguage) { updates.push("preferred_language = ?"); params.push(body.preferredLanguage); }
+    if (body.ageGroup) { updates.push("age_group = ?"); params.push(body.ageGroup); }
+    if (body.occupation) { updates.push("occupation = ?"); params.push(body.occupation); }
+    if (body.educationLevel) { updates.push("education_level = ?"); params.push(body.educationLevel); }
+    if (body.avatarUrl) { updates.push("avatar_url = ?"); params.push(body.avatarUrl); }
 
     if (updates.length === 0) {
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 });

@@ -11,22 +11,39 @@ import toast from "react-hot-toast";
 
 function CheckoutContent() {
   const { lang } = useLanguageStore();
-  const { items, total, clearCart } = useCartStore();
+  const { items, clearCart } = useCartStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", address: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "" });
   const [workerId, setWorkerId] = useState<string | null>(null);
-  const [workerName, setWorkerName] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [productTypes, setProductTypes] = useState<Record<number, string>>({});
+  const [hasPhysical, setHasPhysical] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
     const wid = localStorage.getItem("worker_id");
-    const wname = localStorage.getItem("worker_name");
-    if (wid) {
+    const token = localStorage.getItem("worker_token");
+    if (wid && token) {
       setWorkerId(wid);
-      setWorkerName(wname || "");
-      setForm((f) => ({ ...f, name: wname || f.name }));
+      setIsLoggedIn(true);
+      fetch(`/api/workers/profile?workerId=${wid}`)
+        .then(r => r.json() as Promise<{ name?: string; phone?: string; email?: string }>)
+        .then(data => {
+          setForm(f => ({
+            ...f,
+            name: data.name || f.name,
+            phone: data.phone || f.phone,
+            email: data.email || f.email,
+          }));
+          setProfileLoaded(true);
+        })
+        .catch(() => setProfileLoaded(true));
+    } else {
+      setProfileLoaded(true);
     }
+
     const paymentStatus = searchParams.get("payment");
     if (paymentStatus === "success") {
       toast.success(lang === "bn" ? "পেমেন্ট সফল হয়েছে!" : "Payment successful!");
@@ -39,6 +56,41 @@ function CheckoutContent() {
     }
   }, []);
 
+  useEffect(() => {
+    if (items.length > 0) {
+      (async () => {
+        const ids = items.map(i => i.productId).join(",");
+        try {
+          const res = await fetch("/api/products");
+          const data = await res.json() as { products?: { id: number; productType: string }[] };
+          const types: Record<number, string> = {};
+          let physical = false;
+          if (data.products) {
+            data.products.forEach(p => {
+              types[p.id] = p.productType || "physical";
+              if (p.productType === "virtual") {
+                items.forEach(item => {
+                  if (item.productId === p.id) types[item.productId] = "virtual";
+                });
+              }
+            });
+            items.forEach(item => {
+              const t = types[item.productId] || "physical";
+              types[item.productId] = t;
+              if (t === "physical") physical = true;
+            });
+          } else {
+            items.forEach(() => { physical = true; });
+          }
+          setProductTypes(types);
+          setHasPhysical(physical);
+        } catch {
+          setHasPhysical(true);
+        }
+      })();
+    }
+  }, [items]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!workerId) {
@@ -46,7 +98,7 @@ function CheckoutContent() {
       router.push("/login");
       return;
     }
-    if (!form.name || !form.phone || !form.address) {
+    if (hasPhysical && (!form.name || !form.phone || !form.address)) {
       toast.error(lang === "bn" ? "সব তথ্য পূরণ করুন" : "Fill all fields");
       return;
     }
@@ -69,10 +121,10 @@ function CheckoutContent() {
           quantity: items.reduce((s, i) => s + i.quantity, 0),
           totalAmount,
           currency: firstItem.currency || "BDT",
-          shippingAddress: form.address,
-          cusName: form.name,
-          cusPhone: form.phone,
-          cusEmail: "",
+          shippingAddress: hasPhysical ? form.address : "",
+          cusName: form.name || "",
+          cusPhone: form.phone || "",
+          cusEmail: form.email || "",
         }),
       });
 
@@ -88,20 +140,38 @@ function CheckoutContent() {
     }
   };
 
-  if (!workerId) {
+  if (!profileLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-action border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
     return (
       <div className="min-h-screen py-24 px-4">
         <div className="max-w-md mx-auto text-center">
           <Card>
             <h2 className="text-xl font-bold text-primary mb-4">
-              {lang === "bn" ? "লগইন প্রয়োজন" : "Login Required"}
+              {lang === "bn" ? "অ্যাকাউন্ট প্রয়োজন" : "Account Required"}
             </h2>
             <p className="text-text-secondary mb-6">
-              {lang === "bn" ? "অর্ডার করার জন্য লগইন করুন" : "Please login to place an order"}
+              {lang === "bn"
+                ? "অর্ডার করার জন্য আপনাকে একটি অ্যাকাউন্ট খুলতে হবে"
+                : "You need to create an account to place an order"}
             </p>
-            <Link href="/login">
-              <Button className="w-full">{lang === "bn" ? "লগইন করুন" : "Login"}</Button>
-            </Link>
+            <div className="space-y-3">
+              <Link href="/register">
+                <Button className="w-full">{lang === "bn" ? "নতুন অ্যাকাউন্ট খুলুন" : "Create Account"}</Button>
+              </Link>
+              <div className="text-sm text-text-secondary">
+                {lang === "bn" ? "ইতিমধ্যে অ্যাকাউন্ট আছে?" : "Already have an account?"}{" "}
+                <Link href="/login" className="text-action hover:underline font-medium">
+                  {lang === "bn" ? "লগইন করুন" : "Login"}
+                </Link>
+              </div>
+            </div>
           </Card>
         </div>
       </div>
@@ -115,14 +185,33 @@ function CheckoutContent() {
 
         <div className="grid md:grid-cols-5 gap-6">
           <div className="md:col-span-3 space-y-4">
-            <Card>
-              <h3 className="font-bold text-primary mb-4">{lang === "bn" ? "শিপিং তথ্য" : "Shipping Info"}</h3>
-              <div className="space-y-3">
-                <input type="text" placeholder={lang === "bn" ? "আপনার নাম" : "Your Name"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" required />
-                <input type="tel" placeholder={lang === "bn" ? "ফোন নম্বর" : "Phone Number"} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-field" required />
-                <textarea placeholder={lang === "bn" ? "ঠিকানা" : "Address"} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field min-h-[80px]" required />
-              </div>
-            </Card>
+            {hasPhysical && (
+              <Card>
+                <h3 className="font-bold text-primary mb-4">{lang === "bn" ? "শিপিং তথ্য" : "Shipping Info"}</h3>
+                <div className="space-y-3">
+                  <input type="text" placeholder={lang === "bn" ? "আপনার নাম" : "Your Name"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" required />
+                  <input type="tel" placeholder={lang === "bn" ? "ফোন নম্বর" : "Phone Number"} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-field" required />
+                  <input type="email" placeholder={lang === "bn" ? "ইমেইল (ঐচ্ছিক)" : "Email (optional)"} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-field" />
+                  <textarea placeholder={lang === "bn" ? "ঠিকানা" : "Address"} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field min-h-[80px]" required />
+                </div>
+              </Card>
+            )}
+
+            {!hasPhysical && items.length > 0 && (
+              <Card>
+                <div className="text-center py-6">
+                  <div className="text-4xl mb-3">🎉</div>
+                  <h3 className="font-bold text-primary mb-2">
+                    {lang === "bn" ? "ভার্চুয়াল পণ্য" : "Virtual Product"}
+                  </h3>
+                  <p className="text-sm text-text-secondary">
+                    {lang === "bn"
+                      ? "এটি একটি ডিজিটাল পণ্য, ডেলিভারির প্রয়োজন নেই। আপনার অ্যাকাউন্টে স্বয়ংক্রিয়ভাবে যুক্ত হবে।"
+                      : "This is a digital product — no delivery needed. It will be added to your account automatically."}
+                  </p>
+                </div>
+              </Card>
+            )}
 
             <Card>
               <h3 className="font-bold text-primary mb-4">{lang === "bn" ? "পেমেন্ট মেথড" : "Payment Method"}</h3>
@@ -148,7 +237,12 @@ function CheckoutContent() {
                   <div className="space-y-3 mb-4">
                     {items.map((item) => (
                       <div key={item.productId} className="flex justify-between text-sm">
-                        <span className="text-text-secondary">{item.name} × {item.quantity}</span>
+                        <span className="text-text-secondary">
+                          {item.name} × {item.quantity}
+                          {productTypes[item.productId] === "virtual" && (
+                            <span className="ml-1.5 text-[10px] text-purple-500 font-medium">(Digital)</span>
+                          )}
+                        </span>
                         <span className="font-medium text-primary">{formatCurrency(item.price * item.quantity)}</span>
                       </div>
                     ))}

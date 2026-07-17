@@ -5,7 +5,7 @@ import { hashWorkerPassword, generateToken, generateWorkerId } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, phone, password, referralCode } = await request.json() as { name?: string; phone: string; password: string; referralCode?: string };
+    const { name, phone, email, password, referralCode } = await request.json() as { name?: string; phone: string; email?: string; password: string; referralCode?: string };
     if (!phone || !password) {
       return NextResponse.json({ error: "Phone and password required" }, { status: 400 });
     }
@@ -34,9 +34,9 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashWorkerPassword(password);
 
     await execute(env,
-      `INSERT INTO workers (worker_id, name, phone, password, sponsor_id, sponsor_name, level, join_date, membership_status)
-       VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'), 'active')`,
-      [workerId, displayName, phone, hashedPassword, sponsorId, sponsorName]
+      `INSERT INTO workers (worker_id, name, phone, email, password, sponsor_id, sponsor_name, level, join_date, membership_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), 'active')`,
+      [workerId, displayName, phone, email || null, hashedPassword, sponsorId, sponsorName]
     );
 
     await execute(env,

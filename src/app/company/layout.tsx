@@ -38,6 +38,7 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/company/skills", en: "Skills", bn: "দক্ষতা", icon: "🧠" },
       { href: "/company/ai-conversations", en: "Conversations", bn: "কথোপকথন", icon: "💬" },
       { href: "/company/ai", en: "AI", bn: "এআই", icon: "🤖" },
+      { href: "/company/automation", en: "Automation", bn: "অটোমেশন", icon: "⚡" },
     ],
   },
   {
