@@ -21,6 +21,9 @@ export default function WorkerDashboard() {
     workerId: string; name: string; phone: string; balance: number;
     totalEarned: number; totalTeamMembers: number; level: number;
     levelName?: string; levelNameBn?: string | null; joinDate: string; membershipStatus?: string;
+    goal?: string; ageGroup?: string; occupation?: string; educationLevel?: string;
+    gender?: string; country?: string; city?: string; preferredLanguage?: string;
+    preferredLearningTime?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState(DEFAULT_CHANNELS);
@@ -159,6 +162,43 @@ export default function WorkerDashboard() {
           <StatCard label={lang === "bn" ? "পদবী" : "Position"} value={lang === "bn" && worker.levelNameBn ? worker.levelNameBn : (worker.levelName || `Level ${worker.level}`)} color="text-accent" />
         </div>
 
+        {/* Personalized Section */}
+        {worker.goal && (
+          <div className="mb-8 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl shrink-0">
+                {worker.goal === "career" ? "🚀" : worker.goal === "freelancing" ? "💻" : worker.goal === "business" ? "📊" : worker.goal === "skill" ? "🧠" : worker.goal === "job" ? "💼" : "🎯"}
+              </span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-primary">
+                  {lang === "bn"
+                    ? (worker.goal === "career" ? "ক্যারিয়ার গড়তে চান!" : worker.goal === "freelancing" ? "ফ্রিল্যান্সিং শুরু করতে চান!" : worker.goal === "business" ? "ব্যবসা করতে চান!" : worker.goal === "skill" ? "স্কিল ডেভেলপ করতে চান!" : worker.goal === "job" ? "চাকরি পেতে চান!" : "শিখতে চান!")
+                    : (worker.goal === "career" ? "Want to build a career!" : worker.goal === "freelancing" ? "Want to start freelancing!" : worker.goal === "business" ? "Want to start a business!" : worker.goal === "skill" ? "Want to develop skills!" : worker.goal === "job" ? "Want to get a job!" : "Want to learn!")}
+                </p>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  {lang === "bn" ? "আমরা আপনার লক্ষ্য অনুযায়ী কোর্স ও কন্টেন্ট সাজিয়ে দিচ্ছি" : "We're tailoring courses & content based on your goal"}
+                </p>
+              </div>
+              <Link href="/courses" className="px-4 py-2 text-xs font-semibold rounded-lg bg-action text-white hover:bg-action/90 transition-all shrink-0">
+                {lang === "bn" ? "কোর্স দেখুন" : "View Courses"}
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Profile completeness prompt */}
+        {!worker.goal && !worker.ageGroup && !worker.occupation && (
+          <div className="mb-8 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3">
+            <span className="text-xl">📋</span>
+            <p className="text-sm text-amber-800 flex-1">
+              {lang === "bn" ? "আপনার প্রোফাইল কমপ্লিট করুন — তাহলে আমরা আপনার জন্য সঠিক কোর্স সুপারিশ করতে পারব" : "Complete your profile so we can recommend the right courses for you"}
+            </p>
+            <Link href="/onboarding" className="px-4 py-2 text-xs font-semibold rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-all shrink-0">
+              {lang === "bn" ? "প্রোফাইল কমপ্লিট করুন" : "Complete Profile"}
+            </Link>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Link href="/dashboard/tree" className="card hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
             <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -259,6 +299,19 @@ export default function WorkerDashboard() {
               {lang === "bn" ? `আপনার ব্যালেন্স: ৳${worker.balance.toLocaleString()}` : `Your balance: ৳${worker.balance.toLocaleString()}`}
               {lang === "bn" ? ` | ন্যূনতম উইথড্র: ৳${minWithdraw.toLocaleString()}` : ` | Min withdrawal: ৳${minWithdraw.toLocaleString()}`}
             </div>
+          </Card>
+          <Card>
+            <h3 className="font-bold text-primary mb-4">{lang === "bn" ? "আপনার প্রোফাইল" : "Your Profile"}</h3>
+            <div className="space-y-2">
+              {worker.country && <div className="flex items-center gap-2 text-xs"><span className="text-text-secondary w-20 shrink-0">{lang === "bn" ? "অবস্থান" : "Location"}:</span><span className="font-medium text-primary">{worker.city ? `${worker.city}, ${worker.country}` : worker.country}</span></div>}
+              {worker.goal && <div className="flex items-center gap-2 text-xs"><span className="text-text-secondary w-20 shrink-0">{lang === "bn" ? "লক্ষ্য" : "Goal"}:</span><span className="font-medium text-primary">{worker.goal.replace(/_/g, " ")}</span></div>}
+              {worker.preferredLearningTime && <div className="flex items-center gap-2 text-xs"><span className="text-text-secondary w-20 shrink-0">{lang === "bn" ? "পড়ার সময়" : "Study Time"}:</span><span className="font-medium text-primary">{worker.preferredLearningTime}</span></div>}
+              {worker.occupation && <div className="flex items-center gap-2 text-xs"><span className="text-text-secondary w-20 shrink-0">{lang === "bn" ? "পেশা" : "Occupation"}:</span><span className="font-medium text-primary">{worker.occupation}</span></div>}
+              {worker.ageGroup && <div className="flex items-center gap-2 text-xs"><span className="text-text-secondary w-20 shrink-0">{lang === "bn" ? "বয়স" : "Age"}:</span><span className="font-medium text-primary">{worker.ageGroup.replace(/_/g, " ")}</span></div>}
+            </div>
+            <Link href="/dashboard/profile" className="mt-3 inline-block text-xs text-action font-semibold hover:underline">
+              {lang === "bn" ? "এডিট প্রোফাইল →" : "Edit Profile →"}
+            </Link>
           </Card>
         </div>
 
@@ -378,6 +431,35 @@ export default function WorkerDashboard() {
             </Card>
           </div>
         )}
+
+        {/* Personalized Recommendations Trigger */}
+        <div className="mt-6">
+          <Card>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🔔</span>
+                <div>
+                  <h3 className="font-bold text-primary text-sm">{lang === "bn" ? "ব্যক্তিগতকৃত নোটিফিকেশন" : "Personalized Notifications"}</h3>
+                  <p className="text-xs text-text-secondary">{lang === "bn" ? "আপনার আগ্রহ ও লক্ষ্যের উপর ভিত্তি করে কাস্টম আপডেট" : "Custom updates based on your interests and goals"}</p>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  const wid = localStorage.getItem("worker_id");
+                  if (!wid) return;
+                  const res = await fetch("/api/personalize/notify", {
+                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workerId: wid }),
+                  });
+                  const d = await res.json() as { success?: boolean; sent?: number };
+                  if (d.success) alert(lang === "bn" ? `${d.sent}টি ব্যক্তিগতকৃত নোটিফিকেশন তৈরি হয়েছে` : `${d.sent} personalized notifications created`);
+                }}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary text-white hover:bg-primary/90 transition-all"
+              >
+                {lang === "bn" ? "নোটিফিকেশন জেনারেট করুন" : "Generate Notifications"}
+              </button>
+            </div>
+          </Card>
+        </div>
 
         <div className="mt-6">
           <Card>
