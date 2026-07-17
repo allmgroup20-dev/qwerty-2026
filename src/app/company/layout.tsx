@@ -27,49 +27,76 @@ interface SidebarGroup {
 
 const sidebarGroups: SidebarGroup[] = [
   {
+    en: "Overview",
+    bn: "ওভারভিউ",
+    icon: "📊",
+    links: [
+      { href: "/company", en: "Dashboard", bn: "ড্যাশবোর্ড", icon: "📊" },
+      { href: "/company/analytics", en: "Analytics", bn: "অ্যানালিটিক্স", icon: "📊" },
+      { href: "/company/funnel", en: "Funnel", bn: "ফানেল", icon: "🔄" },
+      { href: "/company/events", en: "Events", bn: "ইভেন্ট", icon: "📋" },
+      { href: "/company/sessions", en: "Sessions", bn: "সেশন", icon: "🕒" },
+    ],
+  },
+  {
+    en: "People",
+    bn: "সদস্য",
+    icon: "👥",
+    links: [
+      { href: "/company/members", en: "Members", bn: "সদস্য", icon: "👥" },
+      { href: "/company/customers", en: "Customers", bn: "গ্রাহক", icon: "👤" },
+      { href: "/company/users", en: "Users", bn: "ব্যবহারকারী", icon: "🔐" },
+      { href: "/company/notifications", en: "Notifications", bn: "বিজ্ঞপ্তি", icon: "🔔" },
+    ],
+  },
+  {
+    en: "Products & Sales",
+    bn: "পণ্য ও বিক্রয়",
+    icon: "📦",
+    links: [
+      { href: "/company/products", en: "Products", bn: "পণ্য", icon: "📦" },
+      { href: "/company/orders", en: "Orders", bn: "অর্ডার", icon: "📋" },
+      { href: "/company/reviews", en: "Reviews", bn: "রিভিউ", icon: "⭐" },
+      { href: "/company/levels", en: "Commission Levels", bn: "কমিশন লেভেল", icon: "📊" },
+      { href: "/company/finance", en: "Finance", bn: "অর্থ", icon: "💰" },
+      { href: "/company/currencies", en: "Currencies", bn: "মুদ্রা", icon: "💵" },
+      { href: "/company/payment-gateway", en: "Payment Gateway", bn: "পেমেন্ট", icon: "💳" },
+    ],
+  },
+  {
     en: "AI & Automation",
     bn: "এআই ও অটোমেশন",
     icon: "🤖",
     links: [
-      { href: "/company/whatsapp", en: "WhatsApp", bn: "হোয়াটসঅ্যাপ", icon: "💬" },
-      { href: "/dashboard/messenger", en: "Messenger", bn: "মেসেঞ্জার", icon: "💬" },
-      { href: "/dashboard/telegram", en: "Telegram", bn: "টেলিগ্রাম", icon: "✈️" },
-      { href: "/dashboard/platforms", en: "Platform Prefs", bn: "প্ল্যাটফর্ম", icon: "🔄" },
+      { href: "/company/ai", en: "AI Hub", bn: "এআই হাব", icon: "🤖" },
+      { href: "/company/automation", en: "Automation", bn: "অটোমেশন", icon: "⚡" },
+      { href: "/company/sentiment", en: "Sentiment", bn: "সেন্টিমেন্ট", icon: "📈" },
       { href: "/company/skills", en: "Skills", bn: "দক্ষতা", icon: "🧠" },
       { href: "/company/ai-conversations", en: "Conversations", bn: "কথোপকথন", icon: "💬" },
-      { href: "/company/ai", en: "AI", bn: "এআই", icon: "🤖" },
-      { href: "/company/automation", en: "Automation", bn: "অটোমেশন", icon: "⚡" },
-      { href: "/company/sentiment", en: "Sentiment", bn: "সেন্টিমেন্ট", icon: "📊" },
     ],
   },
   {
-    en: "Business",
-    bn: "ব্যবসা",
-    icon: "📊",
+    en: "Communication",
+    bn: "যোগাযোগ",
+    icon: "💬",
     links: [
-      { href: "/company", en: "Dashboard", bn: "ড্যাশবোর্ড", icon: "📊" },
-      { href: "/company/customers", en: "Customers", bn: "গ্রাহক", icon: "👤" },
-      { href: "/company/orders", en: "Orders", bn: "অর্ডার", icon: "📋" },
-      { href: "/company/finance", en: "Finance", bn: "ফাইন্যান্স", icon: "💰" },
-      { href: "/company/members", en: "Members", bn: "সদস্য", icon: "👥" },
-      { href: "/company/analytics", en: "Analytics", bn: "অ্যানালিটিক্স", icon: "📊" },
-      { href: "/company/funnel", en: "Funnel", bn: "ফানেল", icon: "🔄" },
-      { href: "/company/sessions", en: "Sessions", bn: "সেশন", icon: "🕒" },
-      { href: "/company/events", en: "Event Logs", bn: "ইভেন্ট লগ", icon: "📋" },
-      { href: "/company/products", en: "Products", bn: "পণ্য", icon: "📦" },
-      { href: "/company/reviews", en: "Reviews", bn: "রিভিউ", icon: "⭐" },
-      { href: "/company/levels", en: "Commission Levels", bn: "কমিশন লেভেল", icon: "📊" },
-      { href: "/company/currencies", en: "Currencies", bn: "কারেন্সি", icon: "💰" },
-      { href: "/company/payment-gateway", en: "Payment Gateway", bn: "পেমেন্ট গেটওয়ে", icon: "💳" },
-      { href: "/company/settings", en: "Settings", bn: "সেটিংস", icon: "⚙️" },
-      { href: "/company/users", en: "Users", bn: "ব্যবহারকারী", icon: "🔐" },
-      { href: "/company/reviews", en: "Reviews", bn: "রিভিউ", icon: "⭐" },
-      { href: "/company/notifications", en: "Notifications", bn: "বিজ্ঞপ্তি", icon: "🔔" },
+      { href: "/company/whatsapp", en: "WhatsApp", bn: "হোয়াটসঅ্যাপ", icon: "💬" },
+      { href: "/dashboard/messenger", en: "Messenger", bn: "মেসেঞ্জার", icon: "💬" },
+      { href: "/dashboard/telegram", en: "Telegram", bn: "টেলিগ্রাম", icon: "✈️" },
+      { href: "/dashboard/platforms", en: "Platforms", bn: "প্ল্যাটফর্ম", icon: "🔄" },
       { href: "/company/translations", en: "Translations", bn: "অনুবাদ", icon: "🌐" },
+    ],
+  },
+  {
+    en: "System",
+    bn: "সিস্টেম",
+    icon: "⚙️",
+    links: [
+      { href: "/company/settings", en: "Settings", bn: "সেটিংস", icon: "⚙️" },
       { href: "/company/fingerprint", en: "Fingerprint", bn: "ফিঙ্গারপ্রিন্ট", icon: "🔐" },
+      { href: "/company/privacy", en: "Privacy", bn: "প্রাইভেসি", icon: "🔒" },
       { href: "/company/test-mode", en: "Test Mode", bn: "টেস্ট মোড", icon: "🧪" },
       { href: "/company/updates", en: "Updates", bn: "আপডেট", icon: "🔄" },
-      { href: "/company/privacy", en: "Privacy", bn: "গোপনীয়তা", icon: "🔒" },
     ],
   },
 ];
@@ -80,7 +107,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
   const router = useRouter();
   const [user, setUser] = useState<UserInfo | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(["ai", "business"]);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(["overview", "people", "products", "ai", "communication", "system"]);
 
   const toggleGroup = (id: string) => {
     setExpandedGroups((prev) =>
@@ -99,9 +126,20 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
   }, [router]);
 
   useEffect(() => {
-    const aiPaths = ["/company/whatsapp", "/company/ai"];
-    const isAi = aiPaths.some((p) => pathname === p || (p !== "/company" && pathname.startsWith(p)));
-    setExpandedGroups(isAi ? ["ai"] : ["business"]);
+    const path = pathname;
+    if (path === "/company" || path.startsWith("/company/analytics") || path.startsWith("/company/funnel") || path.startsWith("/company/events") || path.startsWith("/company/sessions")) {
+      setExpandedGroups(["overview"]);
+    } else if (path.startsWith("/company/members") || path.startsWith("/company/customers") || path.startsWith("/company/users") || path.startsWith("/company/notifications")) {
+      setExpandedGroups(["people"]);
+    } else if (path.startsWith("/company/products") || path.startsWith("/company/orders") || path.startsWith("/company/reviews") || path.startsWith("/company/levels") || path.startsWith("/company/finance") || path.startsWith("/company/currencies") || path.startsWith("/company/payment-gateway")) {
+      setExpandedGroups(["products"]);
+    } else if (path.startsWith("/company/ai") || path.startsWith("/company/automation") || path.startsWith("/company/sentiment") || path.startsWith("/company/skills") || path.startsWith("/company/ai-conversations")) {
+      setExpandedGroups(["ai"]);
+    } else if (path.startsWith("/company/whatsapp") || path.startsWith("/dashboard/messenger") || path.startsWith("/dashboard/telegram") || path.startsWith("/dashboard/platforms") || path.startsWith("/company/translations")) {
+      setExpandedGroups(["communication"]);
+    } else {
+      setExpandedGroups(["system"]);
+    }
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -141,7 +179,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {sidebarGroups.map((group, gi) => {
-            const groupId = gi === 0 ? "ai" : "business";
+            const groupId = ["overview", "people", "products", "ai", "communication", "system"][gi] || "overview";
             const isExpanded = expandedGroups.includes(groupId);
             const hasActive = group.links.some(
               (l) => pathname === l.href || (l.href !== "/company" && pathname.startsWith(l.href))
