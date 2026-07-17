@@ -5,7 +5,10 @@ import { hashWorkerPassword, generateToken, generateWorkerId } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, phone, email, password, referralCode } = await request.json() as { name?: string; phone: string; email?: string; password: string; referralCode?: string };
+    const { name, phone, email, password, referralCode, referralSource, utmSource, utmMedium, utmCampaign } = await request.json() as {
+      name?: string; phone: string; email?: string; password: string; referralCode?: string;
+      referralSource?: string; utmSource?: string; utmMedium?: string; utmCampaign?: string;
+    };
     if (!phone || !password) {
       return NextResponse.json({ error: "Phone and password required" }, { status: 400 });
     }
@@ -38,6 +41,22 @@ export async function POST(request: NextRequest) {
        VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), 'active')`,
       [workerId, displayName, phone, email || null, hashedPassword, sponsorId, sponsorName]
     );
+
+    // Store referral source if provided
+    if (referralSource) {
+      await execute(env,
+        "UPDATE workers SET referral_source = ? WHERE worker_id = ?",
+        [referralSource, workerId]
+      ).catch(() => {});
+    }
+
+    // Log attribution
+    const attributionChannel = utmSource || referralSource || "direct";
+    await execute(env,
+      `INSERT INTO attribution_log (worker_id, channel, utm_source, utm_medium, utm_campaign, referrer, landing_page, first_visit_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+      [workerId, attributionChannel, utmSource || null, utmMedium || null, utmCampaign || null, null, null]
+    ).catch(() => {});
 
     await execute(env,
       `INSERT INTO mlm_tree (worker_id, parent_id, sponsor_id, level_number, position)

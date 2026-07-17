@@ -15,12 +15,21 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const [utmParams, setUtmParams] = useState({ utmSource: "", utmMedium: "", utmCampaign: "" });
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref") || localStorage.getItem("referral_code") || "";
     if (ref) {
       localStorage.setItem("referral_code", ref);
       setForm((prev) => ({ ...prev, referralCode: ref }));
+    }
+    // Capture UTM params
+    const us = params.get("utm_source") || "";
+    const um = params.get("utm_medium") || "";
+    const uc = params.get("utm_campaign") || "";
+    if (us || um || uc) {
+      setUtmParams({ utmSource: us, utmMedium: um, utmCampaign: uc });
     }
   }, []);
 
@@ -35,13 +44,18 @@ export default function RegisterPage() {
       return;
     }
 
-    const payload = {
+    const payload: Record<string, any> = {
       name: form.name || undefined,
       phone: form.phone,
       email: form.email || undefined,
       password: form.password,
       referralCode: form.referralCode || undefined,
     };
+    if (utmParams.utmSource) { payload.utmSource = utmParams.utmSource; payload.utmMedium = utmParams.utmMedium; payload.utmCampaign = utmParams.utmCampaign; }
+    // Auto-detect referral source from UTM
+    if (utmParams.utmSource) {
+      payload.referralSource = utmParams.utmSource;
+    }
 
     try {
       const res = await fetch("/api/auth/register", {

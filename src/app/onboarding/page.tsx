@@ -33,6 +33,9 @@ export default function OnboardingPage() {
   const [city, setCity] = useState("");
   const [goal, setGoal] = useState("");
   const [preferredLearningTime, setLearningTime] = useState("");
+  const [referralSource, setReferralSource] = useState("");
+  const [communicationPreference, setCommPref] = useState("whatsapp");
+  const [budgetRange, setBudgetRange] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -50,6 +53,9 @@ export default function OnboardingPage() {
         if (d.city) setCity(d.city);
         if (d.goal) setGoal(d.goal);
         if (d.preferredLearningTime) setLearningTime(d.preferredLearningTime);
+        if (d.referralSource) setReferralSource(d.referralSource);
+        if (d.communicationPreference) setCommPref(d.communicationPreference);
+        if (d.budgetRange) setBudgetRange(d.budgetRange);
       })
       .catch(() => {});
   }, [router]);
@@ -71,6 +77,9 @@ export default function OnboardingPage() {
       if (city) body.city = city;
       if (goal) body.goal = goal;
       if (preferredLearningTime) body.preferredLearningTime = preferredLearningTime;
+      if (referralSource) body.referralSource = referralSource;
+      if (communicationPreference) body.communicationPreference = communicationPreference;
+      if (budgetRange) body.budgetRange = budgetRange;
 
       if (Object.keys(body).length > 1) {
         await fetch("/api/workers/profile", {
@@ -220,6 +229,37 @@ export default function OnboardingPage() {
                   <option value="afternoon">{lang === "bn" ? "দুপুর" : "Afternoon"}</option>
                   <option value="evening">{lang === "bn" ? "বিকেল" : "Evening"}</option>
                   <option value="night">{lang === "bn" ? "রাত" : "Night"}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "কীভাবে জানতে পেরেছেন?" : "How did you find us?"}</label>
+                <select value={referralSource} onChange={e => setReferralSource(e.target.value)} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="facebook">{lang === "bn" ? "ফেসবুক" : "Facebook"}</option>
+                  <option value="google">{lang === "bn" ? "গুগল" : "Google"}</option>
+                  <option value="youtube">{lang === "bn" ? "ইউটিউব" : "YouTube"}</option>
+                  <option value="whatsapp">{lang === "bn" ? "হোয়াটসঅ্যাপ" : "WhatsApp"}</option>
+                  <option value="friend">{lang === "bn" ? "বন্ধুর মাধ্যমে" : "Friend/Family"}</option>
+                  <option value="other">{lang === "bn" ? "অন্যান্য" : "Other"}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "যোগাযোগের মাধ্যম" : "Preferred Contact"}</label>
+                <select value={communicationPreference} onChange={e => setCommPref(e.target.value)} className="input-field">
+                  <option value="whatsapp">{lang === "bn" ? "হোয়াটসঅ্যাপ" : "WhatsApp"}</option>
+                  <option value="email">Email</option>
+                  <option value="sms">SMS</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "আপনার বাজেট (প্রতি কোর্সে)" : "Budget Range (per course)"}</label>
+                <select value={budgetRange} onChange={e => setBudgetRange(e.target.value)} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="under_1000">{lang === "bn" ? "১,০০০ এর নিচে" : "Under 1,000 ৳"}</option>
+                  <option value="1000_3000">{lang === "bn" ? "১,০০০ - ৩,০০০" : "1,000 - 3,000 ৳"}</option>
+                  <option value="3000_5000">{lang === "bn" ? "৩,০০০ - ৫,০০০" : "3,000 - 5,000 ৳"}</option>
+                  <option value="5000_10000">{lang === "bn" ? "৫,০০০ - ১০,০০০" : "5,000 - 10,000 ৳"}</option>
+                  <option value="over_10000">{lang === "bn" ? "১০,০০০ এর উপরে" : "Above 10,000 ৳"}</option>
                 </select>
               </div>
               <button onClick={saveAndNext} disabled={saving} className="btn-primary w-full">

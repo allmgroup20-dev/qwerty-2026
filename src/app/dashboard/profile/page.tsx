@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 
 export default function ProfilePage() {
   const { lang } = useLanguageStore();
-  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", workerId: "", ageGroup: "", occupation: "", educationLevel: "", preferredLanguage: "", gender: "", country: "", city: "", goal: "", preferredLearningTime: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", workerId: "", ageGroup: "", occupation: "", educationLevel: "", preferredLanguage: "", gender: "", country: "", city: "", goal: "", preferredLearningTime: "", referralSource: "", communicationPreference: "whatsapp", budgetRange: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -24,7 +24,7 @@ export default function ProfilePage() {
       .then((r) => r.json() as Promise<{ workerId?: string; name?: string; phone?: string; email?: string; membershipStatus?: string }>)
       .then((data: any) => {
         if (data.workerId) {
-          setForm({ name: data.name || "", phone: data.phone || "", email: data.email || "", password: "", workerId: data.workerId, ageGroup: data.ageGroup || "", occupation: data.occupation || "", educationLevel: data.educationLevel || "", preferredLanguage: data.preferredLanguage || "bn", gender: data.gender || "", country: data.country || "", city: data.city || "", goal: data.goal || "", preferredLearningTime: data.preferredLearningTime || "" });
+          setForm({ name: data.name || "", phone: data.phone || "", email: data.email || "", password: "", workerId: data.workerId, ageGroup: data.ageGroup || "", occupation: data.occupation || "", educationLevel: data.educationLevel || "", preferredLanguage: data.preferredLanguage || "bn", gender: data.gender || "", country: data.country || "", city: data.city || "", goal: data.goal || "", preferredLearningTime: data.preferredLearningTime || "", referralSource: data.referralSource || "", communicationPreference: data.communicationPreference || "whatsapp", budgetRange: data.budgetRange || "" });
           if (data.membershipStatus) setMembershipStatus(data.membershipStatus);
         }
       })
@@ -55,6 +55,9 @@ export default function ProfilePage() {
     if (form.city) body.city = form.city;
     if (form.goal) body.goal = form.goal;
     if (form.preferredLearningTime) body.preferredLearningTime = form.preferredLearningTime;
+    if (form.referralSource) body.referralSource = form.referralSource;
+    if (form.communicationPreference) body.communicationPreference = form.communicationPreference;
+    if (form.budgetRange) body.budgetRange = form.budgetRange;
     try {
       const res = await fetch("/api/workers/profile", {
         method: "PUT",
@@ -278,6 +281,40 @@ export default function ProfilePage() {
                   <option value="afternoon">{lang === "bn" ? "দুপুর" : "Afternoon"}</option>
                   <option value="evening">{lang === "bn" ? "বিকেল" : "Evening"}</option>
                   <option value="night">{lang === "bn" ? "রাত" : "Night"}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "কীভাবে জানতে পেরেছেন?" : "How did you find us?"}</label>
+                <select value={form.referralSource} onChange={(e) => setForm({ ...form, referralSource: e.target.value })} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="google">Google</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="friend">{lang === "bn" ? "বন্ধুর মাধ্যমে" : "Friend/Family"}</option>
+                  <option value="other">{lang === "bn" ? "অন্যান্য" : "Other"}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "যোগাযোগের মাধ্যম" : "Preferred Contact"}</label>
+                <select value={form.communicationPreference} onChange={(e) => setForm({ ...form, communicationPreference: e.target.value })} className="input-field">
+                  <option value="whatsapp">{lang === "bn" ? "হোয়াটসঅ্যাপ" : "WhatsApp"}</option>
+                  <option value="email">Email</option>
+                  <option value="sms">SMS</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "বাজেট (প্রতি কোর্সে)" : "Budget Range (per course)"}</label>
+                <select value={form.budgetRange} onChange={(e) => setForm({ ...form, budgetRange: e.target.value })} className="input-field">
+                  <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
+                  <option value="under_1000">{lang === "bn" ? "১,০০০ এর নিচে" : "Under 1,000 ৳"}</option>
+                  <option value="1000_3000">{lang === "bn" ? "১,০০০ - ৩,০০০" : "1,000 - 3,000 ৳"}</option>
+                  <option value="3000_5000">{lang === "bn" ? "৩,০০০ - ৫,০০০" : "3,000 - 5,000 ৳"}</option>
+                  <option value="5000_10000">{lang === "bn" ? "৫,০০০ - ১০,০০০" : "5,000 - 10,000 ৳"}</option>
+                  <option value="over_10000">{lang === "bn" ? "১০,০০০ এর উপরে" : "Above 10,000 ৳"}</option>
                 </select>
               </div>
 
