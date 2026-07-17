@@ -150,9 +150,6 @@ export default function WorkerDashboard() {
               {lang === "bn" ? "সদস্য আইডি" : "Member ID"}: {worker.workerId}
             </p>
           </div>
-          <Link href="/company/login" className="text-sm text-text-secondary hover:text-primary underline">
-            {lang === "bn" ? "কোম্পানি লগইন" : "Company Login"} →
-          </Link>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -252,82 +249,6 @@ export default function WorkerDashboard() {
             <div>
               <p className="font-semibold text-primary text-sm">{lang === "bn" ? "প্রোফাইল" : "Profile"}</p>
               <p className="text-xs text-text-secondary">{lang === "bn" ? "সেটিংস" : "Settings"}</p>
-            </div>
-          </Link>
-        </div>
-
-        <h2 className="text-lg font-bold text-primary mb-4">{lang === "bn" ? "যোগাযোগ ও আরও" : "Communication & More"}</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Link href="/dashboard/notifications" className="card hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-semibold text-primary text-sm">{lang === "bn" ? "বিজ্ঞপ্তি" : "Notifications"}</p>
-              <p className="text-xs text-text-secondary">{lang === "bn" ? "সকল নোটিফিকেশন" : "All notifications"}</p>
-            </div>
-          </Link>
-          <Link href="/dashboard/notification-prefs" className="card hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-semibold text-primary text-sm">{lang === "bn" ? "নোটিফিকেশন সেটিংস" : "Notif. Settings"}</p>
-              <p className="text-xs text-text-secondary">{lang === "bn" ? "পছন্দ ও নিয়ন্ত্রণ" : "Preferences"}</p>
-            </div>
-          </Link>
-          <Link href="/dashboard/ai-predictions" className="card hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
-            <div className="w-12 h-12 bg-violet-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-semibold text-primary text-sm">{lang === "bn" ? "এআই প্রেডিকশন" : "AI Predictions"}</p>
-              <p className="text-xs text-text-secondary">{lang === "bn" ? "চার্ন ও এলটিভি" : "Churn & LTV"}</p>
-            </div>
-          </Link>
-          <Link href="/dashboard/messenger" className="card hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
-            <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-semibold text-primary text-sm">Messenger</p>
-              <p className="text-xs text-text-secondary">{lang === "bn" ? "ফেসবুক মেসেঞ্জার" : "Facebook Messenger"}</p>
-            </div>
-          </Link>
-          <Link href="/dashboard/telegram" className="card hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
-            <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 2L11 13" />
-                <path d="M22 2L8 22l-3-9-9-3 20-8z" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-semibold text-primary text-sm">Telegram</p>
-              <p className="text-xs text-text-secondary">{lang === "bn" ? "টেলিগ্রাম বট" : "Telegram Bot"}</p>
-            </div>
-          </Link>
-          <Link href="/dashboard/platforms" className="card hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
-            <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                <line x1="8" y1="21" x2="16" y2="21" />
-                <line x1="12" y1="17" x2="12" y2="21" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-semibold text-primary text-sm">{lang === "bn" ? "প্ল্যাটফর্ম" : "Platforms"}</p>
-              <p className="text-xs text-text-secondary">{lang === "bn" ? "পছন্দের মাধ্যম" : "Platform Prefs"}</p>
             </div>
           </Link>
         </div>
