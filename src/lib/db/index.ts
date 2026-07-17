@@ -60,6 +60,9 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       is_active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
+    // Migrate: add social login columns (idempotent)
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN google_id TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN facebook_id TEXT`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN commission_type TEXT DEFAULT 'both'`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN min_referral_base INTEGER DEFAULT 3`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS products (

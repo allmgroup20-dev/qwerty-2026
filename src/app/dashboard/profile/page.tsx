@@ -14,6 +14,7 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [bioRegistered, setBioRegistered] = useState(false);
   const [bioLoading, setBioLoading] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
     const workerId = localStorage.getItem("worker_id");
@@ -198,14 +199,59 @@ export default function ProfilePage() {
                 </button>
               </div>
             ) : (
-              <Button onClick={handleSetupFingerprint} disabled={bioLoading} className="w-full bg-action/10 text-action hover:bg-action/20 border border-action/30">
-                {bioLoading
-                  ? (lang === "bn" ? "সেটআপ হচ্ছে..." : "Setting up...")
-                  : (lang === "bn" ? "ফিঙ্গারপ্রিন্ট সেটআপ করুন" : "Setup Fingerprint")}
-              </Button>
+              <>
+                <Button onClick={() => setShowWarning(true)} disabled={bioLoading} className="w-full bg-action/10 text-action hover:bg-action/20 border border-action/30">
+                  {bioLoading
+                    ? (lang === "bn" ? "সেটআপ হচ্ছে..." : "Setting up...")
+                    : (lang === "bn" ? "ফিঙ্গারপ্রিন্ট সেটআপ করুন" : "Setup Fingerprint")}
+                </Button>
+              </>
             )}
           </Card>
         </div>
+
+        {/* Fingerprint Warning Modal */}
+        {showWarning && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setShowWarning(false)}>
+            <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-primary text-center mb-3">
+                {lang === "bn" ? "সতর্কবার্তা" : "Warning"}
+              </h3>
+              <div className="space-y-2 text-sm text-text-secondary mb-6">
+                <p>{lang === "bn"
+                  ? "ফিঙ্গারপ্রিন্ট শুধুমাত্র আপনার নিজস্ব ডিভাইসে সেটআপ করুন।"
+                  : "Set up fingerprint only on your own device."}</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>{lang === "bn" ? "নিজের মোবাইল/ল্যাপটপ → সেটআপ করুন" : "Use your own phone/laptop to set up"}</li>
+                  <li>{lang === "bn" ? "অন্যের ডিভাইসে সেটআপ করবেন না" : "Do NOT set up on someone else's device"}</li>
+                  <li>{lang === "bn" ? "একবার সেটআপ করলে শুধু এই ডিভাইসে কাজ করবে" : "Works only on THIS device once set up"}</li>
+                  <li>{lang === "bn" ? "অন্য ডিভাইস থেকে লগইন করতে পাসওয়ার্ড ব্যবহার করুন" : "Use password to login from other devices"}</li>
+                </ul>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowWarning(false)}
+                  className="flex-1 py-3 rounded-xl border border-border text-sm font-medium text-text-secondary hover:bg-gray-50 transition-all"
+                >
+                  {lang === "bn" ? "বাতিল" : "Cancel"}
+                </button>
+                <button
+                  onClick={() => { setShowWarning(false); handleSetupFingerprint(); }}
+                  className="flex-1 py-3 rounded-xl bg-action text-white text-sm font-medium hover:bg-action/90 transition-all"
+                >
+                  {lang === "bn" ? "আমি বুঝেছি, সেটআপ করুন" : "I Understand, Set Up"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
