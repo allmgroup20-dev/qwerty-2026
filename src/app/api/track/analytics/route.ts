@@ -5,6 +5,15 @@ export async function GET(req: NextRequest) {
   try {
     const workerId = req.nextUrl.searchParams.get("workerId");
     const allCustomers = req.nextUrl.searchParams.get("allCustomers");
+    const allSessions = req.nextUrl.searchParams.get("allSessions");
+
+    if (allSessions) {
+      const db = await ensureDB();
+      const { results: sessions } = await db.prepare(
+        "SELECT * FROM user_sessions ORDER BY created_at DESC LIMIT 200"
+      ).bind().all() as { results: any[] };
+      return NextResponse.json({ sessions: sessions || [] });
+    }
 
     if (allCustomers) {
       const db = await ensureDB();

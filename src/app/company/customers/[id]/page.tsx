@@ -275,34 +275,57 @@ export default function Customer360Page() {
 
         {/* Sessions Tab */}
         {activeTab === "sessions" && (
-          <Card className="!p-5">
-            <h3 className="font-semibold text-sm text-primary mb-4">{t("Session History", "সেশনের ইতিহাস")} ({data.sessions.length})</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 text-left">
-                    <th className="p-2 font-semibold text-text-secondary">{t("Start", "শুরু")}</th>
-                    <th className="p-2 font-semibold text-text-secondary">{t("Duration", "সময়")}</th>
-                    <th className="p-2 font-semibold text-text-secondary">{t("Device", "ডিভাইস")}</th>
-                    <th className="p-2 font-semibold text-text-secondary hidden md:table-cell">{t("Browser", "ব্রাউজার")}</th>
-                    <th className="p-2 font-semibold text-text-secondary hidden lg:table-cell">{t("Referrer", "রেফারার")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.sessions.map((s: any, i: number) => (
-                    <tr key={i} className="border-t border-border">
-                      <td className="p-2 text-xs">{formatDate(s.session_start)}</td>
-                      <td className="p-2 text-text-secondary">{s.duration_seconds ? `${Math.round(s.duration_seconds / 60)}m` : "—"}</td>
-                      <td className="p-2 capitalize">{s.device_type || "—"}</td>
-                      <td className="p-2 text-text-secondary hidden md:table-cell">{s.browser || "—"}</td>
-                      <td className="p-2 text-text-secondary hidden lg:table-cell text-xs max-w-[150px] truncate">{s.referrer || "—"}</td>
-                    </tr>
-                  ))}
-                  {data.sessions.length === 0 && <tr><td colSpan={5} className="p-4 text-center text-text-secondary">{t("No sessions", "কোনো সেশন নেই")}</td></tr>}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {data.sessions.map((s: any, i: number) => (
+              <Card key={i} className="!p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-xl">{s.device_type === "mobile" ? "📱" : s.device_type === "tablet" ? "📟" : "💻"}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm text-primary capitalize">{s.device_type || t("Unknown", "অজানা")}</span>
+                      {s.duration_seconds && (
+                        <span className="text-xs text-text-secondary">{Math.round(s.duration_seconds / 60)}m {s.duration_seconds % 60}s</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-text-secondary">
+                      {[s.browser, s.os, s.screen_resolution].filter(Boolean).join(" · ") || "—"}
+                    </div>
+                  </div>
+                  <a
+                    href={`/company/sessions`}
+                    className="text-xs text-primary hover:underline shrink-0"
+                  >
+                    {t("Details", "বিস্তারিত")} →
+                  </a>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <span className="text-text-secondary">{t("Start", "শুরু")}</span>
+                    <div className="font-medium text-primary truncate">{formatDate(s.session_start)}</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <span className="text-text-secondary">{t("Referrer", "রেফারার")}</span>
+                    <div className="font-medium text-primary truncate">{s.referrer || "—"}</div>
+                  </div>
+                  {s.city && (
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <span className="text-text-secondary">{t("Location", "অবস্থান")}</span>
+                      <div className="font-medium text-primary truncate">{s.city}{s.country ? `, ${s.country}` : ""}</div>
+                    </div>
+                  )}
+                  {s.utm_source && (
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <span className="text-text-secondary">UTM</span>
+                      <div className="font-medium text-primary truncate">{s.utm_source}{s.utm_campaign ? ` / ${s.utm_campaign}` : ""}</div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+            {data.sessions.length === 0 && (
+              <div className="col-span-full text-center py-8 text-text-secondary">{t("No sessions", "কোনো সেশন নেই")}</div>
+            )}
+          </div>
         )}
 
         {/* Searches Tab */}

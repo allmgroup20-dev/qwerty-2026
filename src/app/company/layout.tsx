@@ -49,6 +49,7 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/company/customers", en: "Customers", bn: "গ্রাহক", icon: "👤" },
       { href: "/company/members", en: "Members", bn: "সদস্য", icon: "👥" },
       { href: "/company/analytics", en: "Analytics", bn: "অ্যানালিটিক্স", icon: "📊" },
+      { href: "/company/sessions", en: "Sessions", bn: "সেশন", icon: "🕒" },
       { href: "/company/events", en: "Event Logs", bn: "ইভেন্ট লগ", icon: "📋" },
       { href: "/company/products", en: "Products", bn: "পণ্য", icon: "📦" },
       { href: "/company/levels", en: "Commission Levels", bn: "কমিশন লেভেল", icon: "📊" },
