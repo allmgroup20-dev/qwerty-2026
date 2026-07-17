@@ -8,7 +8,6 @@ interface FinanceData {
   revenue: { total: number; completed: number; pending: number };
   orders: { total: number; completed: number; pending: number };
   commissions: { total: number; pending: number };
-  withdrawals: { total: number; pending: number };
   workers: { active: number };
 }
 
@@ -35,7 +34,7 @@ export default function CompanyFinancePage() {
       <div className="max-w-6xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-primary">{lang === "bn" ? "ফাইন্যান্স" : "Finance"}</h1>
-          <p className="text-sm text-text-secondary mt-1">{lang === "bn" ? "রেভিনিউ, কমিশন ও উইথড্রয়াল ওভারভিউ" : "Revenue, commissions & withdrawals overview"}</p>
+          <p className="text-sm text-text-secondary mt-1">{lang === "bn" ? "রেভিনিউ, কমিশন ওভারভিউ" : "Revenue & commissions overview"}</p>
         </div>
 
         {/* Revenue */}
@@ -71,21 +70,6 @@ export default function CompanyFinancePage() {
             <div className="p-4 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100">
               <p className="text-xs text-orange-700 font-medium uppercase tracking-wider">{lang === "bn" ? "পেন্ডিং কমিশন" : "Pending Commission"}</p>
               <p className="text-2xl font-bold text-orange-700 mt-1">{format(data.commissions.pending)} TK</p>
-            </div>
-          </div>
-        </Card>
-
-        {/* Withdrawals */}
-        <Card>
-          <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">{lang === "bn" ? "উইথড্রয়াল" : "Withdrawals"}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100">
-              <p className="text-xs text-teal-700 font-medium uppercase tracking-wider">{lang === "bn" ? "মোট উইথড্রয়াল" : "Total Withdrawn"}</p>
-              <p className="text-2xl font-bold text-teal-700 mt-1">{format(data.withdrawals.total)} TK</p>
-            </div>
-            <div className="p-4 rounded-xl bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-100">
-              <p className="text-xs text-rose-700 font-medium uppercase tracking-wider">{lang === "bn" ? "পেন্ডিং উইথড্রয়াল" : "Pending Withdrawal"}</p>
-              <p className="text-2xl font-bold text-rose-700 mt-1">{format(data.withdrawals.pending)} TK</p>
             </div>
           </div>
         </Card>

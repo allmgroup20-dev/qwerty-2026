@@ -26,13 +26,6 @@ export async function GET() {
       db, "SELECT COALESCE(SUM(total_amount), 0) as s FROM commissions WHERE status = 'pending'"
     );
 
-    const totalWithdrawals = await queryFirst<{ s: number }>(
-      db, "SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'completed'"
-    );
-    const pendingWithdrawals = await queryFirst<{ s: number }>(
-      db, "SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'pending'"
-    );
-
     const totalWorkers = await queryFirst<{ c: number }>(
       db, "SELECT COUNT(*) as c FROM workers WHERE membership_status = 'active'"
     );
@@ -41,7 +34,6 @@ export async function GET() {
       revenue: { total: totalRevenue?.s || 0, completed: completedOrders?.c || 0, pending: pendingOrders?.c || 0 },
       orders: { total: totalOrders?.c || 0, completed: completedOrders?.c || 0, pending: pendingOrders?.c || 0 },
       commissions: { total: totalCommissions?.s || 0, pending: pendingCommissions?.s || 0 },
-      withdrawals: { total: totalWithdrawals?.s || 0, pending: pendingWithdrawals?.s || 0 },
       workers: { active: totalWorkers?.c || 0 },
     });
   } catch (error) {

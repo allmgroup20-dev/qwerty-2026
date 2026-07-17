@@ -57,6 +57,28 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PATCH(request: NextRequest) {
+  try {
+    const { withdrawalId, status } = await request.json() as {
+      withdrawalId: string; status: string;
+    };
+    if (!withdrawalId || !status) {
+      return NextResponse.json({ error: "withdrawalId and status required" }, { status: 400 });
+    }
+    if (!["completed", "rejected", "processing"].includes(status)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    }
+    const env = await getDB();
+    await execute(env,
+      `UPDATE withdrawals SET status = ?, processed_at = datetime('now') WHERE withdrawal_id = ?`,
+      [status, withdrawalId]
+    );
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const workerId = searchParams.get("workerId");

@@ -59,7 +59,8 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/company/orders", en: "Orders", bn: "অর্ডার", icon: "📋", desc: "অর্ডার তালিকা — স্ট্যাটাস আপডেট, পেমেন্ট ভেরিফিকেশন" },
       { href: "/company/reviews", en: "Reviews", bn: "রিভিউ", icon: "⭐", desc: "গ্রাহক রিভিউ — মডারেট ও অনুমোদন" },
       { href: "/company/levels", en: "Commission Levels", bn: "কমিশন লেভেল", icon: "📊", desc: "কমিশন সেটিংস — লেভেলভিত্তিক কমিশন ও বোনাস কনফিগার" },
-      { href: "/company/finance", en: "Finance", bn: "অর্থ", icon: "💰", desc: "আর্থিক প্রতিবেদন — আয়, ব্যয়, কমিশন ও উইথড্রয়াল" },
+      { href: "/company/finance", en: "Finance", bn: "অর্থ", icon: "💰", desc: "আর্থিক প্রতিবেদন — আয়, ব্যয় ও কমিশন" },
+      { href: "/company/withdrawals", en: "Withdrawals", bn: "উত্তোলন", icon: "💸", desc: "উত্তোলন ব্যবস্থাপনা — রিকোয়েস্ট, অনুমোদন, সেটিংস ও পরিসংখ্যান" },
       { href: "/company/currencies", en: "Currencies", bn: "মুদ্রা", icon: "💵", desc: "মুদ্রা ব্যবস্থাপনা — একাধিক কারেন্সি ও রেট কনফিগার" },
       { href: "/company/payment-gateway", en: "Payment Gateway", bn: "পেমেন্ট", icon: "💳", desc: "পেমেন্ট গেটওয়ে — SSLCommerz, COD ইত্যাদি সেটিংস" },
     ],
@@ -132,7 +133,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
       setExpandedGroups(["overview"]);
     } else if (path.startsWith("/company/members") || path.startsWith("/company/customers") || path.startsWith("/company/users") || path.startsWith("/company/notifications")) {
       setExpandedGroups(["people"]);
-    } else if (path.startsWith("/company/products") || path.startsWith("/company/orders") || path.startsWith("/company/reviews") || path.startsWith("/company/levels") || path.startsWith("/company/finance") || path.startsWith("/company/currencies") || path.startsWith("/company/payment-gateway")) {
+    } else if (path.startsWith("/company/products") || path.startsWith("/company/orders") || path.startsWith("/company/reviews") || path.startsWith("/company/levels") || path.startsWith("/company/finance") || path.startsWith("/company/withdrawals") || path.startsWith("/company/currencies") || path.startsWith("/company/payment-gateway")) {
       setExpandedGroups(["products"]);
     } else if (path.startsWith("/company/ai") || path.startsWith("/company/automation") || path.startsWith("/company/sentiment") || path.startsWith("/company/skills") || path.startsWith("/company/ai-conversations")) {
       setExpandedGroups(["ai"]);
