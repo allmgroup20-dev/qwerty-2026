@@ -54,8 +54,7 @@ export default function CompanyDashboard() {
       }
     }).catch(() => {});
     fetch("/api/company/members?limit=1")
-      .then(r => r.json() as Promise<{ total?: number }>)
-      .then(d => { if (d.total) setMemberCount(d.total); })
+      .then(async (r) => { const d = await r.json() as { total?: number }; if (d.total) setMemberCount(d.total); })
       .catch(() => {});
   }, []);
 
