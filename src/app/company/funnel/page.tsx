@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
 
 interface FunnelStage {
   stage: string;
@@ -46,16 +46,7 @@ interface FunnelData {
 
 export default function CompanyFunnelPage() {
   const { lang } = useLanguageStore();
-  const [data, setData] = useState<FunnelData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/track/funnel")
-      .then(r => r.json() as Promise<FunnelData>)
-      .then(setData)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const { data, loading } = useSWRFetch<FunnelData>("/api/track/funnel", { ttlMs: 300_000 });
 
   const t = (en: string, bn: string) => lang === "bn" ? bn : en;
 

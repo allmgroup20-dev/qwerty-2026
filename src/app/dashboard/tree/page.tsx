@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
 
 interface TreeNode {
   worker_id: string;
@@ -67,23 +68,14 @@ function TreeNodeView({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
 
 export default function TreePage() {
   const { lang } = useLanguageStore();
-  const [tree, setTree] = useState<TreeNode | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const workerId = localStorage.getItem("worker_id");
-    if (!workerId) { setLoading(false); return; }
-    fetch(`/api/mlm/tree?workerId=${workerId}`)
-      .then((r) => r.json() as Promise<{ members?: TreeNode[]; total?: number }>)
-      .then((data) => {
-        if (data.members && data.members.length > 0) {
-          const root = buildTree(data.members, workerId);
-          setTree(root);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const workerId = typeof window !== "undefined" ? localStorage.getItem("worker_id") : null;
+  const { data, loading } = useSWRFetch<{ members?: TreeNode[] }>(
+    workerId ? `/api/mlm/tree?workerId=${workerId}` : null,
+    { ttlMs: 300_000 }
+  );
+  const tree = data?.members && data.members.length > 0
+    ? buildTree(data.members, workerId!)
+    : null;
 
   return (
     <div className="min-h-screen py-24 px-4">

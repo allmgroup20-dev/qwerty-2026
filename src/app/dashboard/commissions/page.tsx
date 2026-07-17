@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import { formatCurrency, formatDate, getStatusColor, getStatusBadge } from "@/lib/utils";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
 
 interface Commission {
   commission_id: string; from_name: string; level_number: number;
@@ -13,20 +13,12 @@ interface Commission {
 
 export default function CommissionsPage() {
   const { lang } = useLanguageStore();
-  const [commissions, setCommissions] = useState<Commission[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const workerId = localStorage.getItem("worker_id");
-    if (!workerId) { setLoading(false); return; }
-    fetch(`/api/mlm/commissions?workerId=${workerId}`)
-      .then((r) => r.json() as Promise<{ commissions?: Commission[] }>)
-      .then((data) => {
-        if (data.commissions) setCommissions(data.commissions);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const workerId = typeof window !== "undefined" ? localStorage.getItem("worker_id") : null;
+  const { data, loading } = useSWRFetch<{ commissions?: Commission[] }>(
+    workerId ? `/api/mlm/commissions?workerId=${workerId}` : null,
+    { ttlMs: 300_000 }
+  );
+  const commissions = data?.commissions ?? [];
 
   return (
     <div className="min-h-screen py-24 px-4">

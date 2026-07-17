@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import { formatCurrency, formatDate, getStatusColor, getStatusBadge } from "@/lib/utils";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
 
 interface Order {
   order_id: string; product_name: string; total_amount: number;
@@ -18,18 +18,12 @@ const statusMap: Record<string, string> = {
 
 export default function OrdersPage() {
   const { lang } = useLanguageStore();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const workerId = localStorage.getItem("worker_id");
-    if (!workerId) { setLoading(false); return; }
-    fetch(`/api/orders?workerId=${workerId}`)
-      .then((r) => r.json() as Promise<{ orders?: Order[] }>)
-      .then((data) => { if (data.orders) setOrders(data.orders); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const workerId = typeof window !== "undefined" ? localStorage.getItem("worker_id") : null;
+  const { data, loading } = useSWRFetch<{ orders?: Order[] }>(
+    workerId ? `/api/orders?workerId=${workerId}` : null,
+    { ttlMs: 300_000 }
+  );
+  const orders = data?.orders ?? [];
 
   return (
     <div className="min-h-screen py-24 px-4">

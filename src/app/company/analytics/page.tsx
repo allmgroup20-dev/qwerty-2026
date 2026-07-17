@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
 
 interface SegmentItem { segment: string; count: number }
 interface TopInterest { category: string; avgScore: number; workerCount: number }
@@ -10,31 +11,21 @@ interface EventStat { event_type: string; count: number }
 
 export default function CompanyAnalyticsPage() {
   const { lang } = useLanguageStore();
-  const [segments, setSegments] = useState<SegmentItem[]>([]);
-  const [topInterests, setTopInterests] = useState<TopInterest[]>([]);
-  const [eventStats, setEventStats] = useState<EventStat[]>([]);
-  const [totalWorkers, setTotalWorkers] = useState(0);
-  const [totalEvents, setTotalEvents] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const { data, loading } = useSWRFetch<{
+    segments?: SegmentItem[]; topInterestCategories?: TopInterest[];
+    eventStats?: EventStat[]; totalWorkers?: number; totalEvents?: number;
+  }>("/api/track/analytics", { ttlMs: 300_000 });
+
+  const segments = data?.segments ?? [];
+  const topInterests = data?.topInterestCategories ?? [];
+  const eventStats = data?.eventStats ?? [];
+  const totalWorkers = data?.totalWorkers ?? 0;
+  const totalEvents = data?.totalEvents ?? 0;
 
   const scoredWorkers = useMemo(() =>
     segments.filter(s => s.segment !== "unscored").reduce((s, r) => s + r.count, 0),
     [segments]
   );
-
-  useEffect(() => {
-    fetch("/api/track/analytics")
-      .then(r => r.json() as Promise<Record<string, unknown>>)
-      .then(data => {
-        if (data.segments) setSegments(data.segments as SegmentItem[]);
-        if (data.topInterestCategories) setTopInterests(data.topInterestCategories as TopInterest[]);
-        if (data.eventStats) setEventStats(data.eventStats as EventStat[]);
-        setTotalWorkers(data.totalWorkers as number || 0);
-        setTotalEvents(data.totalEvents as number || 0);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
 
   const segmentColors: Record<string, string> = {
     vip: "bg-amber-50 text-amber-700 border-amber-200",

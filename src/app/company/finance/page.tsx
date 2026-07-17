@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
 
 interface FinanceData {
   revenue: { total: number; completed: number; pending: number };
@@ -14,16 +14,7 @@ interface FinanceData {
 
 export default function CompanyFinancePage() {
   const { lang } = useLanguageStore();
-  const [data, setData] = useState<FinanceData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/company/finance")
-      .then(r => r.json())
-      .then((d: any) => { if (d.revenue) setData(d); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const { data, loading } = useSWRFetch<FinanceData>("/api/company/finance", { ttlMs: 300_000 });
 
   if (loading) return (
     <div className="min-h-screen py-24 px-4 bg-gray-50">
