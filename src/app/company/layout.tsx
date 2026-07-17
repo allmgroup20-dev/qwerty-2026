@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { useLanguageStore } from "@/lib/store";
 
 interface UserInfo {
   name: string;
@@ -61,6 +62,7 @@ const sidebarGroups: SidebarGroup[] = [
 ];
 
 export default function CompanyLayout({ children }: { children: React.ReactNode }) {
+  const { lang } = useLanguageStore();
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -112,13 +114,13 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         <div className="fixed inset-0 z-40 bg-black/30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-border transform transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
-        <div className="h-16 flex items-center gap-2 px-5 border-b border-border">
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-border transform transition-transform duration-200 flex flex-col ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+        <div className="h-16 flex items-center gap-2 px-5 border-b border-border shrink-0">
           <div className="w-8 h-8 gradient-premium rounded-lg flex items-center justify-center text-white font-bold text-xs shadow">JGC</div>
           <span className="font-bold text-sm text-primary">Company Panel</span>
         </div>
 
-        <nav className="p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {sidebarGroups.map((group, gi) => {
             const groupId = gi === 0 ? "ai" : "business";
             const isExpanded = expandedGroups.includes(groupId);
@@ -172,6 +174,20 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
             );
           })}
         </nav>
+
+        <div className="border-t border-border p-3 shrink-0">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-all"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            {lang === "bn" ? "লগআউট" : "Logout"}
+          </button>
+        </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-h-screen">
