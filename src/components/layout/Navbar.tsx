@@ -36,15 +36,19 @@ export default function Navbar() {
   const showSolid = !isHome || scrolled;
 
   const handleLogout = async () => {
-    if (localStorage.getItem("worker_token")) {
+    const isCompanyPage = pathname.startsWith("/company");
+    if (isCompanyPage) {
+      if (document.cookie.includes("company_user")) {
+        await fetch("/api/auth/company-logout", { method: "POST" });
+      }
+      window.location.href = "/company/login";
+    } else {
+      // User page or main site
       localStorage.removeItem("worker_token");
       localStorage.removeItem("worker_id");
       localStorage.removeItem("worker_name");
+      window.location.href = "/";
     }
-    if (document.cookie.includes("company_user")) {
-      await fetch("/api/auth/company-logout", { method: "POST" });
-    }
-    window.location.href = "/";
   };
 
   const btnBase = `text-sm !px-5 !py-2.5 rounded-xl font-bold transition-all`;
