@@ -457,6 +457,85 @@ export const aiModelFailoverState = sqliteTable("ai_model_failover_state", {
   updatedAt: text("updated_at"),
 });
 
+// ── Phase 1: User Tracking & Activity ──
+export const userEvents = sqliteTable("user_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  eventType: text("event_type").notNull(), // page_view, click, search, add_to_cart, purchase
+  pageUrl: text("page_url"),
+  pageCategory: text("page_category"),
+  searchKeyword: text("search_keyword"),
+  productId: text("product_id"),
+  productCategory: text("product_category"),
+  timeSpentSeconds: integer("time_spent_seconds"),
+  deviceInfo: text("device_info"), // JSON
+  sessionId: text("session_id"),
+  metadata: text("metadata"), // JSON — extra data
+  createdAt: text("created_at"),
+});
+
+export const userSessions = sqliteTable("user_sessions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  sessionStart: text("session_start").notNull(),
+  sessionEnd: text("session_end"),
+  durationSeconds: integer("duration_seconds"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  deviceType: text("device_type"), // mobile/desktop/tablet
+  browser: text("browser"),
+  os: text("os"),
+  screenResolution: text("screen_resolution"),
+  referrer: text("referrer"),
+  createdAt: text("created_at"),
+});
+
+export const userSearches = sqliteTable("user_searches", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  searchQuery: text("search_query").notNull(),
+  searchType: text("search_type"), // course, product, general
+  resultCount: integer("result_count"),
+  clickedItem: text("clicked_item"),
+  createdAt: text("created_at"),
+});
+
+export const userInterests = sqliteTable("user_interests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").unique().notNull(),
+  categoryScores: text("category_scores").default("{}"), // JSON: {"web_development":85,"graphics":70}
+  topCategories: text("top_categories").default("[]"), // JSON array
+  lastCalculatedAt: text("last_calculated_at"),
+  createdAt: text("created_at"),
+  updatedAt: text("updated_at"),
+});
+
+export const userBehaviorScores = sqliteTable("user_behavior_scores", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").unique().notNull(),
+  leadScore: integer("lead_score").default(0),
+  churnProbability: integer("churn_probability").default(0),
+  purchaseIntent: integer("purchase_intent").default(0),
+  rfmRecency: integer("rfm_recency").default(0),
+  rfmFrequency: integer("rfm_frequency").default(0),
+  rfmMonetary: real("rfm_monetary").default(0),
+  segment: text("segment").default("new"), // new, active, at_risk, churned, vip
+  lifetimeValue: real("lifetime_value").default(0),
+  lastUpdated: text("last_updated"),
+});
+
+export const userPhonebooks = sqliteTable("user_phonebooks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  contactPhone: text("contact_phone").notNull(),
+  contactName: text("contact_name"),
+  hasWhatsapp: integer("has_whatsapp").default(0),
+  deviceType: text("device_type"), // android, ios, unknown
+  source: text("source").default("whatsapp_sync"),
+  lastCheckedAt: text("last_checked_at"),
+  createdAt: text("created_at"),
+});
+
 export const aiLeads = sqliteTable("ai_leads", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   phone: text("phone").unique().notNull(),

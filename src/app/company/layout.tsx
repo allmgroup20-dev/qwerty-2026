@@ -114,10 +114,16 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         <div className="fixed inset-0 z-40 bg-black/30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
+      <button onClick={() => setSidebarOpen(true)} className="lg:hidden fixed top-3 left-3 z-30 p-2.5 bg-white rounded-xl shadow-lg border border-border text-text-secondary hover:text-primary hover:bg-primary/5 transition-all">
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-border transform transition-transform duration-200 flex flex-col ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="h-16 flex items-center gap-2 px-5 border-b border-border shrink-0">
           <div className="w-8 h-8 gradient-premium rounded-lg flex items-center justify-center text-white font-bold text-xs shadow">JGC</div>
-          <span className="font-bold text-sm text-primary">Company Panel</span>
+          <span className="font-bold text-sm text-primary">{user.name}</span>
         </div>
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
@@ -191,34 +197,6 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
       </aside>
 
       <div className="flex-1 flex flex-col min-h-screen">
-        <header className="h-16 bg-white border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-primary/5 text-text-secondary">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <Link href="/" className="text-xs text-text-secondary hover:text-primary transition-colors">
-              ← {pathname.startsWith("/company") ? "Back to Site" : "Back"}
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-xs text-text-secondary hover:text-primary transition-colors hidden sm:inline">
-              ← Back to Main Site
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-              <span className="text-sm font-medium text-text hidden sm:inline">{user.name}</span>
-            </div>
-            <button onClick={handleLogout} className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
-              Logout
-            </button>
-          </div>
-        </header>
-
         <main className="flex-1">
           {children}
         </main>

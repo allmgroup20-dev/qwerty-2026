@@ -678,6 +678,80 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     // Migrate: add user_type column if missing (idempotent)
     await env.DB.prepare(`ALTER TABLE biometric_credentials ADD COLUMN user_type TEXT DEFAULT 'worker'`).run().catch(() => {});
 
+    // ── Phase 1: User Tracking & Activity Tables ──
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      page_url TEXT,
+      page_category TEXT,
+      search_keyword TEXT,
+      product_id TEXT,
+      product_category TEXT,
+      time_spent_seconds INTEGER,
+      device_info TEXT,
+      session_id TEXT,
+      metadata TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      session_start TEXT NOT NULL,
+      session_end TEXT,
+      duration_seconds INTEGER,
+      ip_address TEXT,
+      user_agent TEXT,
+      device_type TEXT,
+      browser TEXT,
+      os TEXT,
+      screen_resolution TEXT,
+      referrer TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_searches (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      search_query TEXT NOT NULL,
+      search_type TEXT,
+      result_count INTEGER,
+      clicked_item TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_interests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT UNIQUE NOT NULL,
+      category_scores TEXT DEFAULT '{}',
+      top_categories TEXT DEFAULT '[]',
+      last_calculated_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_behavior_scores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT UNIQUE NOT NULL,
+      lead_score INTEGER DEFAULT 0,
+      churn_probability INTEGER DEFAULT 0,
+      purchase_intent INTEGER DEFAULT 0,
+      rfm_recency INTEGER DEFAULT 0,
+      rfm_frequency INTEGER DEFAULT 0,
+      rfm_monetary REAL DEFAULT 0,
+      segment TEXT DEFAULT 'new',
+      lifetime_value REAL DEFAULT 0,
+      last_updated TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_phonebooks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      contact_phone TEXT NOT NULL,
+      contact_name TEXT,
+      has_whatsapp INTEGER DEFAULT 0,
+      device_type TEXT,
+      source TEXT DEFAULT 'whatsapp_sync',
+      last_checked_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
     g[DONE_FLAG] = true;
   } catch (e) {
     g[DONE_FLAG] = false;

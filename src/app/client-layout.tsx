@@ -7,6 +7,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import Footer from "@/components/layout/Footer";
 import SmartInstall from "@/components/home/SmartInstall";
 import { useLanguageStore } from "@/lib/store";
+import { useTracker } from "@/lib/tracking/tracker";
 
 function ScrollProgressBar() {
   const barRef = useRef<HTMLDivElement>(null);
@@ -35,6 +36,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const isHome = pathname === "/";
   const { lang } = useLanguageStore();
+
+  // User tracking (page views, sessions, events)
+  useTracker();
 
   useEffect(() => {
     document.documentElement.lang = lang;
