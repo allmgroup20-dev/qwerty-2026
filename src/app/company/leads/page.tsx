@@ -102,7 +102,7 @@ export default function LeadsPage() {
               {s}
             </button>
           ))}
-          <button onClick={loadStats} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-text-secondary hover:bg-primary/10">
+          <button onClick={() => { refreshLeads(); refreshStats(); }} className="ml-auto px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-text-secondary hover:bg-primary/10">
             {lang === "bn" ? "রিফ্রেশ" : "Refresh"} ↻
           </button>
         </div>

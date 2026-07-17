@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import Link from "next/link";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
 
 interface Customer {
   worker_id: string;
@@ -26,20 +27,12 @@ interface Customer {
 
 export default function CompanyCustomersPage() {
   const { lang } = useLanguageStore();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading } = useSWRFetch<{ customers?: Customer[] }>(
+    "/api/track/analytics?allCustomers=1",
+    { ttlMs: 300_000 }
+  );
+  const customers = data?.customers ?? [];
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    setLoading(true);
-    fetch("/api/track/analytics?allCustomers=1")
-      .then(r => r.json())
-      .then((d: any) => {
-        if (d.customers) setCustomers(d.customers as Customer[]);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
 
   const filtered = customers.filter(c =>
     c.name?.toLowerCase().includes(search.toLowerCase()) ||
