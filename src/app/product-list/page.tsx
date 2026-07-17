@@ -123,12 +123,12 @@ export default function ProductsPage() {
                   </button>
                 ) : (
                   <>
-                    <button onClick={() => handleAddToCart(product)} className="btn-primary text-xs !px-4 !py-2.5 flex-1">
+                    <button onClick={() => handleAddToCart(product)} className="btn-primary text-xs !px-3 !py-2 shrink-0">
                       {addedMsg === product.id
                         ? (lang === "bn" ? "✓ যোগ হয়েছে" : "✓ Added")
                         : (lang === "bn" ? "কার্টে যোগ করুন" : "Add to Cart")}
                     </button>
-                    <button onClick={() => { handleAddToCart(product); window.location.href = `/checkout?product=${product.id}`; }} className="btn-secondary text-xs !px-4 !py-2.5">
+                    <button onClick={() => { handleAddToCart(product); window.location.href = `/checkout?product=${product.id}`; }} className="btn-secondary text-sm !px-6 !py-2.5 flex-1 font-semibold">
                       {lang === "bn" ? "কিনুন" : "Buy"}
                     </button>
                   </>
