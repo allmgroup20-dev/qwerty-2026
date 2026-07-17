@@ -236,14 +236,14 @@ export default function WorkerDashboard() {
 
           <Link href="/dashboard/commissions" className="card hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
             <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-secondary-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="w-6 h-6 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="12" y1="1" x2="12" y2="23" />
                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
             </div>
             <div>
-              <p className="font-semibold text-primary text-sm">{lang === "bn" ? "কমিশন" : "Commissions"}</p>
-              <p className="text-xs text-text-secondary">{lang === "bn" ? "ইতিহাস দেখুন" : "View History"}</p>
+              <p className="font-semibold text-primary text-sm">{lang === "bn" ? "আমার আয়" : "My Earnings"}</p>
+              <p className="text-xs text-text-secondary">{lang === "bn" ? "উপার্জনের বিবরণ" : "Income details"}</p>
             </div>
           </Link>
 

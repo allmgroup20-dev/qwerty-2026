@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useDebounce } from "@/lib/use-debounce";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
 
 interface Member {
   workerId: string; name: string; phone: string; email: string | null;
@@ -20,11 +21,17 @@ const emptyForm = () => ({
 
 export default function CompanyMembersPage() {
   const { lang } = useLanguageStore();
-  const [members, setMembers] = useState<Member[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const debouncedSearch = useDebounce(search);
+  const params = new URLSearchParams({ page: String(page), limit: "50" });
+  if (debouncedSearch) params.set("search", debouncedSearch);
+  const { data, loading, refresh } = useSWRFetch<{ members?: Member[]; total?: number }>(
+    `/api/company/members?${params}`,
+    { ttlMs: 180_000 }
+  );
+  const members = data?.members ?? [];
+  const total = data?.total ?? 0;
   const [showAdd, setShowAdd] = useState(false);
   const [editMember, setEditMember] = useState<Member | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Member | null>(null);
@@ -46,20 +53,6 @@ export default function CompanyMembersPage() {
     } catch {}
   }, []);
 
-  const loadMembers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(page), limit: "50" });
-      if (search) params.set("search", search);
-      const res = await fetch(`/api/company/members?${params}`);
-      const data = await res.json() as { members?: Member[]; total?: number };
-      if (data.members) setMembers(data.members);
-      if (data.total !== undefined) setTotal(data.total);
-    } catch {} finally { setLoading(false); }
-  }, [page, search]);
-
-  useEffect(() => { loadMembers(); }, [loadMembers]);
-
   const resetForm = () => { setForm(emptyForm()); setError(""); };
 
   const handleAdd = async () => {
@@ -72,7 +65,7 @@ export default function CompanyMembersPage() {
       });
       const data = await res.json() as { error?: string };
       if (!res.ok) throw new Error(data.error || "Failed");
-      setShowAdd(false); resetForm(); await loadMembers();
+      setShowAdd(false); resetForm(); refresh();
     } catch (err) { setError(err instanceof Error ? err.message : "Error"); }
     finally { setSaving(false); }
   };
@@ -105,7 +98,7 @@ export default function CompanyMembersPage() {
       });
       const data = await res.json() as { error?: string };
       if (!res.ok) throw new Error(data.error || "Update failed");
-      setEditMember(null); await loadMembers();
+      setEditMember(null); refresh();
     } catch (err) { setError(err instanceof Error ? err.message : "Error"); }
     finally { setSaving(false); }
   };
@@ -140,7 +133,7 @@ export default function CompanyMembersPage() {
       }
       const data = await res.json() as { error?: string };
       if (!res.ok) throw new Error(data.error || "Delete failed");
-      setDeleteTarget(null); setDeleteStep(0); setDeletePass(""); await loadMembers();
+      setDeleteTarget(null); setDeleteStep(0); setDeletePass(""); refresh();
     } catch (err) { setDeleteError(err instanceof Error ? err.message : "Error"); }
     finally { setSaving(false); }
   };
@@ -170,7 +163,7 @@ export default function CompanyMembersPage() {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ membershipStatus: newStatus }),
       });
-      await loadMembers();
+      refresh();
     } catch {}
   };
 

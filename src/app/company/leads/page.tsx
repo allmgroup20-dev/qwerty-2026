@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLanguageStore } from "@/lib/store";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
 
 interface Lead {
   id: number;
@@ -32,39 +33,23 @@ const STATUSES = ["new", "contacted", "replied", "converted", "blocked"];
 
 export default function LeadsPage() {
   const { lang } = useLanguageStore();
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [stats, setStats] = useState<LeadStats | null>(null);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<{ phone: string; status: string; notes: string } | null>(null);
   const perPage = 20;
 
-  async function loadLeads() {
-    setLoading(true);
-    try {
-      const url = new URL("/api/leads", location.origin);
-      if (filter) url.searchParams.set("status", filter);
-      url.searchParams.set("limit", String(perPage));
-      url.searchParams.set("offset", String(page * perPage));
-      const res = await fetch(url.toString());
-      const data: { leads?: Lead[] } = await res.json();
-      if (data.leads) setLeads(data.leads);
-      else setLeads([]);
-    } catch { setLeads([]); }
-    setLoading(false);
-  }
+  const leadsUrl = `/api/leads?limit=${perPage}&offset=${page * perPage}${filter ? `&status=${filter}` : ""}`;
+  const { data: leadsData, loading, refresh: refreshLeads } = useSWRFetch<{ leads?: Lead[] }>(
+    leadsUrl,
+    { ttlMs: 180_000 }
+  );
+  const leads = leadsData?.leads ?? [];
 
-  async function loadStats() {
-    try {
-      const res = await fetch("/api/leads?stats=true");
-      const data: LeadStats = await res.json();
-      if (data && typeof data.total === "number") setStats(data);
-    } catch {}
-  }
-
-  useEffect(() => { loadLeads(); }, [filter, page]);
-  useEffect(() => { loadStats(); }, []);
+  const { data: statsData, refresh: refreshStats } = useSWRFetch<LeadStats>(
+    "/api/leads?stats=true",
+    { ttlMs: 300_000 }
+  );
+  const stats = statsData ?? null;
 
   async function updateLead(phone: string, status: string, notes: string) {
     await fetch("/api/leads", {
@@ -73,8 +58,8 @@ export default function LeadsPage() {
       body: JSON.stringify({ phone, status, notes }),
     });
     setEditing(null);
-    loadLeads();
-    loadStats();
+    refreshLeads();
+    refreshStats();
   }
 
   return (

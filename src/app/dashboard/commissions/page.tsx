@@ -24,10 +24,10 @@ export default function CommissionsPage() {
     <div className="min-h-screen py-24 px-4">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold text-primary mb-2">
-          {lang === "bn" ? "কমিশন ইতিহাস" : "Commission History"}
+          {lang === "bn" ? "আয়ের ইতিহাস" : "Earnings History"}
         </h1>
         <p className="text-sm text-text-secondary mb-8">
-          {lang === "bn" ? "আপনার সব কমিশনের বিস্তারিত" : "Details of all your commissions"}
+          {lang === "bn" ? "আপনার সব উপার্জনের বিস্তারিত" : "Details of all your earnings"}
         </p>
 
         {loading ? (
@@ -36,7 +36,7 @@ export default function CommissionsPage() {
           </div>
         ) : commissions.length === 0 ? (
           <Card className="text-center py-12">
-            <p className="text-text-secondary">{lang === "bn" ? "কোন কমিশন নেই" : "No commissions yet"}</p>
+            <p className="text-text-secondary">{lang === "bn" ? "কোনো উপার্জন নেই" : "No earnings yet"}</p>
           </Card>
         ) : (
           <Card className="overflow-hidden !p-0">

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useDebounce } from "@/lib/use-debounce";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { useSWRFetch } from "@/lib/use-swr-fetch";
 
 interface Order {
   order_id: string; worker_id: string; product_id: number | null;
@@ -34,17 +35,24 @@ const payStatusColors: Record<string, string> = {
 
 export default function CompanyOrdersPage() {
   const { lang } = useLanguageStore();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState("");
   const [payFilter, setPayFilter] = useState("");
-  const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
   const limit = 20;
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (debouncedSearch) params.set("search", debouncedSearch);
+  if (statusFilter) params.set("status", statusFilter);
+  if (payFilter) params.set("paymentStatus", payFilter);
+  const { data, loading, refresh } = useSWRFetch<{ orders?: Order[]; total?: number }>(
+    `/api/company/orders?${params}`,
+    { ttlMs: 180_000 }
+  );
+  const orders = data?.orders ?? [];
+  const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / limit);
 
   const orderStatusCounts = useMemo(() => ({
@@ -52,22 +60,6 @@ export default function CompanyOrdersPage() {
     processing: orders.filter(o => o.order_status === "processing").length,
     delivered: orders.filter(o => o.order_status === "delivered").length,
   }), [orders]);
-
-  const loadOrders = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (debouncedSearch) params.set("search", debouncedSearch);
-      if (statusFilter) params.set("status", statusFilter);
-      if (payFilter) params.set("paymentStatus", payFilter);
-      const res = await fetch(`/api/company/orders?${params}`);
-      const data = await res.json() as { orders?: Order[]; total?: number };
-      if (data.orders) setOrders(data.orders);
-      if (data.total !== undefined) setTotal(data.total);
-    } catch {} finally { setLoading(false); }
-  }, [page, debouncedSearch, statusFilter, payFilter]);
-
-  useEffect(() => { loadOrders(); }, [loadOrders]);
 
   const updateOrder = async (orderId: string, updates: Record<string, string>) => {
     setUpdating(orderId);
@@ -77,7 +69,7 @@ export default function CompanyOrdersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId, ...updates }),
       });
-      await loadOrders();
+      refresh();
     } catch {} finally { setUpdating(null); }
   };
 
