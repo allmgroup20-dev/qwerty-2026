@@ -11,7 +11,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       currency?: string; commissionPercentage?: number; commissionFixed?: number;
       imageUrl?: string; category?: string; stock?: number; isActive?: number;
       enableCommission?: number; enableCod?: number; enableSslcommerz?: number;
-      images?: string; commissionOverride?: string;
+      images?: string; commissionOverride?: string; premiumMembership?: number;
     };
     const db = await getDB();
 
@@ -28,7 +28,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
        image_url=COALESCE(?,image_url), category=COALESCE(?,category), stock=COALESCE(?,stock),
        is_active=COALESCE(?,is_active), enable_commission=COALESCE(?,enable_commission),
        enable_cod=COALESCE(?,enable_cod), enable_sslcommerz=COALESCE(?,enable_sslcommerz),
-       images=COALESCE(?,images), commission_override=COALESCE(?,commission_override)
+       images=COALESCE(?,images), commission_override=COALESCE(?,commission_override),
+       premium_membership=COALESCE(?,premium_membership)
        WHERE id=?`,
       [body.name ?? null, body.nameBn ?? null, body.description ?? null, body.descriptionBn ?? null,
        body.price ?? null, body.minPrice ?? null, body.maxPrice ?? null, body.aiPriceEnabled ?? null,
@@ -36,7 +37,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
        body.commissionPercentage ?? null, body.commissionFixed ?? null,
        body.imageUrl ?? null, body.category ?? null, body.stock ?? null, body.isActive ?? null,
        body.enableCommission ?? null, body.enableCod ?? null, body.enableSslcommerz ?? null,
-       body.images ?? null, body.commissionOverride ?? null, parseInt(id)]
+       body.images ?? null, body.commissionOverride ?? null,
+       body.premiumMembership ?? null, parseInt(id)]
     );
 
     return NextResponse.json({ success: true });

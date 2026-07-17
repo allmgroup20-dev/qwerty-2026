@@ -51,6 +51,16 @@ export async function GET(request: NextRequest) {
       [transactionId, orderId]
     );
 
+    // Upgrade to premium if the purchased product has premium_membership enabled
+    if (existing.product_id) {
+      const prod = await queryFirst<{ premium_membership: number }>(
+        env, "SELECT premium_membership FROM products WHERE id = ?", [existing.product_id]
+      );
+      if (prod?.premium_membership === 1) {
+        await execute(env, "UPDATE workers SET membership_status = 'premium' WHERE worker_id = ?", [existing.worker_id]);
+      }
+    }
+
     const worker = await queryFirst<{ name: string; phone: string }>(
       env, "SELECT name, phone FROM workers WHERE worker_id = ?", [existing.worker_id]
     );

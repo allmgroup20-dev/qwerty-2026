@@ -14,6 +14,7 @@ export async function GET() {
               category, stock, is_active as isActive, enable_commission as enableCommission,
               enable_cod as enableCod, enable_sslcommerz as enableSslcommerz,
               images, commission_override as commissionOverride,
+              premium_membership as premiumMembership,
               created_at as createdAt
        FROM products WHERE is_active = 1 ORDER BY created_at DESC`
     );
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
       currency?: string; commissionPercentage?: number; commissionFixed?: number;
       imageUrl?: string; category?: string; stock?: number;
       enableCommission?: number; enableCod?: number; enableSslcommerz?: number;
-      images?: string; commissionOverride?: string;
+      images?: string; commissionOverride?: string; premiumMembership?: number;
     };
 
     if (!body.name || body.price === undefined) {
@@ -44,8 +45,9 @@ export async function POST(request: NextRequest) {
       `INSERT INTO products (name, name_bn, description, description_bn, price,
         min_price, max_price, ai_price_enabled, currency,
         commission_percentage, commission_fixed, image_url, category, stock, is_active,
-        enable_commission, enable_cod, enable_sslcommerz, images, commission_override)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`,
+        enable_commission, enable_cod, enable_sslcommerz, images, commission_override,
+        premium_membership)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
       [
         body.name, body.nameBn || null, body.description || null, body.descriptionBn || null,
         body.price,
@@ -54,7 +56,8 @@ export async function POST(request: NextRequest) {
         body.commissionPercentage || 0, body.commissionFixed || 0,
         body.imageUrl || null, body.category || null, body.stock ?? -1,
         body.enableCommission ?? 1, body.enableCod ?? 1, body.enableSslcommerz ?? 1,
-        body.images || null, body.commissionOverride || null
+        body.images || null, body.commissionOverride || null,
+        body.premiumMembership ?? 0
       ]
     );
 

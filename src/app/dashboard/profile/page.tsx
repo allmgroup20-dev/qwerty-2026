@@ -15,15 +15,17 @@ export default function ProfilePage() {
   const [bioRegistered, setBioRegistered] = useState(false);
   const [bioLoading, setBioLoading] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const [membershipStatus, setMembershipStatus] = useState("");
 
   useEffect(() => {
     const workerId = localStorage.getItem("worker_id");
     if (!workerId) { setLoading(false); return; }
     fetch(`/api/workers/profile?workerId=${workerId}`)
-      .then((r) => r.json() as Promise<{ workerId?: string; name?: string; phone?: string; email?: string }>)
+      .then((r) => r.json() as Promise<{ workerId?: string; name?: string; phone?: string; email?: string; membershipStatus?: string }>)
       .then((data) => {
         if (data.workerId) {
           setForm({ name: data.name || "", phone: data.phone || "", email: data.email || "", password: "", workerId: data.workerId });
+          if (data.membershipStatus) setMembershipStatus(data.membershipStatus);
         }
       })
       .catch(() => setError("Failed to load profile"))
@@ -151,6 +153,11 @@ export default function ProfilePage() {
           </div>
           <h2 className="font-bold text-xl text-primary">{form.name}</h2>
           <p className="text-sm text-text-secondary">{form.workerId}</p>
+          {membershipStatus === "premium" ? (
+            <span className="inline-block mt-2 text-xs bg-amber-100 text-amber-700 font-bold px-3 py-1 rounded-full">⭐ PREMIUM MEMBER</span>
+          ) : (
+            <span className="inline-block mt-2 text-xs bg-gray-100 text-gray-500 font-medium px-3 py-1 rounded-full">{lang === "bn" ? "সাধারণ সদস্য" : "General Member"}</span>
+          )}
         </div>
 
         <div className="space-y-4">

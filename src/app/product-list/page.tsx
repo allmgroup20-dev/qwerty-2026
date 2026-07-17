@@ -6,18 +6,18 @@ import { useLanguageStore, useCartStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
 
 const sampleProducts = [
-  { id: 1, name: "Starter Business Kit", nameBn: "স্টার্টার বিজনেস কিট", price: 2990, currency: "BDT", category: "business", image: "📦", commission: 10 },
-  { id: 2, name: "Premium Career Package", nameBn: "প্রিমিয়াম ক্যারিয়ার প্যাকেজ", price: 9990, currency: "BDT", category: "career", image: "🎯", commission: 15 },
-  { id: 3, name: "Elite Success Bundle", nameBn: "এলিট সাকসেস বান্ডেল", price: 24990, currency: "BDT", category: "elite", image: "👑", commission: 20 },
-  { id: 4, name: "Digital Marketing Course", nameBn: "ডিজিটাল মার্কেটিং কোর্স", price: 1990, currency: "BDT", category: "education", image: "📚", commission: 25 },
-  { id: 5, name: "Team Building Workshop", nameBn: "টিম বিল্ডিং ওয়ার্কশপ", price: 4990, currency: "BDT", category: "business", image: "🤝", commission: 12 },
-  { id: 6, name: "Leadership Program", nameBn: "লিডারশিপ প্রোগ্রাম", price: 14990, currency: "BDT", category: "career", image: "⭐", commission: 18 },
-  { id: 7, name: "Smart Business Pack", nameBn: "স্মার্ট বিজনেস প্যাক", price: 7990, currency: "BDT", category: "business", image: "💼", commission: 15 },
-  { id: 8, name: "Annual Membership", nameBn: "বার্ষিক মেম্বারশিপ", price: 19990, currency: "BDT", category: "elite", image: "🏆", commission: 22 },
-  { id: 9, name: "Communication Skills Pro", nameBn: "কমিউনিকেশন স্কিলস প্রো", price: 3990, currency: "BDT", category: "education", image: "🎤", commission: 20 },
-  { id: 10, name: "Global Business Access", nameBn: "গ্লোবাল বিজনেস অ্যাক্সেস", price: 49990, currency: "BDT", category: "elite", image: "🌍", commission: 30 },
-  { id: 11, name: "Facebook Ads Mastery", nameBn: "ফেসবুক এডস মাস্টারি", price: 5990, currency: "BDT", category: "education", image: "📱", commission: 20 },
-  { id: 12, name: "Entrepreneur Starter", nameBn: "এন্টারপ্রেনার স্টার্টার", price: 999, currency: "BDT", category: "business", image: "🚀", commission: 10 },
+  { id: 1, name: "Starter Business Kit", nameBn: "স্টার্টার বিজনেস কিট", price: 2990, currency: "BDT", category: "business", image: "📦", commission: 10, premium: false },
+  { id: 2, name: "Premium Career Package", nameBn: "প্রিমিয়াম ক্যারিয়ার প্যাকেজ", price: 9990, currency: "BDT", category: "career", image: "🎯", commission: 15, premium: true },
+  { id: 3, name: "Elite Success Bundle", nameBn: "এলিট সাকসেস বান্ডেল", price: 24990, currency: "BDT", category: "elite", image: "👑", commission: 20, premium: true },
+  { id: 4, name: "Digital Marketing Course", nameBn: "ডিজিটাল মার্কেটিং কোর্স", price: 1990, currency: "BDT", category: "education", image: "📚", commission: 25, premium: false },
+  { id: 5, name: "Team Building Workshop", nameBn: "টিম বিল্ডিং ওয়ার্কশপ", price: 4990, currency: "BDT", category: "business", image: "🤝", commission: 12, premium: false },
+  { id: 6, name: "Leadership Program", nameBn: "লিডারশিপ প্রোগ্রাম", price: 14990, currency: "BDT", category: "career", image: "⭐", commission: 18, premium: true },
+  { id: 7, name: "Smart Business Pack", nameBn: "স্মার্ট বিজনেস প্যাক", price: 7990, currency: "BDT", category: "business", image: "💼", commission: 15, premium: false },
+  { id: 8, name: "Annual Membership", nameBn: "বার্ষিক মেম্বারশিপ", price: 19990, currency: "BDT", category: "elite", image: "🏆", commission: 22, premium: true },
+  { id: 9, name: "Communication Skills Pro", nameBn: "কমিউনিকেশন স্কিলস প্রো", price: 3990, currency: "BDT", category: "education", image: "🎤", commission: 20, premium: false },
+  { id: 10, name: "Global Business Access", nameBn: "গ্লোবাল বিজনেস অ্যাক্সেস", price: 49990, currency: "BDT", category: "elite", image: "🌍", commission: 30, premium: true },
+  { id: 11, name: "Facebook Ads Mastery", nameBn: "ফেসবুক এডস মাস্টারি", price: 5990, currency: "BDT", category: "education", image: "📱", commission: 20, premium: false },
+  { id: 12, name: "Entrepreneur Starter", nameBn: "এন্টারপ্রেনার স্টার্টার", price: 999, currency: "BDT", category: "business", image: "🚀", commission: 10, premium: false },
 ];
 
 export default function ProductsPage() {
@@ -79,7 +79,14 @@ export default function ProductsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filtered.map((product) => (
             <div key={product.id} className="card hover:shadow-xl hover:-translate-y-1 group animate-fade-up">
-              <div className="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">{product.image}</div>
+              <div className="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300 relative">
+                {product.image}
+                {product.premium && (
+                  <span className="absolute -top-2 -right-2 bg-amber-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                    ⭐ PREMIUM
+                  </span>
+                )}
+              </div>
               <h3 className="font-bold text-primary mb-2">{lang === "bn" ? product.nameBn : product.name}</h3>
               <p className="text-2xl font-bold text-action mb-2">{formatCurrency(product.price, product.currency)}</p>
               <p className="text-xs text-text-secondary mb-4">

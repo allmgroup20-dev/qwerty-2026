@@ -20,7 +20,7 @@ export default function WorkerDashboard() {
   const [worker, setWorker] = useState<{
     workerId: string; name: string; phone: string; balance: number;
     totalEarned: number; totalTeamMembers: number; level: number;
-    levelName?: string; joinDate: string;
+    levelName?: string; joinDate: string; membershipStatus?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState(DEFAULT_CHANNELS);
@@ -109,8 +109,13 @@ export default function WorkerDashboard() {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-fade-up">
           <div>
-            <h1 className="text-2xl font-bold text-primary">
+            <h1 className="text-2xl font-bold text-primary flex items-center gap-3">
               {lang === "bn" ? "স্বাগতম" : "Welcome"}, {worker.name}
+              {worker.membershipStatus === "premium" ? (
+                <span className="text-xs bg-amber-100 text-amber-700 font-bold px-2.5 py-1 rounded-full">⭐ PREMIUM</span>
+              ) : (
+                <span className="text-xs bg-gray-100 text-gray-500 font-medium px-2.5 py-1 rounded-full">{lang === "bn" ? "সাধারণ" : "General"}</span>
+              )}
             </h1>
             <p className="text-sm text-text-secondary mt-1">
               {lang === "bn" ? "সদস্য আইডি" : "Member ID"}: {worker.workerId}

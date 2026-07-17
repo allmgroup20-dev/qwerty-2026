@@ -28,6 +28,7 @@ interface Product {
   enableCod: number;
   enableSslcommerz: number;
   commissionOverride: string | null;
+  premiumMembership: number;
   createdAt: string;
 }
 
@@ -41,6 +42,7 @@ const emptyForm = () => ({
   name: "", nameBn: "", description: "", descriptionBn: "", price: "", minPrice: "", maxPrice: "", aiPriceEnabled: 1,
   currency: "BDT", commissionPercentage: "0", commissionFixed: "0", category: "business", stock: "-1",
   enableCommission: 1, enableCod: 1, enableSslcommerz: 1, imageUrl: "", images: "[]", commissionOverride: "",
+  premiumMembership: 0,
 });
 
 export default function CompanyProductsPage() {
@@ -92,6 +94,7 @@ export default function CompanyProductsPage() {
       category: p.category || "business", stock: String(p.stock),
       enableCommission: p.enableCommission, enableCod: p.enableCod, enableSslcommerz: p.enableSslcommerz,
       imageUrl: p.imageUrl || "", images: p.images || "[]", commissionOverride: p.commissionOverride || "",
+      premiumMembership: p.premiumMembership,
     });
     setLevelOverrides(overrides.length > 0 ? overrides : globalLevels.map(l => ({ ...l })));
     setEditingId(p.id); setShowAdd(true); setError("");
@@ -110,6 +113,7 @@ export default function CompanyProductsPage() {
         stock: parseInt(form.stock) || -1, imageUrl: form.imageUrl || null, images: form.images || null,
         enableCommission: form.enableCommission, enableCod: form.enableCod, enableSslcommerz: form.enableSslcommerz,
         commissionOverride: levelOverrides.length > 0 ? JSON.stringify(levelOverrides) : null,
+        premiumMembership: form.premiumMembership,
       };
 
       const url = editingId ? `/api/products/${editingId}` : "/api/products";
@@ -214,7 +218,18 @@ export default function CompanyProductsPage() {
                   <input type="checkbox" checked={form.enableSslcommerz === 1} onChange={(e) => setForm({ ...form, enableSslcommerz: e.target.checked ? 1 : 0 })} className="w-4 h-4 accent-primary" />
                   <span className="text-sm text-text-secondary">SSL Commerz</span>
                 </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={form.premiumMembership === 1} onChange={(e) => setForm({ ...form, premiumMembership: e.target.checked ? 1 : 0 })} className="w-4 h-4 accent-amber-500" />
+                  <span className="text-sm font-semibold text-amber-600">⭐ {lang === "bn" ? "প্রিমিয়াম মেম্বারশিপ" : "Premium Membership"}</span>
+                </label>
               </div>
+              {form.premiumMembership === 1 && (
+                <p className="text-xs text-amber-600 mt-2">
+                  {lang === "bn"
+                    ? "এই পণ্য ক্রয় করলে ক্রেতা স্বয়ংক্রিয়ভাবে প্রিমিয়াম মেম্বার হবে"
+                    : "Buying this product will automatically upgrade the buyer to Premium Member"}
+                </p>
+              )}
             </div>
 
             {form.enableCommission === 1 && (
@@ -265,6 +280,7 @@ export default function CompanyProductsPage() {
                   <th className="text-center p-4 text-sm font-semibold text-primary">COD</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">SSL</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">AI</th>
+                  <th className="text-center p-4 text-sm font-semibold text-primary">⭐</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "স্ট্যাটাস" : "Status"}</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "কাজ" : "Actions"}</th>
                 </tr>
@@ -318,6 +334,13 @@ export default function CompanyProductsPage() {
                       </button>
                     </td>
                     <td className="p-4 text-center">
+                      {p.premiumMembership === 1 ? (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-600">⭐</span>
+                      ) : (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
                       <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600">
                         {lang === "bn" ? "সক্রিয়" : "Active"}
                       </span>
@@ -332,7 +355,7 @@ export default function CompanyProductsPage() {
                 ))}
                 {products.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="p-8 text-center text-text-secondary text-sm">
+                    <td colSpan={10} className="p-8 text-center text-text-secondary text-sm">
                       {lang === "bn" ? "কোনো পণ্য নেই। উপরে \"নতুন পণ্য\" বাটনে ক্লিক করে পণ্য যোগ করুন।" : "No products found. Click \"Add Product\" above to create one."}
                     </td>
                   </tr>
