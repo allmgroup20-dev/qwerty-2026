@@ -122,9 +122,9 @@ export default function ProductsPage() {
                     ? (lang === "bn" ? "✓ যোগ হয়েছে" : "✓ Added")
                     : (lang === "bn" ? "কার্টে যোগ করুন" : "Add to Cart")}
                 </button>
-                <Link href={`/checkout?product=${product.id}`} className="btn-secondary text-xs !px-4 !py-2.5">
+                <button onClick={() => { handleAddToCart(product); window.location.href = `/checkout?product=${product.id}`; }} className="btn-secondary text-xs !px-4 !py-2.5">
                   {lang === "bn" ? "কিনুন" : "Buy"}
-                </Link>
+                </button>
               </div>
               <button
                 onClick={() => setReviewProduct(product)}

@@ -69,7 +69,29 @@ function CheckoutContent() {
         }));
       })
       .catch(() => {})
-      .finally(() => setStep("form"));
+      .finally(() => {
+        const productId = searchParams.get("product");
+        if (productId && items.length === 0) {
+          (async () => {
+            try {
+              const res = await fetch("/api/products");
+              const data = await res.json() as { products?: { id: number; name: string; nameBn?: string; price: number; currency: string; productType: string }[] };
+              const p = data.products?.find(x => x.id === parseInt(productId));
+              if (p) {
+                useCartStore.getState().addItem({
+                  productId: p.id,
+                  name: lang === "bn" && p.nameBn ? p.nameBn : p.name,
+                  price: p.price,
+                  currency: p.currency || "BDT",
+                  quantity: 1,
+                  productType: p.productType,
+                });
+              }
+            } catch {}
+          })();
+        }
+        setStep("form");
+      });
   }, []);
 
   useEffect(() => {
