@@ -1,5 +1,6 @@
 import { query, queryFirst, execute } from "@/lib/db/queries";
-import { ensureDB, getDB } from "@/lib/db";
+import { ensureDB } from "@/lib/db";
+import { syncPhonebookContact } from "@/lib/tracking/phonebook";
 
 export interface WAContact {
   id: number;
@@ -42,6 +43,8 @@ export async function createContact(
     "INSERT INTO wa_contacts (phone, name, status, source, notes, created_at, updated_at) VALUES (?, ?, 'pending', ?, ?, datetime('now'), datetime('now'))",
     [phone, data?.name || null, data?.source || "manual", data?.notes || null]
   );
+
+  syncPhonebookContact(phone, data?.name, data?.source).catch(() => {});
 }
 
 export async function updateContactStatus(
