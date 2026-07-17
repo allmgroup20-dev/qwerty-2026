@@ -63,6 +63,11 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     // Migrate: add social login columns (idempotent)
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN google_id TEXT`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN facebook_id TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN preferred_language TEXT DEFAULT 'bn'`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN age_group TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN occupation TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN education_level TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN interests_updated_at TEXT`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN commission_type TEXT DEFAULT 'both'`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN min_referral_base INTEGER DEFAULT 3`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS products (
@@ -752,6 +757,84 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       last_contacted_at TEXT,
       source TEXT DEFAULT 'whatsapp_sync',
       last_checked_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    // Phase 8 migrations
+    await env.DB.prepare(`ALTER TABLE user_sessions ADD COLUMN city TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE user_sessions ADD COLUMN country TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE user_sessions ADD COLUMN timezone TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE user_sessions ADD COLUMN language TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE user_sessions ADD COLUMN utm_source TEXT`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE user_sessions ADD COLUMN utm_campaign TEXT`).run().catch(() => {});
+
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_devices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      device_type TEXT,
+      browser TEXT,
+      os TEXT,
+      user_agent TEXT,
+      screen_resolution TEXT,
+      ip_address TEXT,
+      city TEXT,
+      country TEXT,
+      timezone TEXT,
+      language TEXT,
+      is_active INTEGER DEFAULT 1,
+      last_seen_at TEXT,
+      first_seen_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS product_reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      product_id TEXT,
+      product_type TEXT DEFAULT 'course',
+      rating INTEGER NOT NULL,
+      review_text TEXT,
+      is_approved INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS communication_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      direction TEXT DEFAULT 'outbound',
+      message TEXT,
+      status TEXT DEFAULT 'sent',
+      reference_id TEXT,
+      metadata TEXT,
+      sent_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS privacy_consent (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      consent_type TEXT NOT NULL,
+      is_granted INTEGER DEFAULT 1,
+      ip_address TEXT,
+      user_agent TEXT,
+      granted_at TEXT,
+      revoked_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS attribution_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      utm_source TEXT,
+      utm_medium TEXT,
+      utm_campaign TEXT,
+      referrer TEXT,
+      landing_page TEXT,
+      first_visit_at TEXT,
+      converted INTEGER DEFAULT 0,
+      converted_at TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
 

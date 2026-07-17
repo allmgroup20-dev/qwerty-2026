@@ -19,6 +19,11 @@ export const workers = sqliteTable("workers", {
   totalTeamMembers: integer("total_team_members").default(0),
   membershipStatus: text("membership_status").default("active"),
   isTestAccount: integer("is_test_account").default(0),
+  preferredLanguage: text("preferred_language").default("bn"),
+  ageGroup: text("age_group"),
+  occupation: text("occupation"),
+  educationLevel: text("education_level"),
+  interestsUpdatedAt: text("interests_updated_at"),
   createdAt: text("created_at"),
   updatedAt: text("updated_at"),
 });
@@ -457,6 +462,81 @@ export const aiModelFailoverState = sqliteTable("ai_model_failover_state", {
   updatedAt: text("updated_at"),
 });
 
+// ── Phase 8: User Devices ──
+export const userDevices = sqliteTable("user_devices", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  deviceType: text("device_type"),
+  browser: text("browser"),
+  os: text("os"),
+  userAgent: text("user_agent"),
+  screenResolution: text("screen_resolution"),
+  ipAddress: text("ip_address"),
+  city: text("city"),
+  country: text("country"),
+  timezone: text("timezone"),
+  language: text("language"),
+  isActive: integer("is_active").default(1),
+  lastSeenAt: text("last_seen_at"),
+  firstSeenAt: text("first_seen_at"),
+  createdAt: text("created_at"),
+});
+
+// ── Phase 9: Product Reviews ──
+export const productReviews = sqliteTable("product_reviews", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  productId: text("product_id"),
+  productType: text("product_type").default("course"),
+  rating: integer("rating").notNull(),
+  reviewText: text("review_text"),
+  isApproved: integer("is_approved").default(0),
+  createdAt: text("created_at"),
+});
+
+// ── Phase 8: Communication History (unified) ──
+export const communicationHistory = sqliteTable("communication_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  channel: text("channel").notNull(),
+  direction: text("direction").default("outbound"),
+  message: text("message"),
+  status: text("status").default("sent"),
+  referenceId: text("reference_id"),
+  metadata: text("metadata"),
+  sentAt: text("sent_at"),
+  createdAt: text("created_at"),
+});
+
+// ── Phase 8: Privacy Consent ──
+export const privacyConsent = sqliteTable("privacy_consent", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  consentType: text("consent_type").notNull(),
+  isGranted: integer("is_granted").default(1),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  grantedAt: text("granted_at"),
+  revokedAt: text("revoked_at"),
+  createdAt: text("created_at"),
+});
+
+// ── Phase 8: Attribution Log ──
+export const attributionLog = sqliteTable("attribution_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  channel: text("channel").notNull(),
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  referrer: text("referrer"),
+  landingPage: text("landing_page"),
+  firstVisitAt: text("first_visit_at"),
+  converted: integer("converted").default(0),
+  convertedAt: text("converted_at"),
+  createdAt: text("created_at"),
+});
+
 // ── Phase 1: User Tracking & Activity ──
 export const userEvents = sqliteTable("user_events", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -487,6 +567,12 @@ export const userSessions = sqliteTable("user_sessions", {
   os: text("os"),
   screenResolution: text("screen_resolution"),
   referrer: text("referrer"),
+  city: text("city"),
+  country: text("country"),
+  timezone: text("timezone"),
+  language: text("language"),
+  utmSource: text("utm_source"),
+  utmCampaign: text("utm_campaign"),
   createdAt: text("created_at"),
 });
 

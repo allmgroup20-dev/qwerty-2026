@@ -4,6 +4,22 @@ import { ensureDB } from "@/lib/db";
 export async function GET(req: NextRequest) {
   try {
     const workerId = req.nextUrl.searchParams.get("workerId");
+    const allCustomers = req.nextUrl.searchParams.get("allCustomers");
+
+    if (allCustomers) {
+      const db = await ensureDB();
+      const { results: customers } = await db.prepare(`
+        SELECT w.worker_id, w.name, w.phone, w.email, w.membership_status,
+               w.preferred_language, w.age_group, w.occupation, w.education_level,
+               w.join_date, w.total_spent, w.total_earned, w.created_at,
+               bs.segment, bs.lead_score, bs.lifetime_value
+        FROM workers w
+        LEFT JOIN user_behavior_scores bs ON w.worker_id = bs.worker_id
+        WHERE w.membership_status = 'active'
+        ORDER BY w.created_at DESC
+      `).bind().all() as { results: any[] };
+      return NextResponse.json({ customers: customers || [] });
+    }
 
     if (workerId) {
       const db = await ensureDB();
