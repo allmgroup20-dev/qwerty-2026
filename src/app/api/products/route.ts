@@ -16,6 +16,7 @@ export async function GET() {
               images, commission_override as commissionOverride,
               premium_membership as premiumMembership,
               product_type as productType,
+              direct_buy as directBuy,
               created_at as createdAt
        FROM products WHERE is_active = 1 ORDER BY created_at DESC`
     );
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
       imageUrl?: string; category?: string; stock?: number;
       enableCommission?: number; enableCod?: number; enableSslcommerz?: number;
       images?: string; commissionOverride?: string; premiumMembership?: number;
-      productType?: string;
+      productType?: string; directBuy?: number;
     };
 
     if (!body.name || body.price === undefined) {
@@ -48,8 +49,8 @@ export async function POST(request: NextRequest) {
         min_price, max_price, ai_price_enabled, currency,
         commission_percentage, commission_fixed, image_url, category, stock, is_active,
         enable_commission, enable_cod, enable_sslcommerz, images, commission_override,
-        premium_membership, product_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)`,
+        premium_membership, product_type, direct_buy)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         body.name, body.nameBn || null, body.description || null, body.descriptionBn || null,
         body.price,
@@ -60,7 +61,8 @@ export async function POST(request: NextRequest) {
         body.enableCommission ?? 1, body.enableCod ?? 1, body.enableSslcommerz ?? 1,
         body.images || null, body.commissionOverride || null,
         body.premiumMembership ?? 0,
-        body.productType || "physical"
+        body.productType || "physical",
+        body.directBuy ?? 0
       ]
     );
 

@@ -71,11 +71,12 @@ function CheckoutContent() {
       .catch(() => {})
       .finally(() => {
         const productId = searchParams.get("product");
-        if (productId && items.length === 0) {
+        if (productId) {
+          useCartStore.getState().clearCart();
           (async () => {
             try {
               const res = await fetch("/api/products");
-              const data = await res.json() as { products?: { id: number; name: string; nameBn?: string; price: number; currency: string; productType: string }[] };
+              const data = await res.json() as { products?: { id: number; name: string; nameBn?: string; price: number; currency: string; productType: string; directBuy: number }[] };
               const p = data.products?.find(x => x.id === parseInt(productId));
               if (p) {
                 useCartStore.getState().addItem({

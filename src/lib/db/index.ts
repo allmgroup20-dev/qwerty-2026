@@ -102,6 +102,7 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     await env.DB.prepare(`ALTER TABLE products ADD COLUMN ai_price_enabled INTEGER DEFAULT 1`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE products ADD COLUMN product_type TEXT DEFAULT 'physical'`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE products ADD COLUMN premium_membership INTEGER DEFAULT 0`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE products ADD COLUMN direct_buy INTEGER DEFAULT 0`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id TEXT UNIQUE NOT NULL,

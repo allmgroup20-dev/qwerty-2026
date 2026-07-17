@@ -27,6 +27,7 @@ interface Product {
   enableSslcommerz: number;
   premiumMembership: number;
   productType: string;
+  directBuy: number;
   createdAt: string;
 }
 
@@ -34,7 +35,7 @@ const emptyForm = () => ({
   name: "", nameBn: "", description: "", descriptionBn: "", price: "", minPrice: "", maxPrice: "", aiPriceEnabled: 1,
   currency: "BDT", category: "business", stock: "-1",
   enableCommission: 1, enableCod: 1, enableSslcommerz: 1, imageUrl: "", images: "[]",
-  premiumMembership: 0, productType: "physical",
+  premiumMembership: 0, productType: "physical", directBuy: 0,
 });
 
 export default function CompanyProductsPage() {
@@ -69,7 +70,7 @@ export default function CompanyProductsPage() {
       category: p.category || "business", stock: String(p.stock),
       enableCommission: p.enableCommission, enableCod: p.enableCod, enableSslcommerz: p.enableSslcommerz,
       imageUrl: p.imageUrl || "", images: p.images || "[]",
-      premiumMembership: p.premiumMembership, productType: p.productType || "physical",
+      premiumMembership: p.premiumMembership, productType: p.productType || "physical", directBuy: p.directBuy || 0,
     });
     setEditingId(p.id); setShowAdd(true); setError("");
   };
@@ -85,7 +86,7 @@ export default function CompanyProductsPage() {
         currency: form.currency, category: form.category || null,
         stock: parseInt(form.stock) || -1, imageUrl: form.imageUrl || null, images: form.images || null,
         enableCommission: form.enableCommission, enableCod: form.enableCod, enableSslcommerz: form.enableSslcommerz,
-        premiumMembership: form.premiumMembership, productType: form.productType,
+        premiumMembership: form.premiumMembership, productType: form.productType, directBuy: form.directBuy,
       };
 
       const url = editingId ? `/api/products/${editingId}` : "/api/products";
@@ -195,6 +196,10 @@ export default function CompanyProductsPage() {
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input type="checkbox" checked={form.premiumMembership === 1} onChange={(e) => setForm({ ...form, premiumMembership: e.target.checked ? 1 : 0 })} className="w-4 h-4 accent-amber-500" />
                   <span className="text-sm font-semibold text-amber-600">⭐ {lang === "bn" ? "প্রিমিয়াম মেম্বারশিপ" : "Premium Membership"}</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={form.directBuy === 1} onChange={(e) => setForm({ ...form, directBuy: e.target.checked ? 1 : 0 })} className="w-4 h-4 accent-blue-500" />
+                  <span className="text-sm font-semibold text-blue-600">{lang === "bn" ? "সরাসরি ক্রয় (কার্ডে যোগ হবে না)" : "Direct Buy (No Cart)"}</span>
                 </label>
               </div>
               {form.premiumMembership === 1 && (

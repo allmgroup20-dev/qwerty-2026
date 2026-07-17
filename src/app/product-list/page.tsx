@@ -11,7 +11,7 @@ interface Product {
   id: number; name: string; nameBn: string | null; price: number;
   currency: string; commissionPercentage: number; imageUrl: string | null;
   category: string | null; stock: number; premiumMembership: number;
-  productType: string;
+  productType: string; directBuy: number;
 }
 
 const categoryKeys = ["business", "career", "elite", "education"];
@@ -117,14 +117,22 @@ export default function ProductsPage() {
               </h3>
               <p className="text-2xl font-bold text-action mb-4">{formatCurrency(product.price, product.currency || "BDT")}</p>
               <div className="flex gap-2">
-                <button onClick={() => handleAddToCart(product)} className="btn-primary text-xs !px-4 !py-2.5 flex-1">
-                  {addedMsg === product.id
-                    ? (lang === "bn" ? "✓ যোগ হয়েছে" : "✓ Added")
-                    : (lang === "bn" ? "কার্টে যোগ করুন" : "Add to Cart")}
-                </button>
-                <button onClick={() => { handleAddToCart(product); window.location.href = `/checkout?product=${product.id}`; }} className="btn-secondary text-xs !px-4 !py-2.5">
-                  {lang === "bn" ? "কিনুন" : "Buy"}
-                </button>
+                {product.directBuy === 1 ? (
+                  <button onClick={() => { window.location.href = `/checkout?product=${product.id}`; }} className="btn-primary text-xs !px-4 !py-2.5 w-full">
+                    {lang === "bn" ? "কিনুন" : "Buy"}
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={() => handleAddToCart(product)} className="btn-primary text-xs !px-4 !py-2.5 flex-1">
+                      {addedMsg === product.id
+                        ? (lang === "bn" ? "✓ যোগ হয়েছে" : "✓ Added")
+                        : (lang === "bn" ? "কার্টে যোগ করুন" : "Add to Cart")}
+                    </button>
+                    <button onClick={() => { handleAddToCart(product); window.location.href = `/checkout?product=${product.id}`; }} className="btn-secondary text-xs !px-4 !py-2.5">
+                      {lang === "bn" ? "কিনুন" : "Buy"}
+                    </button>
+                  </>
+                )}
               </div>
               <button
                 onClick={() => setReviewProduct(product)}

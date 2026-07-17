@@ -12,7 +12,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       imageUrl?: string; category?: string; stock?: number; isActive?: number;
       enableCommission?: number; enableCod?: number; enableSslcommerz?: number;
       images?: string; commissionOverride?: string; premiumMembership?: number;
-      productType?: string;
+      productType?: string; directBuy?: number;
     };
     const db = await getDB();
 
@@ -30,9 +30,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
        is_active=COALESCE(?,is_active), enable_commission=COALESCE(?,enable_commission),
        enable_cod=COALESCE(?,enable_cod), enable_sslcommerz=COALESCE(?,enable_sslcommerz),
        images=COALESCE(?,images), commission_override=COALESCE(?,commission_override),
-       premium_membership=COALESCE(?,premium_membership),
-       product_type=COALESCE(?,product_type)
-       WHERE id=?`,
+        premium_membership=COALESCE(?,premium_membership),
+        product_type=COALESCE(?,product_type),
+        direct_buy=COALESCE(?,direct_buy)
+        WHERE id=?`,
       [body.name ?? null, body.nameBn ?? null, body.description ?? null, body.descriptionBn ?? null,
        body.price ?? null, body.minPrice ?? null, body.maxPrice ?? null, body.aiPriceEnabled ?? null,
        body.currency ?? null,
@@ -40,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
        body.imageUrl ?? null, body.category ?? null, body.stock ?? null, body.isActive ?? null,
        body.enableCommission ?? null, body.enableCod ?? null, body.enableSslcommerz ?? null,
        body.images ?? null, body.commissionOverride ?? null,
-       body.premiumMembership ?? null, body.productType ?? null, parseInt(id)]
+       body.premiumMembership ?? null, body.productType ?? null, body.directBuy ?? null, parseInt(id)]
     );
 
     return NextResponse.json({ success: true });
