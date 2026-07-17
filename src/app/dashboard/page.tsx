@@ -251,6 +251,20 @@ export default function WorkerDashboard() {
               <p className="text-xs text-text-secondary">{lang === "bn" ? "সেটিংস" : "Settings"}</p>
             </div>
           </Link>
+
+          <Link href="/product-list" className="card hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-primary text-sm">{lang === "bn" ? "পণ্যসমূহ" : "Products"}</p>
+              <p className="text-xs text-text-secondary">{lang === "bn" ? "সকল পণ্য দেখুন ও কিনুন" : "Browse & Buy"}</p>
+            </div>
+          </Link>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
