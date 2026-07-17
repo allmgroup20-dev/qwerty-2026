@@ -20,7 +20,7 @@ export default function WorkerDashboard() {
   const [worker, setWorker] = useState<{
     workerId: string; name: string; phone: string; balance: number;
     totalEarned: number; totalTeamMembers: number; level: number;
-    levelName?: string; joinDate: string; membershipStatus?: string;
+    levelName?: string; levelNameBn?: string | null; joinDate: string; membershipStatus?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState(DEFAULT_CHANNELS);
@@ -145,7 +145,7 @@ export default function WorkerDashboard() {
           <StatCard label={lang === "bn" ? "ব্যালেন্স" : "Balance"} value={formatCurrency(worker.balance)} color="text-action" />
           <StatCard label={lang === "bn" ? "মোট আয়" : "Total Earnings"} value={formatCurrency(worker.totalEarned)} color="text-secondary-dark" />
           <StatCard label={lang === "bn" ? "টিম মেম্বার" : "Team Members"} value={worker.totalTeamMembers.toString()} color="text-primary" />
-          <StatCard label={lang === "bn" ? "পদবী" : "Position"} value={worker.levelName || `Level ${worker.level}`} color="text-accent" />
+          <StatCard label={lang === "bn" ? "পদবী" : "Position"} value={lang === "bn" && worker.levelNameBn ? worker.levelNameBn : (worker.levelName || `Level ${worker.level}`)} color="text-accent" />
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

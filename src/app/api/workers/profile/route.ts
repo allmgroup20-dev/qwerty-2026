@@ -18,12 +18,13 @@ export async function GET(request: NextRequest) {
       join_date: string; balance: number; total_earned: number;
       total_spent: number; total_team_members: number; membership_status: string;
       level_name: string | null;
+      level_name_bn: string | null;
     }>(
       await getDB(),
       `SELECT w.worker_id, w.name, w.phone, w.email, w.sponsor_id, w.sponsor_name,
               w.level, w.join_date, w.balance, w.total_earned, w.total_spent,
               w.total_team_members, w.membership_status,
-              cl.level_name
+              cl.level_name, cl.level_name_bn
        FROM workers w
        LEFT JOIN commission_levels cl ON cl.level_number = w.level AND cl.is_active = 1
        WHERE w.worker_id = ?`,
@@ -43,6 +44,7 @@ export async function GET(request: NextRequest) {
       sponsorName: worker.sponsor_name,
       level: worker.level,
       levelName: worker.level_name || `Level ${worker.level}`,
+      levelNameBn: worker.level_name_bn || null,
       joinDate: worker.join_date,
       balance: worker.balance,
       totalEarned: worker.total_earned,
