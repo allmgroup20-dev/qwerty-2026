@@ -293,7 +293,7 @@ export default function OnboardingPage() {
   };
 
   const handleFinish = () => {
-    router.push("/dashboard");
+    window.location.href = "/dashboard";
   };
 
   if (loading) {
