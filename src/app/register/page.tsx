@@ -56,7 +56,12 @@ export default function RegisterPage() {
         localStorage.setItem("worker_id", data.workerId || "");
       }
       localStorage.removeItem("referral_code");
-      router.push("/dashboard");
+      // Redirect to onboarding if name was auto-generated (starts with "User")
+      if (data.name && data.name.startsWith("User")) {
+        router.push("/onboarding");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
