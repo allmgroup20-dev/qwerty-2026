@@ -4,191 +4,101 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useDebounce } from "@/lib/use-debounce";
 import { courses, categoryOrder, categoryNames } from "@/data/courses-data";
 
-const iconMap: Record<string, string> = {
-  "fa-school": "\uF549",
-  "fa-graduation-cap": "\uF19D",
-  "fa-university": "\uF19C",
-  "fa-laptop-code": "\uF5FC",
-  "fa-video": "\uF03D",
-  "fa-chart-line": "\uF201",
-  "fa-play-circle": "\uF144",
-  "fa-pen-fancy": "\uF5AC",
-  "fa-bullhorn": "\uF0A1",
-  "fa-udemy": "\uF5D0",
-  "fa-question-circle": "\uF059",
-  "fa-code": "\uF121",
-  "fa-sticky-note": "\uF249",
-  "fa-crown": "\uF521",
-  "fa-chart-simple": "\uF470",
-  "fa-palette": "\uF53F",
-  "fa-keyboard": "\uF11C",
-  "fa-magnifying-glass-chart": "\uF522",
-  "fa-dollar-sign": "\uF155",
-  "fa-link": "\uF0C1",
-  "fa-facebook": "\uF09A",
-  "fa-star": "\uF005",
-  "fa-film": "\uF008",
-  "fa-pen-ruler": "\uF5AE",
-  "fa-globe": "\uF0AC",
-  "fa-android": "\uF17B",
-  "fa-wordpress": "\uF19A",
-  "fa-shield-halved": "\uF3ED",
-  "fa-wifi": "\uF1EB",
-  "fa-lock": "\uF023",
-  "fa-money-bill-wave": "\uF53A",
-  "fa-file-word": "\uF1C2",
-  "fa-file-excel": "\uF1C3",
-  "fa-file-powerpoint": "\uF1C4",
-  "fa-ranking-star": "\uF561",
-  "fa-book-quran": "\uF6A7",
-  "fa-clapperboard": "\uE131",
-  "fa-youtube": "\uF167",
-  "fa-draw-polygon": "\uF5EE",
-  "fa-pen-nib": "\uF5AD",
-  "fa-briefcase": "\uF0B1",
-  "fa-language": "\uF1AB",
-  "fa-pen": "\uF304",
-  "fa-cubes": "\uF1B3",
-  "fa-robot": "\uF544",
-  "fa-pencil-ruler": "\uF5AE",
-  "fa-id-card": "\uF2C2",
-  "fa-car": "\uF1B9",
-  "fa-cart-shopping": "\uF07A",
-  "fa-image": "\uF03E",
-  "fa-camera": "\uF030",
-  "fa-handshake": "\uF2B5",
-  "fa-ship": "\uF21A",
-  "fa-python": "\uF3E2",
-  "fa-tshirt": "\uF553",
-  "fa-hand-fist": "\uF6DE",
-  "fa-calendar": "\uF133",
-  "fa-store": "\uF54E",
-  "fa-heart-pulse": "\uF21E",
-  "fa-file-pen": "\uF31C",
-  "fa-gamepad": "\uF11B",
-  "fa-node-js": "\uF3D3",
-  "fa-mobile-screen-button": "\uF3CD",
-  "fa-mobile": "\uF3CE",
-  "fa-cube": "\uF1B2",
-  "fa-book": "\uF02D",
-  "fa-microphone": "\uF130",
-  "fa-tags": "\uF02C",
-  "fa-google": "\uF1A0",
-  "fa-trophy": "\uF091",
-  "fa-funnel-dollar": "\uF662",
-  "fa-server": "\uF233",
-  "fa-terminal": "\uF120",
-  "fa-user-secret": "\uF21B",
-  "fa-credit-card": "\uF09D",
-  "fa-skull": "\uF54C",
-  "fa-certificate": "\uF0A3",
-  "fa-sim-card": "\uF7C4",
-  "fa-eye-slash": "\uF070",
-  "fa-bluetooth": "\uF293",
-  "fa-lock-open": "\uF3C1",
-  "fa-key": "\uF084",
-  "fa-desktop": "\uF108",
-  "fa-screwdriver-wrench": "\uF7D9",
-  "fa-file": "\uF15B",
-  "fa-envelope": "\uF0E0",
-  "fa-file-video": "\uF1C8",
-  "fa-copyright": "\uF1F9",
-  "fa-file-code": "\uF1C9",
-  "fa-instagram": "\uF16D",
-  "fa-blog": "\uF781",
-  "fa-microsoft": "\uF3CA",
-  "fa-music": "\uF001",
-  "fa-chart-pie": "\uF200",
-  "fa-puzzle-piece": "\uF12E",
-  "fa-rocket": "\uF135",
-  "fa-pray": "\uF683",
-  "fa-flask": "\uF0C3",
-  "fa-amazon": "\uF270",
-  "fa-file-pdf": "\uF1C1",
-  "fa-file-text": "\uF15C",
-  "fa-file-lines": "\uF15C",
-  "fa-brain": "\uF5DC",
-  "fa-laptop-house": "\uF566",
-  "fa-compass": "\uF14E",
-  "fa-building-columns": "\uF19C",
-  "fa-comments": "\uF086",
-  "fa-dumbbell": "\uF44B",
-  "fa-child": "\uF1AE",
-  "fa-chalkboard-user": "\uF51C",
-  "fa-laptop": "\uF109",
-  "fa-database": "\uF1C0",
-  "fa-lightbulb": "\uF0EB",
-  "fa-icons": "\uF86D",
-  "fa-clipboard-list": "\uF46D",
-  "fa-dvd": "\uF004",
-  "fa-fire": "\uF06D",
-  "fa-paypal": "\uF1ED",
-  "fa-calculator": "\uF1EC",
-  "fa-telegram": "\uF2C6",
-  "fa-heart": "\uF004",
-  "fa-folder-open": "\uF07C",
+const catEmoji: Record<string, string> = {
+  "Platform": "📱", "10MS": "🎓", "Ghoori": "🏫", "SkillUper": "📈", "E-Shikhon": "🎬",
+  "eShikhon": "🎬", "MSB": "🏛️", "Creative IT": "💻", "Hacking": "🛡️", "File Collection": "📁",
+  "ChatGPT": "🤖", "10MS PDF": "📄", "Bongo Academy": "▶️", "Graphics Design": "🎨",
+  "Digital Marketing": "📊", "SEO": "🔍", "Facebook Marketing": "👍", "YouTube": "🎥",
+  "YouTube Marketing": "🎥", "Data Entry": "⌨️", "Video Editing": "✂️", "Software": "📦",
+  "Logo Design": "✏️", "Motion Graphics": "✨", "WordPress": "🌐", "Android App": "📱",
+  "Ethical Hacking": "🔒", "Facebook Hacking": "🔓", "WiFi Hacking": "📶", "Cyber Security": "🛡️",
+  "Android Hacking": "📱", "Blackhat": "💀", "MS Office": "📋", "Quran": "🕋",
+  "AutoCAD": "📐", "Content Writing": "✍️", "Job Preparation": "💼", "English": "🇬🇧",
+  "Handwriting": "🖊️", "CPA Marketing": "💰", "Affiliate Marketing": "🔗", "Fiverr": "⭐",
+  "IT Bari": "🏠", "Graphics School": "🎨", "Spoken English": "🗣️", "Outsourcing": "🌍",
+  "Programming": "👨‍💻", "Game Development": "🎮", "Business": "📊", "LinkedIn": "💼",
+  "Email Marketing": "📧", "Resources": "📂", "Other": "📌", "Web Development": "🌐",
+  "Facebook": "👍", "Python": "🐍",
 };
 
-function getIconHtml(icon: string): string {
-  if (iconMap[icon]) return iconMap[icon];
-  return "\uF15B";
+function getCourseEmoji(item: { cat: string; icon: string }): string {
+  if (item.cat === "Programming" || item.icon === "fa-python" || item.icon === "fa-code") return "👨‍💻";
+  if (item.icon === "fa-robot" || item.cat === "ChatGPT") return "🤖";
+  if (item.icon === "fa-gamepad") return "🎮";
+  if (item.icon === "fa-android") return "📱";
+  if (item.icon === "fa-lock" || item.icon === "fa-shield-halved" || item.icon === "fa-user-secret") return "🔒";
+  if (item.icon === "fa-wifi") return "📶";
+  if (item.icon === "fa-money-bill-wave" || item.icon === "fa-dollar-sign") return "💰";
+  if (item.icon === "fa-palette" || item.icon === "fa-pen-nib" || item.icon === "fa-pencil-ruler") return "🎨";
+  if (item.icon === "fa-film" || item.icon === "fa-video" || item.icon === "fa-clapperboard") return "🎬";
+  if (item.icon === "fa-music") return "🎵";
+  if (item.icon === "fa-globe" || item.icon === "fa-wordpress") return "🌐";
+  if (item.icon === "fa-database" || item.icon === "fa-server") return "🗄️";
+  if (item.icon === "fa-calculator" || item.icon === "fa-file-excel") return "📊";
+  if (item.icon === "fa-brain") return "🧠";
+  if (item.icon === "fa-rocket") return "🚀";
+  if (item.icon === "fa-key") return "🔑";
+  if (item.icon === "fa-crown") return "👑";
+  if (item.icon === "fa-star" || item.icon === "fa-ranking-star") return "⭐";
+  if (item.icon === "fa-certificate") return "📜";
+  if (item.icon === "fa-trophy") return "🏆";
+  if (item.icon === "fa-fire") return "🔥";
+  if (item.icon === "fa-heart") return "❤️";
+  if (item.icon === "fa-book" || item.icon === "fa-book-quran") return "📖";
+  if (item.icon === "fa-microphone") return "🎤";
+  if (item.icon === "fa-camera") return "📷";
+  if (item.icon === "fa-image") return "🖼️";
+  if (item.icon === "fa-puzzle-piece") return "🧩";
+  if (item.icon === "fa-lightbulb") return "💡";
+  if (item.icon === "fa-comments" || item.icon === "fa-envelope") return "💬";
+  if (item.icon === "fa-handshake") return "🤝";
+  if (item.icon === "fa-briefcase") return "💼";
+  if (item.icon === "fa-language" || item.icon === "fa-book-quran") return "🕋";
+  if (item.cat === "Quran") return "🕋";
+  if (item.cat === "English" || item.cat === "Spoken English") return "🗣️";
+  if (item.cat === "AutoCAD") return "📐";
+  return catEmoji[item.cat] || "📌";
 }
 
-const categoryIcons: Record<string, string> = {
-  "Platform": "\uF19D",
-  "10MS": "\uF549",
-  "Ghoori": "\uF19D",
-  "SkillUper": "\uF201",
-  "E-Shikhon": "\uF03D",
-  "eShikhon": "\uF03D",
-  "MSB": "\uF19C",
-  "Creative IT": "\uF5FC",
-  "Hacking": "\uF3ED",
-  "File Collection": "\uF1C0",
-  "ChatGPT": "\uF544",
-  "10MS PDF": "\uF1C1",
-  "Bongo Academy": "\uF144",
-  "Graphics Design": "\uF53F",
-  "Digital Marketing": "\uF201",
-  "SEO": "\uF522",
-  "Facebook Marketing": "\uF09A",
-  "YouTube": "\uF167",
-  "YouTube Marketing": "\uF167",
-  "Data Entry": "\uF11C",
-  "Video Editing": "\uF03D",
-  "Software": "\uF1B3",
-  "Logo Design": "\uF5AE",
-  "Motion Graphics": "\uF008",
-  "WordPress": "\uF19A",
-  "Android App": "\uF17B",
-  "Ethical Hacking": "\uF3ED",
-  "Facebook Hacking": "\uF09A",
-  "WiFi Hacking": "\uF1EB",
-  "Cyber Security": "\uF023",
-  "Android Hacking": "\uF17B",
-  "Blackhat": "\uF53A",
-  "MS Office": "\uF1C2",
-  "Quran": "\uF6A7",
-  "AutoCAD": "\uF5EE",
-  "Content Writing": "\uF5AD",
-  "Job Preparation": "\uF0B1",
-  "English": "\uF1AB",
-  "Handwriting": "\uF304",
-  "CPA Marketing": "\uF155",
-  "Affiliate Marketing": "\uF0C1",
-  "Fiverr": "\uF005",
-  "IT Bari": "\uF109",
-  "Graphics School": "\uF53F",
-  "Spoken English": "\uF1AB",
-  "Outsourcing": "\uF109",
-  "Programming": "\uF121",
-  "Game Development": "\uF11B",
-  "Business": "\uF0F7",
-  "LinkedIn": "\uF0E1",
-  "Email Marketing": "\uF0E0",
-  "Resources": "\uF1C0",
-  "Other": "\uF15B",
-};
+function getCourseEmojiBg(item: { cat: string; icon: string }): string {
+  const e = getCourseEmoji(item);
+  const m: Record<string, string> = {
+    "👨‍💻": "from-blue-500/10 to-blue-600/5 text-blue-600",
+    "🤖": "from-purple-500/10 to-purple-600/5 text-purple-600",
+    "🎮": "from-green-500/10 to-green-600/5 text-green-600",
+    "📱": "from-orange-500/10 to-orange-600/5 text-orange-600",
+    "🔒": "from-red-500/10 to-red-600/5 text-red-600",
+    "📶": "from-cyan-500/10 to-cyan-600/5 text-cyan-600",
+    "💰": "from-amber-500/10 to-amber-600/5 text-amber-600",
+    "🎨": "from-pink-500/10 to-pink-600/5 text-pink-600",
+    "🎬": "from-rose-500/10 to-rose-600/5 text-rose-600",
+    "🎵": "from-violet-500/10 to-violet-600/5 text-violet-600",
+    "🌐": "from-teal-500/10 to-teal-600/5 text-teal-600",
+    "🗄️": "from-slate-500/10 to-slate-600/5 text-slate-600",
+    "📊": "from-emerald-500/10 to-emerald-600/5 text-emerald-600",
+    "🧠": "from-indigo-500/10 to-indigo-600/5 text-indigo-600",
+    "🚀": "from-orange-500/10 to-orange-600/5 text-orange-600",
+    "🔑": "from-yellow-500/10 to-yellow-600/5 text-yellow-600",
+    "👑": "from-amber-500/10 to-amber-600/5 text-amber-600",
+    "⭐": "from-yellow-500/10 to-yellow-600/5 text-yellow-600",
+    "📜": "from-amber-500/10 to-amber-600/5 text-amber-600",
+    "🏆": "from-yellow-500/10 to-yellow-600/5 text-yellow-600",
+    "🔥": "from-red-500/10 to-red-600/5 text-red-600",
+    "❤️": "from-rose-500/10 to-rose-600/5 text-rose-600",
+    "📖": "from-amber-500/10 to-amber-600/5 text-amber-600",
+    "🎤": "from-fuchsia-500/10 to-fuchsia-600/5 text-fuchsia-600",
+    "📷": "from-sky-500/10 to-sky-600/5 text-sky-600",
+    "🖼️": "from-violet-500/10 to-violet-600/5 text-violet-600",
+    "🧩": "from-emerald-500/10 to-emerald-600/5 text-emerald-600",
+    "💡": "from-yellow-500/10 to-yellow-600/5 text-yellow-600",
+    "💬": "from-sky-500/10 to-sky-600/5 text-sky-600",
+    "🤝": "from-teal-500/10 to-teal-600/5 text-teal-600",
+    "💼": "from-blue-500/10 to-blue-600/5 text-blue-600",
+    "🗣️": "from-green-500/10 to-green-600/5 text-green-600",
+    "📐": "from-orange-500/10 to-orange-600/5 text-orange-600",
+  };
+  return m[e] || "from-blue-500/10 to-blue-600/5 text-blue-600";
+}
 
 export default function CoursesPage() {
   const [search, setSearch] = useState("");
@@ -196,6 +106,10 @@ export default function CoursesPage() {
   const [activeCat, setActiveCat] = useState("all");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isPremium, setIsPremium] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userInterests, setUserInterests] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 600);
@@ -203,8 +117,50 @@ export default function CoursesPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const wid = localStorage.getItem("worker_id");
+    if (!wid) { setLoading(false); return; }
+    setIsLoggedIn(true);
+    fetch(`/api/workers/profile?workerId=${wid}`)
+      .then(r => r.json())
+      .then((d: any) => {
+        setIsPremium(d.membershipStatus === "premium");
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+    fetch("/api/track/analytics")
+      .then(r => r.json())
+      .then((d: any) => {
+        if (d?.interests) {
+          const cats = Object.entries(d.interests).sort(([,a], [,b]) => (b as number) - (a as number));
+          setUserInterests(cats.slice(0, 5).map(([k]) => k));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // For non-premium: pick 8 least relevant courses (categories not in user interests)
+  const freeCourses = useMemo(() => {
+    if (isPremium || !isLoggedIn) return [];
+    const interestedSet = new Set(userInterests.map(i => i.toLowerCase()));
+    const scored = courses.map(c => ({
+      ...c,
+      relevance: (interestedSet.has(c.cat.toLowerCase()) || interestedSet.has(c.catBn.toLowerCase())) ? 1 : 0,
+    }));
+    const low = scored.filter(c => c.relevance === 0);
+    const high = scored.filter(c => c.relevance === 1);
+    // Pick 8 from low-relevance, or fallback to shuffled high
+    const pool = low.length >= 8 ? low : [...low, ...high.sort(() => Math.random() - 0.5)];
+    return pool.sort(() => Math.random() - 0.5).slice(0, 8);
+  }, [isPremium, isLoggedIn, userInterests]);
+
+  const visibleCourses = useMemo(() => {
+    if (isPremium || !isLoggedIn) return courses;
+    return freeCourses;
+  }, [isPremium, isLoggedIn, freeCourses]);
+
   const filtered = useMemo(() => {
-    let result = courses;
+    let result = visibleCourses;
     if (activeCat !== "all") {
       result = result.filter((c) => c.cat === activeCat);
     }
@@ -219,7 +175,7 @@ export default function CoursesPage() {
       );
     }
     return result;
-  }, [debouncedSearch, activeCat]);
+  }, [debouncedSearch, activeCat, visibleCourses]);
 
   const totalCount = courses.length;
 
@@ -239,14 +195,21 @@ export default function CoursesPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-10 md:py-16">
           <div className="text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs font-bold mb-4 border border-white/10">
-              <span>📚</span>
-              <span>মোট {totalCount}টি রিসোর্স — সম্পূর্ণ ফ্রি</span>
+              {loading ? (
+                <span>⏳ লোড হচ্ছে...</span>
+              ) : !isLoggedIn ? (
+                <span>📚 মোট {totalCount}টি রিসোর্স — লগইন করে এক্সেস করুন</span>
+              ) : isPremium ? (
+                <span>👑 মোট {totalCount}টি রিসোর্স — প্রিমিয়াম এক্সেস</span>
+              ) : (
+                <span>🎁 মোট {totalCount}টি রিসোর্স — {freeCourses.length}টি ফ্রি কোর্স</span>
+              )}
             </div>
             <h1 className="text-2xl md:text-4xl font-black text-white leading-tight">
-              সকল কোর্স, সফটওয়্যার &amp; রিসোর্স
+              {isPremium ? "👑 সকল কোর্স, সফটওয়্যার &amp; রিসোর্স" : !isLoggedIn ? "📚 কোর্স, সফটওয়্যার &amp; রিসোর্স" : "🎁 ফ্রি কোর্স সমূহ"}
             </h1>
             <p className="text-white/80 font-semibold mt-3 max-w-xl mx-auto text-sm md:text-base">
-              ফ্রিতে ডাউনলোড করুন ৫৪টি ক্যাটাগরির ৯৭৪+টি প্রিমিয়াম কোর্স, সফটওয়্যার ও ফাইল
+              {loading ? "তথ্য লোড হচ্ছে..." : !isLoggedIn ? `লগইন করে ${totalCount}টি রিসোর্স এক্সেস করুন` : isPremium ? `প্রিমিয়াম সদস্য হিসাবে ${totalCount}টি রিসোর্স এক্সেস করুন` : `প্রিমিয়াম মেম্বারশিপ নিয়ে ${totalCount}টি রিসোর্স এক্সেস করুন — এখনই ${freeCourses.length}টি ফ্রি কোর্স দেখুন`}
             </p>
 
             {/* Search */}
@@ -292,9 +255,9 @@ export default function CoursesPage() {
               <span>🏠</span>
               <span>সব ({totalCount})</span>
             </button>
-            {categoryOrder.map((cat) => {
-              const count = countsByCat[cat] || 0;
-              const icon = categoryIcons[cat] || "\uF15B";
+            {categoryOrder.filter(cat => isPremium || isLoggedIn === false || visibleCourses.some(vc => vc.cat === cat)).map((cat) => {
+              const count = isPremium || !isLoggedIn ? (countsByCat[cat] || 0) : visibleCourses.filter(vc => vc.cat === cat).length;
+              const emoji = catEmoji[cat] || "📌";
               return (
                 <button
                   key={cat}
@@ -305,10 +268,7 @@ export default function CoursesPage() {
                       : "bg-white border-border text-text-secondary hover:border-primary/30 hover:text-text"
                   }`}
                 >
-                  <span
-                    className="text-xs"
-                    dangerouslySetInnerHTML={{ __html: `&#x${icon.charCodeAt(0).toString(16)};` }}
-                  />
+                  <span className="text-xs">{emoji}</span>
                   <span>{categoryNames[cat] || cat}</span>
                   <span className="opacity-60">({count})</span>
                 </button>
@@ -323,9 +283,12 @@ export default function CoursesPage() {
         {/* Count badge */}
         <div className="text-center mb-6">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary font-bold text-xs">
-            {activeCat === "all"
-              ? `মোট ${filtered.length} টি রিসোর্স`
-              : `${categoryNames[activeCat] || activeCat} — ${filtered.length} টি রিসোর্স`}
+            {isPremium || !isLoggedIn
+              ? (activeCat === "all" ? `মোট ${filtered.length} টি রিসোর্স` : `${categoryNames[activeCat] || activeCat} — ${filtered.length} টি`)
+              : (activeCat === "all" ? `${filtered.length} টি ফ্রি কোর্স (মোট ${totalCount}টি)` : `${categoryNames[activeCat] || activeCat} — ${filtered.length} টি`)}
+            {!isPremium && isLoggedIn && activeCat === "all" && (
+              <span className="ml-1">🎁</span>
+            )}
           </span>
         </div>
 
@@ -338,21 +301,8 @@ export default function CoursesPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filtered.map((item, i) => {
-              const iconCode = getIconHtml(item.icon);
-              const bgColors = [
-                "from-blue-500/10 to-blue-600/5 text-blue-600",
-                "from-purple-500/10 to-purple-600/5 text-purple-600",
-                "from-emerald-500/10 to-emerald-600/5 text-emerald-600",
-                "from-orange-500/10 to-orange-600/5 text-orange-600",
-                "from-pink-500/10 to-pink-600/5 text-pink-600",
-                "from-teal-500/10 to-teal-600/5 text-teal-600",
-                "from-red-500/10 to-red-600/5 text-red-600",
-                "from-indigo-500/10 to-indigo-600/5 text-indigo-600",
-                "from-cyan-500/10 to-cyan-600/5 text-cyan-600",
-                "from-rose-500/10 to-rose-600/5 text-rose-600",
-              ];
-              const colorIdx =
-                (item.cat.charCodeAt(0) + item.cat.length) % bgColors.length;
+              const emoji = getCourseEmoji(item);
+              const bgColor = getCourseEmojiBg(item);
               const isExternal =
                 item.url.includes("terabox") ||
                 item.url.includes("1024tera") ||
@@ -371,13 +321,9 @@ export default function CoursesPage() {
                 >
                   <div className="flex items-start gap-3.5">
                     <div
-                      className={`w-11 h-11 rounded-xl bg-gradient-to-br ${bgColors[colorIdx]} flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3`}
+                      className={`w-11 h-11 rounded-xl bg-gradient-to-br ${bgColor} flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3`}
                     >
-                      <span
-                        dangerouslySetInnerHTML={{
-                          __html: `&#x${iconCode.charCodeAt(0).toString(16)};`,
-                        }}
-                      />
+                      <span className="text-lg">{emoji}</span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 mb-1">
@@ -406,10 +352,21 @@ export default function CoursesPage() {
           </div>
         )}
 
+        {/* Upgrade prompt for non-premium */}
+        {isLoggedIn && !isPremium && (
+          <div className="text-center mt-8 mb-4 p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/10">
+            <p className="text-lg font-bold text-primary mb-2">👑 প্রিমিয়াম মেম্বারশিপ নিন</p>
+            <p className="text-sm text-text-secondary mb-4">প্রিমিয়াম মেম্বার হয়ে {totalCount}টি কোর্স, সফটওয়্যার ও রিসোর্স এক্সেস করুন</p>
+            <a href="/dashboard/profile" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+              👑 প্রিমিয়াম হোন এখনই
+            </a>
+          </div>
+        )}
+
         {/* Footer */}
-        <div className="text-center mt-10 pt-6 border-t border-border">
+        <div className="text-center mt-6 pt-6 border-t border-border">
           <p className="text-xs font-semibold text-text-secondary/60">
-            মোট {totalCount} টি রিসোর্স — সবগুলোই সম্পূর্ণ ফ্রি
+            {isPremium ? `👑 প্রিমিয়াম — ${totalCount} টি রিসোর্স` : isLoggedIn ? `🎁 ${freeCourses.length} টি ফ্রি • প্রিমিয়ামে ${totalCount} টি` : `📚 মোট ${totalCount} টি রিসোর্স`}
           </p>
         </div>
       </div>
