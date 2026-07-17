@@ -1,135 +1,127 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLanguageStore } from "@/lib/store";
-import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
-interface Preference {
-  id: number;
-  worker_id: string;
-  channel: string;
-  category: string;
-  enabled: number;
+interface PlatformUser {
+  phone: string;
+  preferred_platform: string;
+  last_active_platform: string | null;
+  platforms_tried: string;
+  last_active_at: string | null;
 }
 
-const CHANNELS = ["whatsapp", "push", "email"];
-const CATEGORIES = ["promotional", "transactional", "reminder"];
-
-const CHANNEL_LABELS: Record<string, [string, string]> = {
+const PLATFORM_LABELS: Record<string, [string, string]> = {
   whatsapp: ["WhatsApp", "হোয়াটসঅ্যাপ"],
-  push: ["In-App", "অ্যাপ"],
-  email: ["Email", "ইমেইল"],
+  messenger: ["Messenger", "মেসেঞ্জার"],
+  telegram: ["Telegram", "টেলিগ্রাম"],
 };
 
-const CATEGORY_LABELS: Record<string, [string, string]> = {
-  promotional: ["Promotional", "প্রচারণামূলক"],
-  transactional: ["Transactional", "লেনদেন"],
-  reminder: ["Reminder", "রিমাইন্ডার"],
-};
-
-export default function NotificationPreferencesPage() {
+export default function PlatformPreferencesPage() {
   const { lang } = useLanguageStore();
-  const [prefs, setPrefs] = useState<Preference[]>([]);
+  const [users, setUsers] = useState<PlatformUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+  const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editPlatform, setEditPlatform] = useState("whatsapp");
 
-  const workerId = typeof window !== "undefined" ? localStorage.getItem("worker_id") || "" : "";
-
-  const load = async () => {
-    if (!workerId) return;
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/notifications/preferences?workerId=${workerId}`);
-      const data = await res.json() as { preferences: Preference[] };
-      setPrefs(data.preferences || []);
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/platform-prefs?${params}`);
+      const data = await res.json() as { users: PlatformUser[] };
+      setUsers(data.users || []);
     } catch {} finally { setLoading(false); }
+  }, [search]);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const handleUpdate = async (phone: string) => {
+    await fetch("/api/platform-prefs", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, platform: editPlatform }),
+    });
+    setEditing(null);
+    fetchUsers();
   };
 
-  useEffect(() => { load(); }, [workerId]);
-
-  const toggle = async (channel: string, category: string, current: number) => {
-    const enabled = current ? 0 : 1;
-    setMessage("");
-    try {
-      const res = await fetch("/api/notifications/preferences", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workerId, channel, category, enabled }),
-      });
-      if (res.ok) {
-        setPrefs(prev => prev.map(p => p.channel === channel && p.category === category ? { ...p, enabled } : p));
-        setMessage(lang === "bn" ? "আপডেট করা হয়েছে" : "Updated");
-      }
-    } catch { setMessage(lang === "bn" ? "ব্যর্থ" : "Failed"); }
+  const handleDelete = async (phone: string) => {
+    if (!confirm(lang === "bn" ? "মুছে ফেলবেন?" : "Delete?")) return;
+    await fetch(`/api/platform-prefs?phone=${phone}`, { method: "DELETE" });
+    fetchUsers();
   };
-
-  const getPref = (ch: string, cat: string) => prefs.find(p => p.channel === ch && p.category === cat);
 
   return (
     <div className="min-h-screen py-24 px-4 bg-gray-50">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-primary">
-            {lang === "bn" ? "বিজ্ঞপ্তি পছন্দ" : "Notification Preferences"}
-          </h1>
-          <p className="text-sm text-text-secondary mt-1">
-            {lang === "bn" ? "কোন ধরনের বিজ্ঞপ্তি কোন মাধ্যমে পেতে চান তা নির্বাচন করুন" : "Choose which notifications you want on each channel"}
-          </p>
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-primary">
+              {lang === "bn" ? "প্ল্যাটফর্ম পছন্দ" : "Platform Preferences"}
+            </h1>
+            <p className="text-sm text-text-secondary mt-1">
+              {users.length} {lang === "bn" ? "জন ব্যবহারকারী" : "user(s)"}
+            </p>
+          </div>
+          <input
+            type="text" value={search} onChange={e => setSearch(e.target.value)}
+            placeholder={lang === "bn" ? "ফোন নম্বর অনুসন্ধান..." : "Search phone..."}
+            className="w-full sm:w-64 px-4 py-2 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
         </div>
-
-        {message && (
-          <div className="p-3 bg-green-50 rounded-xl text-sm text-green-700">{message}</div>
-        )}
 
         {loading ? (
           <div className="text-center py-12 text-text-secondary">{lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}</div>
         ) : (
-          <Card className="!p-0 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-border">
-                    <th className="p-4 text-left text-sm font-semibold text-primary">{lang === "bn" ? "বিভাগ" : "Category"}</th>
-                    {CHANNELS.map(ch => (
-                      <th key={ch} className="p-4 text-center text-sm font-semibold text-primary">
-                        {CHANNEL_LABELS[ch]?.[lang === "bn" ? 1 : 0] || ch}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {CATEGORIES.map(cat => (
-                    <tr key={cat} className="border-b border-border last:border-0">
-                      <td className="p-4 text-sm font-medium text-primary">
-                        {CATEGORY_LABELS[cat]?.[lang === "bn" ? 1 : 0] || cat}
-                      </td>
-                      {CHANNELS.map(ch => {
-                        const pref = getPref(ch, cat);
-                        const enabled = pref?.enabled ?? 1;
-                        return (
-                          <td key={ch} className="p-4 text-center">
-                            <button
-                              onClick={() => toggle(ch, cat, enabled)}
-                              className={`relative w-12 h-6 rounded-full transition-all ${enabled ? "bg-primary" : "bg-gray-200"}`}
-                            >
-                              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${enabled ? "left-6" : "left-0.5"}`} />
-                            </button>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          <div className="space-y-2">
+            {users.map(u => (
+              <div key={u.phone} className="bg-white rounded-xl border border-border p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium text-sm text-primary">{u.phone}</span>
+                    <span className={`ml-3 inline-block px-2 py-0.5 rounded-full text-xs font-medium ${u.preferred_platform === "whatsapp" ? "bg-green-100 text-green-700" : u.preferred_platform === "messenger" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+                      {PLATFORM_LABELS[u.preferred_platform]?.[lang === "bn" ? 1 : 0] || u.preferred_platform}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setEditing(u.phone); setEditPlatform(u.preferred_platform); }} className="text-xs text-primary hover:underline">
+                      {lang === "bn" ? "সম্পাদনা" : "Edit"}
+                    </button>
+                    <button onClick={() => handleDelete(u.phone)} className="text-xs text-red-500 hover:underline">
+                      {lang === "bn" ? "মুছুন" : "Delete"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
-        <div className="text-xs text-text-secondary space-y-1">
-          <p>💬 <strong>WhatsApp</strong> — {lang === "bn" ? "হোয়াটসঅ্যাপে বার্তা" : "Messages via WhatsApp"}</p>
-          <p>🔔 <strong>In-App</strong> — {lang === "bn" ? "সাইটের ভিতরে বিজ্ঞপ্তি" : "On-site notification bell"}</p>
-          <p>📧 <strong>Email</strong> — {lang === "bn" ? "ইমেইলে নোটিফিকেশন" : "Email notifications"}</p>
-        </div>
+        {editing && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setEditing(null)}>
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+              <h3 className="font-bold text-primary mb-4">{lang === "bn" ? "প্ল্যাটফর্ম পরিবর্তন" : "Change Platform"}</h3>
+              <p className="text-sm text-text-secondary mb-3">{editing}</p>
+              <select value={editPlatform} onChange={e => setEditPlatform(e.target.value)} className="w-full px-4 py-2 rounded-xl border border-border bg-white text-sm mb-4">
+                {Object.entries(PLATFORM_LABELS).map(([key, labels]) => (
+                  <option key={key} value={key}>{labels[lang === "bn" ? 1 : 0]}</option>
+                ))}
+              </select>
+              <div className="flex gap-2">
+                <Button onClick={() => handleUpdate(editing)} variant="primary" size="sm" className="flex-1">
+                  {lang === "bn" ? "আপডেট" : "Update"}
+                </Button>
+                <Button onClick={() => setEditing(null)} variant="outline" size="sm" className="flex-1">
+                  {lang === "bn" ? "বাতিল" : "Cancel"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
