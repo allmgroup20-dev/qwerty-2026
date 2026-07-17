@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
+import { getCached, setCached, invalidateCache } from "@/lib/cache";
 
 export async function GET() {
+  const cached = await getCached<any[]>("products", 30);
+  if (cached) return NextResponse.json({ products: cached });
+
   try {
     const products = await query<any>(
       await getDB(),
@@ -20,6 +24,7 @@ export async function GET() {
               created_at as createdAt
        FROM products WHERE is_active = 1 ORDER BY created_at DESC`
     );
+    await setCached("products", products);
     return NextResponse.json({ products });
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -44,6 +49,7 @@ export async function POST(request: NextRequest) {
 
     const db = await getDB();
 
+    await invalidateCache("products");
     await execute(db,
       `INSERT INTO products (name, name_bn, description, description_bn, price,
         min_price, max_price, ai_price_enabled, currency,

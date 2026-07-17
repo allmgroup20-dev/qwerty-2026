@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
+import { getCached, setCached, invalidateCache } from "@/lib/cache";
 
 interface LevelRow {
   levelNumber: number;
@@ -14,6 +15,9 @@ interface LevelRow {
 }
 
 export async function GET() {
+  const cached = await getCached<{ levels: any[]; minReferralBase: number }>("mlm_levels", 60);
+  if (cached) return NextResponse.json(cached);
+
   try {
     const db = await getDB();
 
@@ -43,7 +47,9 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ levels, minReferralBase: base });
+    const result = { levels, minReferralBase: base };
+    await setCached("mlm_levels", result);
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -63,6 +69,7 @@ export async function POST(request: NextRequest) {
       minReferralBase?: number;
     };
 
+    await invalidateCache("mlm_levels");
     const { levels, minReferralBase } = body;
 
     if (!levels || !Array.isArray(levels)) {

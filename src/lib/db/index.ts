@@ -73,6 +73,12 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN city TEXT`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN goal TEXT`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN preferred_learning_time TEXT`).run().catch(() => {});
+
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_tracking_prefs (
+      worker_id TEXT PRIMARY KEY,
+      tracking_enabled INTEGER DEFAULT 1,
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN commission_type TEXT DEFAULT 'both'`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN min_referral_base INTEGER DEFAULT 3`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN level_name_bn TEXT`).run().catch(() => {});
@@ -874,6 +880,15 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     await env.DB.prepare(`INSERT OR IGNORE INTO notification_preferences (worker_id, channel, category, enabled)
       SELECT w.worker_id, 'push', 'reminder', 1 FROM workers w
     `).run().catch(() => {});
+
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_worker ON orders(worker_id)`).run().catch(() => {});
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at)`).run().catch(() => {});
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_commissions_worker ON commissions(worker_id)`).run().catch(() => {});
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_commissions_order ON commissions(order_id)`).run().catch(() => {});
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_events_worker ON user_events(worker_id, created_at)`).run().catch(() => {});
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_notifications_worker ON notifications(worker_id)`).run().catch(() => {});
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)`).run().catch(() => {});
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active)`).run().catch(() => {});
 
     g[DONE_FLAG] = true;
   } catch (e) {

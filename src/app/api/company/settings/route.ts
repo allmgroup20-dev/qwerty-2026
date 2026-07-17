@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
+import { getCached, setCached, invalidateCache } from "@/lib/cache";
 
 export async function GET() {
+  const cached = await getCached<Record<string, string>>("company_settings", 60);
+  if (cached) return NextResponse.json({ settings: cached });
+
   try {
     const rows = await query<{ setting_key: string; setting_value: string }>(
       await getDB(),
@@ -12,6 +16,7 @@ export async function GET() {
     for (const row of rows) {
       settings[row.setting_key] = row.setting_value;
     }
+    await setCached("company_settings", settings);
     return NextResponse.json({ settings });
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -22,6 +27,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as { key: string; value: string } | { settings: { key: string; value: string }[] };
 
+    await invalidateCache("company_settings");
     const env = await getDB();
     const entries = "settings" in body ? body.settings : [body];
 

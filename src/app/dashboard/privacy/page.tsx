@@ -20,15 +20,24 @@ export default function PrivacySettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [message, setMessage] = useState("");
+  const [trackingEnabled, setTrackingEnabled] = useState(true);
+  const [trackingLoading, setTrackingLoading] = useState(false);
 
   const workerId = typeof window !== "undefined" ? localStorage.getItem("worker_id") || "" : "";
 
   const loadConsents = async () => {
     if (!workerId) return;
     try {
-      const res = await fetch(`/api/privacy/consent?workerId=${workerId}`);
-      const data = await res.json() as { consents: Consent[] };
-      setConsents(data.consents || []);
+      const [consentRes, trackRes] = await Promise.all([
+        fetch(`/api/privacy/consent?workerId=${workerId}`),
+        fetch(`/api/privacy/tracking?workerId=${workerId}`),
+      ]);
+      const consentData = await consentRes.json() as { consents: Consent[] };
+      setConsents(consentData.consents || []);
+      const trackData = await trackRes.json() as { trackingEnabled: boolean };
+      const enabled = trackData.trackingEnabled !== false;
+      setTrackingEnabled(enabled);
+      localStorage.setItem("tracking_paused", enabled ? "false" : "true");
     } catch {} finally { setLoading(false); }
   };
 
@@ -115,9 +124,20 @@ export default function PrivacySettingsPage() {
                 <div key={type} className="flex items-center justify-between py-2">
                   <span className="text-sm text-primary">{label}</span>
                   {consented ? (
-                    <span className="text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                      {lang === "bn" ? "সম্মতি দেওয়া হয়েছে" : "Consented"}
-                    </span>
+                    <button
+                      onClick={async () => {
+                        await fetch("/api/privacy/consent", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ workerId, consentType: type, isGranted: false }),
+                        });
+                        loadConsents();
+                        setMessage(lang === "bn" ? `${label} প্রত্যাহার করা হয়েছে` : `${type} consent revoked`);
+                      }}
+                      className="text-xs px-3 py-1 rounded-full bg-red-50 text-red-600 hover:bg-red-100"
+                    >
+                      {lang === "bn" ? "প্রত্যাহার" : "Revoke"}
+                    </button>
                   ) : (
                     <button
                       onClick={() => giveConsent(type)}
@@ -129,6 +149,42 @@ export default function PrivacySettingsPage() {
                 </div>
               );
             })}
+          </div>
+        </Card>
+
+        {/* Tracking Control */}
+        <Card className="!p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-primary">{lang === "bn" ? "ট্র্যাকিং নিয়ন্ত্রণ" : "Tracking Control"}</h3>
+              <p className="text-xs text-text-secondary mt-1">
+                {lang === "bn"
+                  ? "বন্ধ করলে পেজ ভিউ, সেশন ও ইভেন্ট ট্র্যাকিং temporarily paused হবে"
+                  : "Disable to temporarily pause page view, session & event tracking"}
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                setTrackingLoading(true);
+                const newVal = !trackingEnabled;
+                try {
+                  await fetch("/api/privacy/tracking", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ workerId, trackingEnabled: newVal }),
+                  });
+                  setTrackingEnabled(newVal);
+                  localStorage.setItem("tracking_paused", newVal ? "false" : "true");
+                  setMessage(newVal
+                    ? (lang === "bn" ? "ট্র্যাকিং চালু করা হয়েছে" : "Tracking enabled")
+                    : (lang === "bn" ? "ট্র্যাকিং বন্ধ করা হয়েছে" : "Tracking paused"));
+                } catch {} finally { setTrackingLoading(false); }
+              }}
+              disabled={trackingLoading}
+              className={`relative w-14 h-7 rounded-full transition-all ${trackingEnabled ? "bg-green-500" : "bg-gray-300"} ${trackingLoading ? "opacity-50" : ""}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${trackingEnabled ? "translate-x-7" : ""}`} />
+            </button>
           </div>
         </Card>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { execute, queryFirst } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
+import { invalidateCache } from "@/lib/cache";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -19,6 +20,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const existing = await queryFirst<{ id: number }>(db, "SELECT id FROM products WHERE id = ?", [parseInt(id)]);
     if (!existing) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
+    await invalidateCache("products");
     await execute(db,
       `UPDATE products SET name=COALESCE(?,name), name_bn=COALESCE(?,name_bn),
        description=COALESCE(?,description), description_bn=COALESCE(?,description_bn),

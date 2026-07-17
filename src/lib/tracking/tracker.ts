@@ -53,6 +53,14 @@ function getUTMParams() {
   return { utmSource, utmCampaign, utmMedium };
 }
 
+function isTrackingPaused(): boolean {
+  try {
+    return localStorage.getItem("tracking_paused") === "true";
+  } catch {
+    return false;
+  }
+}
+
 function getWorkerId(): string {
   try {
     return localStorage.getItem("worker_id") || "";
@@ -67,6 +75,7 @@ function getIpHint(): string {
 
 async function registerDevice() {
   if (deviceRegistered) return;
+  if (isTrackingPaused()) return;
   const workerId = getWorkerId();
   if (!workerId) return;
   const di = getDeviceInfo();
@@ -91,6 +100,7 @@ async function registerDevice() {
 }
 
 async function trackSessionStart() {
+  if (isTrackingPaused()) return;
   const workerId = getWorkerId();
   if (!workerId || !sessionId) return;
   const di = getDeviceInfo();
@@ -132,6 +142,7 @@ async function trackSessionEnd() {
 }
 
 async function sendEvent(data: Record<string, unknown>) {
+  if (isTrackingPaused()) return;
   try {
     const payload: Record<string, unknown> = {
       ...data,
