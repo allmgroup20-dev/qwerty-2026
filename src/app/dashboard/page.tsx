@@ -75,7 +75,7 @@ export default function WorkerDashboard() {
     setLoading(true);
     fetch(`/api/dashboard/summar?workerId=${workerId}`)
       .then(r => r.json())
-      .then(data => {
+      .then((data: any) => {
         if (data.error) { setLoading(false); return; }
         const p = data.profile;
         if (p) {
