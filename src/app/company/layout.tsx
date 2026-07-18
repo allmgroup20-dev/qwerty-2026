@@ -56,8 +56,8 @@ const sidebarGroups: SidebarGroup[] = [
     icon: "📦",
     links: [
       { href: "/company/products", en: "Products", bn: "পণ্য", icon: "📦", desc: "পণ্য ব্যবস্থাপনা — কোর্স/প্রোডাক্ট যোগ, সম্পাদনা, সক্রিয়/নিষ্ক্রিয়" },
-      { href: "/company/courses", en: "Courses", bn: "কোর্সসমূহ", icon: "🎓", desc: "কোর্স ব্যবস্থাপনা — কোর্স যোগ, সম্পাদনা, ডিলিট, ভিজিবিলিটি কন্ট্রোল" },
-      { href: "/company/courses/categories", en: "Course Categories", bn: "কোর্স ক্যাটাগরি", icon: "📂", desc: "কোর্স ক্যাটাগরি — নতুন/পুরাতন ক্যাটাগরি ও ব্যবস্থাপনা" },
+      { href: "/company/courses", en: "Resources", bn: "রিসোর্সসমূহ", icon: "🎓", desc: "রিসোর্স ব্যবস্থাপনা — রিসোর্স যোগ, সম্পাদনা, ডিলিট, ভিজিবিলিটি কন্ট্রোল" },
+      { href: "/company/courses/categories", en: "Resource Categories", bn: "রিসোর্স ক্যাটাগরি", icon: "📂", desc: "রিসোর্স ক্যাটাগরি — নতুন/সাব-ক্যাটাগরি ও প্যারেন্ট পরিবর্তন" },
       { href: "/company/orders", en: "Orders", bn: "অর্ডার", icon: "📋", desc: "অর্ডার তালিকা — স্ট্যাটাস আপডেট, পেমেন্ট ভেরিফিকেশন" },
       { href: "/company/reviews", en: "Reviews", bn: "রিভিউ", icon: "⭐", desc: "গ্রাহক রিভিউ — মডারেট ও অনুমোদন" },
       { href: "/company/levels", en: "Commission Levels", bn: "কমিশন লেভেল", icon: "📊", desc: "কমিশন সেটিংস — লেভেলভিত্তিক কমিশন ও বোনাস কনফিগার" },

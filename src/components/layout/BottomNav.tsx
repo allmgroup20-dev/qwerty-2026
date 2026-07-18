@@ -19,8 +19,8 @@ const navItems = [
   },
   {
     key: "courses",
-    en: "Courses",
-    bn: "কোর্স",
+    en: "Resources",
+    bn: "রিসোর্স",
     href: "/courses",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

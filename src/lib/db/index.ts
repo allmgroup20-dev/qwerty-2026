@@ -375,6 +375,7 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
     await env.DB.prepare(`ALTER TABLE course_categories ADD COLUMN sort_order INTEGER DEFAULT 0`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE course_categories ADD COLUMN parent_id INTEGER DEFAULT NULL`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS courses (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,

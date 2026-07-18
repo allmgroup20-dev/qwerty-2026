@@ -159,14 +159,14 @@ export default function CompanyCoursesPage() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-primary">{lang === "bn" ? "কোর্স ব্যবস্থাপনা" : "Manage Courses"}</h1>
-            <p className="text-sm text-text-secondary mt-1">{courses.length} {lang === "bn" ? "টি কোর্স" : "courses"}</p>
+            <h1 className="text-2xl font-bold text-primary">{lang === "bn" ? "রিসোর্স ব্যবস্থাপনা" : "Manage Resources"}</h1>
+            <p className="text-sm text-text-secondary mt-1">{courses.length} {lang === "bn" ? "টি রিসোর্স" : "resources"}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={async () => {
               if (courses.length > 0 && !confirm(lang === "bn"
-                ? `${courses.length} টি কোর্স আছে। আবার ইম্পোর্ট করলে পুরনো ডাটা মুছে নতুন করে বসবে। নিশ্চিত?`
-                : `${courses.length} courses exist. Re-importing will delete all and re-seed. Confirm?`)) return;
+                ? `${courses.length} টি রিসোর্স আছে। আবার ইম্পোর্ট করলে পুরনো ডাটা মুছে নতুন করে বসবে। নিশ্চিত?`
+                : `${courses.length} resources exist. Re-importing will delete all and re-seed. Confirm?`)) return;
               setSeeding(true); setError("");
               try {
                 const res = await fetch("/api/courses/seed", { method: "POST" });
@@ -174,8 +174,8 @@ export default function CompanyCoursesPage() {
                 if (!res.ok) throw new Error(data.error || "Seed failed");
                 refreshCourses(); refreshCats();
                 alert(lang === "bn"
-                  ? `${data.categoriesSeeded}টি ক্যাটাগরি ও ${data.coursesSeeded}টি কোর্স ইম্পোর্ট হয়েছে`
-                  : `${data.categoriesSeeded} categories and ${data.coursesSeeded} courses imported`);
+                  ? `${data.categoriesSeeded}টি ক্যাটাগরি ও ${data.coursesSeeded}টি রিসোর্স ইম্পোর্ট হয়েছে`
+                  : `${data.categoriesSeeded} categories and ${data.coursesSeeded} resources imported`);
               } catch (err) {
                 setError(err instanceof Error ? err.message : "Seed failed");
               } finally { setSeeding(false); }
@@ -183,7 +183,7 @@ export default function CompanyCoursesPage() {
               {seeding ? "⏳" : "🌱"} {lang === "bn" ? (courses.length > 0 ? "পুনরায় ইম্পোর্ট" : "স্ট্যাটিক ডাটা ইম্পোর্ট") : (courses.length > 0 ? "Re-import Data" : "Import Static Data")}
             </Button>
             <Button onClick={() => { resetForm(); setShowAdd(!showAdd); }}>
-              {lang === "bn" ? "নতুন কোর্স" : "Add Course"}
+              {lang === "bn" ? "নতুন রিসোর্স" : "Add Resource"}
             </Button>
           </div>
         </div>
@@ -192,13 +192,13 @@ export default function CompanyCoursesPage() {
 
         {showAdd && (
           <Card className="mb-6 animate-fade-up">
-            <h3 className="font-bold text-primary mb-4">
-              {editingId ? (lang === "bn" ? "কোর্স সম্পাদনা করুন" : "Edit Course") : (lang === "bn" ? "নতুন কোর্স যোগ করুন" : "Add New Course")}
-            </h3>
+              <h3 className="font-bold text-primary mb-4">
+                {editingId ? (lang === "bn" ? "রিসোর্স সম্পাদনা করুন" : "Edit Resource") : (lang === "bn" ? "নতুন রিসোর্স যোগ করুন" : "Add New Resource")}
+              </h3>
 
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
-              <input type="text" placeholder={lang === "bn" ? "কোর্সের শিরোনাম (ইংরেজি)" : "Course Title (EN)"} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" required />
-              <input type="text" placeholder={lang === "bn" ? "কোর্সের শিরোনাম (বাংলা)" : "Course Title (BN)"} value={form.titleBn} onChange={(e) => setForm({ ...form, titleBn: e.target.value })} className="input-field" />
+              <input type="text" placeholder={lang === "bn" ? "শিরোনাম (ইংরেজি)" : "Title (EN)"} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" required />
+              <input type="text" placeholder={lang === "bn" ? "শিরোনাম (বাংলা)" : "Title (BN)"} value={form.titleBn} onChange={(e) => setForm({ ...form, titleBn: e.target.value })} className="input-field" />
               <select value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })} className="input-field">
                 <option value="">{lang === "bn" ? "ক্যাটাগরি নির্বাচন করুন" : "Select Category"}</option>
                 {categories.map((cat) => (
@@ -273,7 +273,7 @@ export default function CompanyCoursesPage() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-border">
-                  <th className="text-left p-4 text-sm font-semibold text-primary">{lang === "bn" ? "কোর্স" : "Course"}</th>
+                  <th className="text-left p-4 text-sm font-semibold text-primary">{lang === "bn" ? "রিসোর্স" : "Resource"}</th>
                   <th className="text-left p-4 text-sm font-semibold text-primary">{lang === "bn" ? "ক্যাটাগরি" : "Category"}</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "নতুন" : "New"}</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "দৃশ্যমান" : "Visible"}</th>
@@ -323,7 +323,7 @@ export default function CompanyCoursesPage() {
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-text-secondary text-sm">
                       <div className="mb-3 text-3xl">📭</div>
-                      {lang === "bn" ? "কোনো কোর্স নেই। উপরে \"Import Static Data\" বাটনে ক্লিক করে ৮০০+ কোর্স ইম্পোর্ট করুন, অথবা ম্যানুয়ালি কোর্স যোগ করুন।" : "No courses. Click \"Import Static Data\" above to import 800+ courses, or add manually."}
+                      {lang === "bn" ? "কোনো রিসোর্স নেই। উপরে \"Import Static Data\" বাটনে ক্লিক করে ৮০০+ রিসোর্স ইম্পোর্ট করুন, অথবা ম্যানুয়ালি রিসোর্স যোগ করুন।" : "No resources. Click \"Import Static Data\" above to import 800+ resources, or add manually."}
                     </td>
                   </tr>
                 )}

@@ -512,7 +512,7 @@ export default function WorkerDashboard() {
               {recommendations.courses.length > 0 && (
                 <div className="mb-4">
                   <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                    {lang === "bn" ? "কোর্স" : "Courses"}
+                    {lang === "bn" ? "রিসোর্স" : "Resources"}
                   </h4>
                   <div className="grid sm:grid-cols-2 gap-3">
                     {recommendations.courses.map((c, i) => (

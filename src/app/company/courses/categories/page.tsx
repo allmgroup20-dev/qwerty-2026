@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -13,12 +13,13 @@ interface CourseCategory {
   icon: string;
   isVisible: number;
   sortOrder: number;
+  parentId: number | null;
   createdAt: string;
 }
 
-const emptyForm = () => ({ name: "", nameBn: "", icon: "📌", isVisible: 1, sortOrder: 0 });
+const emptyForm = () => ({ name: "", nameBn: "", icon: "📌", isVisible: 1, sortOrder: 0, parentId: "" });
 
-export default function CourseCategoriesPage() {
+export default function ResourceCategoriesPage() {
   const { lang } = useLanguageStore();
   const { data, loading, refresh } = useSWRFetch<{ categories?: CourseCategory[] }>(
     "/api/courses/categories",
@@ -32,28 +33,65 @@ export default function CourseCategoriesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const buildTree = (items: CourseCategory[], parentId: number | null = null, depth = 0): (CourseCategory & { depth: number })[] => {
+    const result: (CourseCategory & { depth: number })[] = [];
+    for (const item of items) {
+      if (item.parentId === parentId || (item.parentId === null && parentId === null && depth === 0)) {
+        result.push({ ...item, depth });
+        result.push(...buildTree(items, item.id, depth + 1));
+      }
+    }
+    return result;
+  };
+
+  const tree = useMemo(() => buildTree(categories), [categories]);
+
+  const catMap = useMemo(() => {
+    const map = new Map<number, CourseCategory>();
+    for (const c of categories) map.set(c.id, c);
+    return map;
+  }, [categories]);
+
+  const getPath = (id: number): string => {
+    const parts: string[] = [];
+    let current = catMap.get(id);
+    while (current) {
+      parts.unshift(lang === "bn" && current.nameBn ? current.nameBn : current.name);
+      current = current.parentId ? catMap.get(current.parentId) : undefined;
+    }
+    return parts.join(" > ");
+  };
+
   const resetForm = () => {
     setForm(emptyForm()); setEditingId(null); setShowAdd(false); setError("");
   };
 
   const startEdit = (cat: CourseCategory) => {
-    setForm({ name: cat.name, nameBn: cat.nameBn || "", icon: cat.icon || "📌", isVisible: cat.isVisible, sortOrder: cat.sortOrder || 0 });
+    setForm({
+      name: cat.name, nameBn: cat.nameBn || "", icon: cat.icon || "📌",
+      isVisible: cat.isVisible, sortOrder: cat.sortOrder || 0, parentId: cat.parentId ? String(cat.parentId) : "",
+    });
     setEditingId(cat.id); setShowAdd(true); setError("");
   };
 
   const handleSave = async () => {
     setSaving(true); setError("");
     try {
-      const payload = {
-        name: form.name, nameBn: form.nameBn || null, icon: form.icon || "📌", isVisible: form.isVisible, sortOrder: form.sortOrder,
+      const parentVal = form.parentId ? parseInt(form.parentId) : null;
+      const payload: Record<string, unknown> = {
+        name: form.name, nameBn: form.nameBn || null, icon: form.icon || "📌",
+        isVisible: form.isVisible, sortOrder: form.sortOrder,
       };
-
-      const url = editingId ? `/api/courses/categories/${editingId}` : "/api/courses/categories";
-      const method = editingId ? "PUT" : "POST";
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const data = await res.json() as { error?: string };
-      if (!res.ok) throw new Error(data.error || "Save failed");
-
+      if (editingId) {
+        payload.parentId = parentVal;
+        const res = await fetch(`/api/courses/categories/${editingId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        const data = await res.json() as { error?: string };
+        if (!res.ok) throw new Error(data.error || "Save failed");
+      } else {
+        const res = await fetch("/api/courses/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, parentId: parentVal }) });
+        const data = await res.json() as { error?: string };
+        if (!res.ok) throw new Error(data.error || "Save failed");
+      }
       refresh(); resetForm();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -61,16 +99,24 @@ export default function CourseCategoriesPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(lang === "bn" ? "নিশ্চিতভাবে ক্যাটাগরি ডিলিট করবেন? (এই ক্যাটাগরির সব কোর্স আনক্যাটেগরাইজড হবে)" : "Are you sure you want to delete this category? (All courses in this category will be uncategorized)")) return;
+    if (!confirm(lang === "bn"
+      ? "নিশ্চিতভাবে ক্যাটাগরি ডিলিট করবেন? (সাব-ক্যাটাগরিগুলো রুটে চলে যাবে, কোর্স আনক্যাটেগরাইজড হবে)"
+      : "Delete this category? (sub-categories become root, courses uncategorized)")) return;
     try { const res = await fetch(`/api/courses/categories/${id}`, { method: "DELETE" }); if (res.ok) refresh(); } catch {}
   };
+
+  const catOptions = useMemo(() => {
+    return categories
+      .filter(c => editingId ? c.id !== editingId : true)
+      .map(c => ({ id: c.id, label: getPath(c.id) }));
+  }, [categories, editingId, catMap, getPath]);
 
   return (
     <div className="min-h-screen py-24 px-4 bg-gray-50">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-primary">{lang === "bn" ? "কোর্স ক্যাটাগরি" : "Course Categories"}</h1>
+            <h1 className="text-2xl font-bold text-primary">{lang === "bn" ? "রিসোর্স ক্যাটাগরি" : "Resource Categories"}</h1>
             <p className="text-sm text-text-secondary mt-1">{categories.length} {lang === "bn" ? "টি ক্যাটাগরি" : "categories"}</p>
           </div>
           <Button onClick={() => { resetForm(); setShowAdd(!showAdd); }}>
@@ -88,6 +134,12 @@ export default function CourseCategoriesPage() {
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
               <input type="text" placeholder={lang === "bn" ? "নাম (ইংরেজি)" : "Name (EN)"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" required />
               <input type="text" placeholder={lang === "bn" ? "নাম (বাংলা)" : "Name (BN)"} value={form.nameBn} onChange={(e) => setForm({ ...form, nameBn: e.target.value })} className="input-field" />
+              <select value={form.parentId} onChange={(e) => setForm({ ...form, parentId: e.target.value })} className="input-field">
+                <option value="">{lang === "bn" ? "— মূল ক্যাটাগরি —" : "— Root Category —"}</option>
+                {catOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>{opt.label}</option>
+                ))}
+              </select>
               <input type="text" placeholder={lang === "bn" ? "আইকন (ইমোজি)" : "Icon (Emoji)"} value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} className="input-field" />
               <input type="number" placeholder={lang === "bn" ? "সর্ট অর্ডার" : "Sort Order"} value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })} className="input-field" />
               <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -117,10 +169,13 @@ export default function CourseCategoriesPage() {
                 </tr>
               </thead>
               <tbody>
-                {categories.map((cat) => (
+                {tree.map((cat) => (
                   <tr key={cat.id} className="border-b border-border last:border-0 hover:bg-gray-50/50">
-                    <td className="p-4 text-sm font-medium text-primary">
-                      {lang === "bn" && cat.nameBn ? cat.nameBn : cat.name}
+                    <td className="p-4 text-sm font-medium text-primary" style={{ paddingLeft: `${16 + cat.depth * 24}px` }}>
+                      <div className="flex items-center gap-2">
+                        {cat.depth > 0 && <span className="text-xs text-gray-400">└─</span>}
+                        <span>{getPath(cat.id)}</span>
+                      </div>
                     </td>
                     <td className="p-4 text-center text-lg">{cat.icon || "📌"}</td>
                     <td className="p-4 text-center text-sm text-text-secondary">{cat.sortOrder || 0}</td>
@@ -139,13 +194,13 @@ export default function CourseCategoriesPage() {
                     </td>
                     <td className="p-4 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <button onClick={() => startEdit(cat)} className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded">✏️</button>
+                        <button onClick={() => startEdit(cat)} className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded" title={lang === "bn" ? "সম্পাদনা / প্যারেন্ট পরিবর্তন" : "Edit / Move"}>✏️</button>
                         <button onClick={() => handleDelete(cat.id)} className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded">🗑️</button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {categories.length === 0 && (
+                {tree.length === 0 && (
                   <tr>
                     <td colSpan={5} className="p-8 text-center text-text-secondary text-sm">
                       {lang === "bn" ? "কোনো ক্যাটাগরি নেই।" : "No categories found."}

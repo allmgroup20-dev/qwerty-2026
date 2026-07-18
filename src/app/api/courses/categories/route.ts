@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const categories = await query<any>(
       await getDB(),
-      `SELECT id, name, name_bn as nameBn, icon, is_visible as isVisible, sort_order as sortOrder, created_at as createdAt
+      `SELECT id, name, name_bn as nameBn, icon, is_visible as isVisible, sort_order as sortOrder, parent_id as parentId, created_at as createdAt
        FROM course_categories ORDER BY sort_order ASC, id ASC`
     );
     return NextResponse.json({ categories });
@@ -19,7 +19,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
-      name: string; nameBn?: string; icon?: string; isVisible?: number; sortOrder?: number;
+      name: string; nameBn?: string; icon?: string; isVisible?: number; sortOrder?: number; parentId?: number | null;
     };
 
     if (!body.name) {
@@ -29,9 +29,9 @@ export async function POST(request: NextRequest) {
     const db = await getDB();
     await invalidateCache("courses");
     await execute(db,
-      `INSERT INTO course_categories (name, name_bn, icon, is_visible, sort_order)
-       VALUES (?, ?, ?, ?, ?)`,
-      [body.name, body.nameBn || null, body.icon || "📌", body.isVisible ?? 1, body.sortOrder ?? 0]
+      `INSERT INTO course_categories (name, name_bn, icon, is_visible, sort_order, parent_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [body.name, body.nameBn || null, body.icon || "📌", body.isVisible ?? 1, body.sortOrder ?? 0, body.parentId ?? null]
     );
 
     return NextResponse.json({ success: true }, { status: 201 });

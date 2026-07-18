@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useDebounce } from "@/lib/use-debounce";
 
 interface CourseCategory {
-  id: number; name: string; nameBn: string | null; icon: string;
+  id: number; name: string; nameBn: string | null; icon: string; parentId: number | null;
 }
 
 interface Course {
@@ -111,12 +111,26 @@ export default function CoursesPage() {
     fetchData();
   }, []);
 
-  const catNameMap = useMemo(() => {
-    const map: Record<number, { name: string; nameBn: string | null }> = {};
-    for (const cat of categories) {
-      map[cat.id] = { name: cat.name, nameBn: cat.nameBn };
+  const catPathMap = useMemo(() => {
+    const map = new Map<number, CourseCategory>();
+    for (const c of categories) map.set(c.id, c);
+    const path = (id: number): string => {
+      const parts: string[] = [];
+      let cur = map.get(id);
+      while (cur) { parts.unshift(cur.name); cur = cur.parentId ? map.get(cur.parentId) : undefined; }
+      return parts.join(" > ");
+    };
+    const pathBn = (id: number): string => {
+      const parts: string[] = [];
+      let cur = map.get(id);
+      while (cur) { parts.unshift(cur.nameBn || cur.name); cur = cur.parentId ? map.get(cur.parentId) : undefined; }
+      return parts.join(" > ");
+    };
+    const r: Record<number, { name: string; nameBn: string | null }> = {};
+    for (const c of categories) {
+      r[c.id] = { name: path(c.id), nameBn: pathBn(c.id) };
     }
-    return map;
+    return r;
   }, [categories]);
 
   const categoryOrder = useMemo(() => {
@@ -125,7 +139,7 @@ export default function CoursesPage() {
     for (const c of courses) {
       if (c.categoryId && !seen.has(c.categoryId)) {
         seen.add(c.categoryId);
-        const cat = catNameMap[c.categoryId];
+        const cat = catPathMap[c.categoryId];
         if (cat) {
           order.push({
             id: c.categoryId,
@@ -137,7 +151,7 @@ export default function CoursesPage() {
       }
     }
     return order;
-  }, [courses, catNameMap]);
+  }, [courses, catPathMap]);
 
   const countsByCat = useMemo(() => {
     const map: Record<string, number> = {};
@@ -159,11 +173,11 @@ export default function CoursesPage() {
           c.title.toLowerCase().includes(q) ||
           (c.titleBn || "").toLowerCase().includes(q) ||
           (c.description || "").toLowerCase().includes(q) ||
-          (catNameMap[c.categoryId || -1]?.name || "").toLowerCase().includes(q)
+          (catPathMap[c.categoryId || -1]?.name || "").toLowerCase().includes(q)
       );
     }
     return result;
-  }, [debouncedSearch, activeCat, courses, catNameMap]);
+  }, [debouncedSearch, activeCat, courses, catPathMap]);
 
   const canAccess = (course: Course) => {
     if (!isLoggedIn) return false;
@@ -192,10 +206,10 @@ export default function CoursesPage() {
               )}
             </div>
             <h1 className="text-2xl md:text-4xl font-black text-white leading-tight">
-              {isPremium ? "👑 সকল কোর্স, সফটওয়্যার &amp; রিসোর্স" : !isLoggedIn ? "📚 কোর্স, সফটওয়্যার &amp; রিসোর্স" : "🎁 কোর্স সমূহ"}
+              {isPremium ? "👑 সকল রিসোর্স, সফটওয়্যার &amp; কোর্স" : !isLoggedIn ? "📚 রিসোর্স, সফটওয়্যার &amp; কোর্স" : "🎁 রিসোর্স সমূহ"}
             </h1>
             <p className="text-white/80 font-semibold mt-3 max-w-xl mx-auto text-sm md:text-base">
-              {loading ? "তথ্য লোড হচ্ছে..." : !isLoggedIn ? `লগইন করে ${courses.length}টি রিসোর্স এক্সেস করুন` : isPremium ? `প্রিমিয়াম সদস্য হিসাবে ${courses.length}টি রিসোর্স এক্সেস করুন` : `${freeCount}টি ফ্রি কোর্স এক্সেস করুন, প্রিমিয়ামে আপগ্রেড হয়ে ${premiumCount}টি অতিরিক্ত কোর্স আনলক করুন`}
+              {loading ? "তথ্য লোড হচ্ছে..." : !isLoggedIn ? `লগইন করে ${courses.length}টি রিসোর্স এক্সেস করুন` : isPremium ? `প্রিমিয়াম সদস্য হিসাবে ${courses.length}টি রিসোর্স এক্সেস করুন` : `${freeCount}টি ফ্রি রিসোর্স এক্সেস করুন, প্রিমিয়ামে আপগ্রেড হয়ে ${premiumCount}টি প্রিমিয়াম রিসোর্স আনলক করুন`}
             </p>
 
             <div className="mt-6 max-w-lg mx-auto relative">
@@ -205,7 +219,7 @@ export default function CoursesPage() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="সার্চ করুন কোর্স, ক্যাটাগরি..."
+                  placeholder="সার্চ করুন রিসোর্স, ক্যাটাগরি..."
                   className="w-full px-4 py-3.5 text-sm font-semibold text-text bg-transparent border-none outline-none placeholder:text-text-secondary/50"
                 />
                 {search && (
@@ -228,8 +242,8 @@ export default function CoursesPage() {
                   : "bg-white border-border text-text-secondary hover:border-primary/30 hover:text-text"
               }`}
             >
-              <span>🏠</span>
-              <span>সব ({courses.length})</span>
+                <span>🏠</span>
+              <span>{lang === "bn" ? `সব (${courses.length})` : `All (${courses.length})`}</span>
             </button>
             {categoryOrder.map((cat) => {
               const count = countsByCat[String(cat.id)] || 0;
@@ -256,7 +270,7 @@ export default function CoursesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8">
         <div className="text-center mb-6">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary font-bold text-xs">
-            {activeCat === "all" ? `মোট ${filtered.length} টি রিসোর্স` : `${catNameMap[Number(activeCat)]?.nameBn || catNameMap[Number(activeCat)]?.name || ''} — ${filtered.length} টি`}
+            {activeCat === "all" ? `মোট ${filtered.length} টি রিসোর্স` : `${catPathMap[Number(activeCat)]?.nameBn || catPathMap[Number(activeCat)]?.name || ''} — ${filtered.length} টি রিসোর্স`}
           </span>
         </div>
 
@@ -273,8 +287,8 @@ export default function CoursesPage() {
               const bgColor = getEmojiBg(emoji);
               const url = item.fileUrl || "#";
               const access = canAccess(item);
-              const catDisplay = (item.categoryId ? catNameMap[item.categoryId] : null)?.nameBn
-                || (item.categoryId ? catNameMap[item.categoryId]?.name : "")
+              const catDisplay = (item.categoryId ? catPathMap[item.categoryId] : null)?.nameBn
+                || (item.categoryId ? catPathMap[item.categoryId]?.name : "")
                 || "";
 
               return (
@@ -333,7 +347,7 @@ export default function CoursesPage() {
         {isLoggedIn && !isPremium && premiumCount > 0 && (
           <div className="text-center mt-8 mb-4 p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/10">
             <p className="text-lg font-bold text-primary mb-2">👑 প্রিমিয়াম মেম্বারশিপ নিন</p>
-            <p className="text-sm text-text-secondary mb-4">প্রিমিয়াম মেম্বার হয়ে {premiumCount}টি অতিরিক্ত প্রিমিয়াম কোর্স এক্সেস করুন</p>
+            <p className="text-sm text-text-secondary mb-4">প্রিমিয়াম মেম্বার হয়ে {premiumCount}টি প্রিমিয়াম রিসোর্স এক্সেস করুন</p>
             <a href="/dashboard/profile" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
               👑 প্রিমিয়াম হোন এখনই
             </a>

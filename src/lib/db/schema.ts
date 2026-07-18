@@ -676,6 +676,7 @@ export const courseCategories = sqliteTable("course_categories", {
   icon: text("icon").default("📌"),
   isVisible: integer("is_visible").default(1),
   sortOrder: integer("sort_order").default(0),
+  parentId: integer("parent_id"),
   createdAt: text("created_at"),
 });
 
