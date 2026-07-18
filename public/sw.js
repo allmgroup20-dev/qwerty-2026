@@ -4,7 +4,7 @@ const RUNTIME = `jgcareer-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `jgcareer-images-v${CACHE_VERSION}`;
 const API_CACHE = `jgcareer-api-v${CACHE_VERSION}`;
 
-const PRECACHE = ["/", "/offline", "/app-install", "/products", "/faq", "/login", "/register"];
+const PRECACHE = ["/", "/offline", "/products", "/faq", "/login", "/register"];
 
 const IMAGE_EXT = /\.(png|jpg|jpeg|gif|svg|webp|avif|ico)(\?.*)?$/;
 const STATIC_EXT = /\.(js|css|woff2?|ttf|otf|eot)(\?.*)?$/;

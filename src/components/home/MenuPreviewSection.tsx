@@ -60,12 +60,12 @@ const previews: MenuPreview[] = [
     gradient: "from-rose-500 to-pink-500",
   },
   {
-    href: "/app-install",
+    href: "/company/apps",
     icon: "📱",
     titleBn: "অ্যাপ",
-    titleEn: "Get App",
-    descBn: "মোবাইল অ্যাপ ডাউনলোড করুন। আইফোন, অ্যান্ড্রয়েড ও ডেস্কটপ — সব প্ল্যাটফর্মে উপলব্ধ। সাথে থাকুন সবসময়।",
-    descEn: "Download the mobile app. Available on iPhone, Android & Desktop. Stay connected always.",
+    titleEn: "App",
+    descBn: "এক ক্লিকেই অ্যাপ ইনস্টল করুন। কোনো ঝামেলা ছাড়াই সরাসরি হোম স্ক্রিনে যুক্ত হবে।",
+    descEn: "Install the app with one click. Added directly to your home screen without hassle.",
     gradient: "from-indigo-500 to-purple-500",
   },
 ];
