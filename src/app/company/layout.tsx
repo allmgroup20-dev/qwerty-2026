@@ -65,6 +65,8 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/company/withdrawals", en: "Withdrawals", bn: "উত্তোলন", icon: "💸", desc: "উত্তোলন ব্যবস্থাপনা — রিকোয়েস্ট, অনুমোদন, সেটিংস ও পরিসংখ্যান" },
       { href: "/company/currencies", en: "Currencies", bn: "মুদ্রা", icon: "💵", desc: "মুদ্রা ব্যবস্থাপনা — একাধিক কারেন্সি ও রেট কনফিগার" },
       { href: "/company/payment-gateway", en: "Payment Gateway", bn: "পেমেন্ট", icon: "💳", desc: "পেমেন্ট গেটওয়ে — SSLCommerz, COD ইত্যাদি সেটিংস" },
+      { href: "/company/unlocks", en: "Unlock Management", bn: "আনলক ব্যবস্থাপনা", icon: "🔓", desc: "ইউজার আনলক লিমিট ও ম্যানুয়াল আনলক" },
+      { href: "/company/complaints", en: "Complaints", bn: "কমপ্লেইন", icon: "⚠️", desc: "ইউজার কমপ্লেইন — দেখুন ও সমাধান করুন" },
     ],
   },
   {

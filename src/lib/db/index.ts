@@ -376,6 +376,34 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     )`).run();
     await env.DB.prepare(`ALTER TABLE course_categories ADD COLUMN sort_order INTEGER DEFAULT 0`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE course_categories ADD COLUMN parent_id INTEGER DEFAULT NULL`).run().catch(() => {});
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_unlocks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      course_id INTEGER NOT NULL,
+      unlocked_at TEXT DEFAULT (datetime('now')),
+      unlocked_by TEXT DEFAULT 'user',
+      UNIQUE(worker_id, course_id)
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS unlock_limits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT UNIQUE NOT NULL,
+      max_unlocks INTEGER DEFAULT 0,
+      set_by TEXT DEFAULT 'system',
+      set_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS complaints (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      course_ids TEXT NOT NULL,
+      description TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      admin_note TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      resolved_at TEXT
+    )`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_unlocks_worker ON user_unlocks(worker_id)`).run().catch(() => {});
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status)`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS course_category_map (
       course_id INTEGER NOT NULL,
       category_id INTEGER NOT NULL,

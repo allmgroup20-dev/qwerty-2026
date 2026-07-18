@@ -696,6 +696,34 @@ export const courses = sqliteTable("courses", {
   updatedAt: text("updated_at"),
 });
 
+export const userUnlocks = sqliteTable("user_unlocks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  courseId: integer("course_id").notNull(),
+  unlockedAt: text("unlocked_at"),
+  unlockedBy: text("unlocked_by").default("user"),
+});
+
+export const unlockLimits = sqliteTable("unlock_limits", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").unique().notNull(),
+  maxUnlocks: integer("max_unlocks").default(0),
+  setBy: text("set_by").default("system"),
+  setAt: text("set_at"),
+  updatedAt: text("updated_at"),
+});
+
+export const complaints = sqliteTable("complaints", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  courseIds: text("course_ids").notNull(),
+  description: text("description").notNull(),
+  status: text("status").default("pending"),
+  adminNote: text("admin_note"),
+  createdAt: text("created_at"),
+  resolvedAt: text("resolved_at"),
+});
+
 export const courseCategoryMap = sqliteTable("course_category_map", {
   courseId: integer("course_id").notNull(),
   categoryId: integer("category_id").notNull(),
