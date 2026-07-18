@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
-import { invalidateCache } from "@/lib/cache";
+import { getCached, setCached, invalidateCache } from "@/lib/cache";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const cacheKey = `course_files:${id}`;
+    const cached = await getCached<any[]>(cacheKey, 60);
+    if (cached) return NextResponse.json({ files: cached });
+
     const files = await query<any>(
       await getDB(),
       `SELECT id, course_id as courseId, label, label_bn as labelBn, url,
@@ -13,6 +17,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
        FROM course_files WHERE course_id = ? ORDER BY sort_order ASC, id ASC`,
       [parseInt(id)]
     );
+    await setCached(cacheKey, files);
     return NextResponse.json({ files });
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -32,6 +37,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const db = await getDB();
     await invalidateCache("courses");
+    await invalidateCache(`course_files:${id}`);
     await execute(db,
       `INSERT INTO course_files (course_id, label, label_bn, url, file_type, sort_order)
        VALUES (?, ?, ?, ?, ?, ?)`,

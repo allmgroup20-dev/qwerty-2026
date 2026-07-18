@@ -367,12 +367,14 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     // ── Courses Module Tables ──
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS course_categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
+      name TEXT NOT NULL UNIQUE,
       name_bn TEXT,
       icon TEXT DEFAULT '📌',
       is_visible INTEGER DEFAULT 1,
+      sort_order INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
+    await env.DB.prepare(`ALTER TABLE course_categories ADD COLUMN sort_order INTEGER DEFAULT 0`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS courses (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,

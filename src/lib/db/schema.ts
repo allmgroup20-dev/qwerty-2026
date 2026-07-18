@@ -671,10 +671,11 @@ export const userPhonebooks = sqliteTable("user_phonebooks", {
 // ── Courses Module ──
 export const courseCategories = sqliteTable("course_categories", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  name: text("name").notNull(),
+  name: text("name").notNull().unique(),
   nameBn: text("name_bn"),
   icon: text("icon").default("📌"),
   isVisible: integer("is_visible").default(1),
+  sortOrder: integer("sort_order").default(0),
   createdAt: text("created_at"),
 });
 

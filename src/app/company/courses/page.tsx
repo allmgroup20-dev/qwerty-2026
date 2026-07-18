@@ -53,7 +53,7 @@ export default function CompanyCoursesPage() {
     "/api/courses",
     { ttlMs: 60_000 }
   );
-  const { data: catsData } = useSWRFetch<{ categories?: CourseCategory[] }>(
+  const { data: catsData, refresh: refreshCats } = useSWRFetch<{ categories?: CourseCategory[] }>(
     "/api/courses/categories",
     { ttlMs: 120_000 }
   );
@@ -65,9 +65,9 @@ export default function CompanyCoursesPage() {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [seeding, setSeeding] = useState(false);
 
   const [files, setFiles] = useState<CourseFile[]>([]);
-  const [showFilesFor, setShowFilesFor] = useState<number | null>(null);
   const [newFileUrl, setNewFileUrl] = useState("");
   const [newFileLabel, setNewFileLabel] = useState("");
 
@@ -157,14 +157,34 @@ export default function CompanyCoursesPage() {
   return (
     <div className="min-h-screen py-24 px-4 bg-gray-50">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-primary">{lang === "bn" ? "কোর্স ব্যবস্থাপনা" : "Manage Courses"}</h1>
             <p className="text-sm text-text-secondary mt-1">{courses.length} {lang === "bn" ? "টি কোর্স" : "courses"}</p>
           </div>
-          <Button onClick={() => { resetForm(); setShowAdd(!showAdd); }}>
-            {lang === "bn" ? "নতুন কোর্স" : "Add Course"}
-          </Button>
+          <div className="flex gap-2">
+            {courses.length === 0 && (
+              <Button variant="outline" onClick={async () => {
+                setSeeding(true); setError("");
+                try {
+                  const res = await fetch("/api/courses/seed", { method: "POST" });
+                  const data = await res.json() as { error?: string; coursesSeeded?: number; categoriesSeeded?: number };
+                  if (!res.ok) throw new Error(data.error || "Seed failed");
+                  refreshCourses(); refreshCats();
+                  alert(lang === "bn"
+                    ? `${data.categoriesSeeded}টি ক্যাটাগরি ও ${data.coursesSeeded}টি কোর্স ইম্পোর্ট হয়েছে`
+                    : `${data.categoriesSeeded} categories and ${data.coursesSeeded} courses imported`);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Seed failed");
+                } finally { setSeeding(false); }
+              }} disabled={seeding}>
+                {seeding ? "⏳" : "🌱"} {lang === "bn" ? "স্ট্যাটিক ডাটা ইম্পোর্ট" : "Import Static Data"}
+              </Button>
+            )}
+            <Button onClick={() => { resetForm(); setShowAdd(!showAdd); }}>
+              {lang === "bn" ? "নতুন কোর্স" : "Add Course"}
+            </Button>
+          </div>
         </div>
 
         {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
@@ -301,7 +321,8 @@ export default function CompanyCoursesPage() {
                 {courses.length === 0 && (
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-text-secondary text-sm">
-                      {lang === "bn" ? "কোনো কোর্স নেই। উপরে \"নতুন কোর্স\" বাটনে ক্লিক করে কোর্স যোগ করুন।" : "No courses found. Click \"Add Course\" above to create one."}
+                      <div className="mb-3 text-3xl">📭</div>
+                      {lang === "bn" ? "কোনো কোর্স নেই। উপরে \"Import Static Data\" বাটনে ক্লিক করে ৮০০+ কোর্স ইম্পোর্ট করুন, অথবা ম্যানুয়ালি কোর্স যোগ করুন।" : "No courses. Click \"Import Static Data\" above to import 800+ courses, or add manually."}
                     </td>
                   </tr>
                 )}

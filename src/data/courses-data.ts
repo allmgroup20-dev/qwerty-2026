@@ -1038,7 +1038,6 @@ export const categoryOrder: string[] = [
   'LinkedIn',
   'Email Marketing',
   'Resources',
-  'eShikhon',
 ];
 
 export const categoryNames: Record<string, string> = {
@@ -1095,5 +1094,4 @@ export const categoryNames: Record<string, string> = {
   'LinkedIn':'লিংকডইন',
   'Email Marketing':'ইমেইল মার্কেটিং',
   'Resources':'রিসোর্স',
-  'eShikhon':'ই-শিখন',
 };

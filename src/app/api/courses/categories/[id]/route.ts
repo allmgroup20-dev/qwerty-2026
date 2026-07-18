@@ -7,7 +7,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const body = await request.json() as {
-      name?: string; nameBn?: string; icon?: string; isVisible?: number;
+      name?: string; nameBn?: string; icon?: string; isVisible?: number; sortOrder?: number;
     };
     const db = await getDB();
 
@@ -17,8 +17,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await invalidateCache("courses");
     await execute(db,
       `UPDATE course_categories SET name=COALESCE(?,name), name_bn=COALESCE(?,name_bn),
-       icon=COALESCE(?,icon), is_visible=COALESCE(?,is_visible) WHERE id=?`,
-      [body.name ?? null, body.nameBn ?? null, body.icon ?? null, body.isVisible ?? null, parseInt(id)]
+       icon=COALESCE(?,icon), is_visible=COALESCE(?,is_visible), sort_order=COALESCE(?,sort_order) WHERE id=?`,
+      [body.name ?? null, body.nameBn ?? null, body.icon ?? null, body.isVisible ?? null, body.sortOrder ?? null, parseInt(id)]
     );
 
     return NextResponse.json({ success: true });

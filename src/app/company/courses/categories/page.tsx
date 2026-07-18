@@ -12,10 +12,11 @@ interface CourseCategory {
   nameBn: string | null;
   icon: string;
   isVisible: number;
+  sortOrder: number;
   createdAt: string;
 }
 
-const emptyForm = () => ({ name: "", nameBn: "", icon: "📌", isVisible: 1 });
+const emptyForm = () => ({ name: "", nameBn: "", icon: "📌", isVisible: 1, sortOrder: 0 });
 
 export default function CourseCategoriesPage() {
   const { lang } = useLanguageStore();
@@ -36,7 +37,7 @@ export default function CourseCategoriesPage() {
   };
 
   const startEdit = (cat: CourseCategory) => {
-    setForm({ name: cat.name, nameBn: cat.nameBn || "", icon: cat.icon || "📌", isVisible: cat.isVisible });
+    setForm({ name: cat.name, nameBn: cat.nameBn || "", icon: cat.icon || "📌", isVisible: cat.isVisible, sortOrder: cat.sortOrder || 0 });
     setEditingId(cat.id); setShowAdd(true); setError("");
   };
 
@@ -44,7 +45,7 @@ export default function CourseCategoriesPage() {
     setSaving(true); setError("");
     try {
       const payload = {
-        name: form.name, nameBn: form.nameBn || null, icon: form.icon || "📌", isVisible: form.isVisible,
+        name: form.name, nameBn: form.nameBn || null, icon: form.icon || "📌", isVisible: form.isVisible, sortOrder: form.sortOrder,
       };
 
       const url = editingId ? `/api/courses/categories/${editingId}` : "/api/courses/categories";
@@ -88,6 +89,7 @@ export default function CourseCategoriesPage() {
               <input type="text" placeholder={lang === "bn" ? "নাম (ইংরেজি)" : "Name (EN)"} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" required />
               <input type="text" placeholder={lang === "bn" ? "নাম (বাংলা)" : "Name (BN)"} value={form.nameBn} onChange={(e) => setForm({ ...form, nameBn: e.target.value })} className="input-field" />
               <input type="text" placeholder={lang === "bn" ? "আইকন (ইমোজি)" : "Icon (Emoji)"} value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} className="input-field" />
+              <input type="number" placeholder={lang === "bn" ? "সর্ট অর্ডার" : "Sort Order"} value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })} className="input-field" />
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" checked={form.isVisible === 1} onChange={(e) => setForm({ ...form, isVisible: e.target.checked ? 1 : 0 })} className="w-4 h-4 accent-primary" />
                 <span className="text-sm text-text-secondary">{lang === "bn" ? "দৃশ্যমান" : "Visible"}</span>
@@ -109,6 +111,7 @@ export default function CourseCategoriesPage() {
                 <tr className="bg-gray-50 border-b border-border">
                   <th className="text-left p-4 text-sm font-semibold text-primary">{lang === "bn" ? "ক্যাটাগরি" : "Category"}</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "আইকন" : "Icon"}</th>
+                  <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "সর্ট" : "Sort"}</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "দৃশ্যমান" : "Visible"}</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "কাজ" : "Actions"}</th>
                 </tr>
@@ -120,6 +123,7 @@ export default function CourseCategoriesPage() {
                       {lang === "bn" && cat.nameBn ? cat.nameBn : cat.name}
                     </td>
                     <td className="p-4 text-center text-lg">{cat.icon || "📌"}</td>
+                    <td className="p-4 text-center text-sm text-text-secondary">{cat.sortOrder || 0}</td>
                     <td className="p-4 text-center">
                       <button
                         onClick={() => {
@@ -143,7 +147,7 @@ export default function CourseCategoriesPage() {
                 ))}
                 {categories.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="p-8 text-center text-text-secondary text-sm">
+                    <td colSpan={5} className="p-8 text-center text-text-secondary text-sm">
                       {lang === "bn" ? "কোনো ক্যাটাগরি নেই।" : "No categories found."}
                     </td>
                   </tr>

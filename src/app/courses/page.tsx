@@ -4,12 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useDebounce } from "@/lib/use-debounce";
 
 interface CourseCategory {
-  id: number; name: string; nameBn: string | null; icon: string; isVisible: number;
-}
-
-interface CourseFile {
-  id: number; courseId: number; label: string | null; labelBn: string | null;
-  url: string; fileType: string; sortOrder: number;
+  id: number; name: string; nameBn: string | null; icon: string;
 }
 
 interface Course {
@@ -18,55 +13,42 @@ interface Course {
   categoryId: number | null; isNew: number; isVisible: number;
   icon: string; price: number; isPremium: number;
   categoryName: string | null; categoryNameBn: string | null;
+  fileUrl: string | null; fileCount: number;
 }
 
-type CourseWithFiles = Course & { files: CourseFile[] };
-
-const catEmoji: Record<string, string> = {
-  "Platform": "📱", "10MS": "🎓", "Ghoori": "🏫", "SkillUper": "📈",
-  "E-Shikhon": "🎬", "eShikhon": "🎬", "MSB": "🏛️", "Creative IT": "💻",
-  "Hacking": "🛡️", "File Collection": "📁", "ChatGPT": "🤖",
-  "Graphics Design": "🎨", "Digital Marketing": "📊", "SEO": "🔍",
-  "Facebook Marketing": "👍", "YouTube": "🎥", "Data Entry": "⌨️",
-  "Video Editing": "✂️", "Software": "📦", "Logo Design": "✏️",
-  "Motion Graphics": "✨", "WordPress": "🌐", "Android App": "📱",
-  "Ethical Hacking": "🔒", "Facebook Hacking": "🔓", "WiFi Hacking": "📶",
-  "Cyber Security": "🛡️", "Android Hacking": "📱", "Blackhat": "💀",
-  "MS Office": "📋", "Quran": "🕋", "AutoCAD": "📐",
-  "Content Writing": "✍️", "Job Preparation": "💼", "English": "🇬🇧",
-  "Handwriting": "🖊️", "CPA Marketing": "💰", "Affiliate Marketing": "🔗",
-  "Fiverr": "⭐", "Web Development": "🌐", "Facebook": "👍", "Python": "🐍",
-};
-
-function getCourseEmoji(item: { icon: string; cat?: string }): string {
-  if (item.icon && item.icon !== "📌") return item.icon;
-  if (item.cat && catEmoji[item.cat]) return catEmoji[item.cat];
+function getCourseEmoji(icon: string, catName?: string): string {
+  if (icon && icon !== "📌") return icon;
+  const m: Record<string, string> = {
+    "Platform": "📱", "10MS": "🎓", "Ghoori": "🏫", "SkillUper": "📈",
+    "E-Shikhon": "🎬", "MSB": "🏛️", "Creative IT": "💻", "Hacking": "🛡️",
+    "File Collection": "📁", "ChatGPT": "🤖", "Graphics Design": "🎨",
+    "Digital Marketing": "📊", "SEO": "🔍", "YouTube": "🎥", "Data Entry": "⌨️",
+    "Video Editing": "✂️", "Software": "📦", "WordPress": "🌐",
+    "Ethical Hacking": "🔒", "Cyber Security": "🛡️", "MS Office": "📋",
+    "Quran": "🕋", "English": "🇬🇧", "Web Development": "🌐",
+  };
+  if (catName && m[catName]) return m[catName];
   return "📌";
 }
 
-function getCourseEmojiBg(emoji: string): string {
+function getEmojiBg(emoji: string): string {
   const m: Record<string, string> = {
-    "👨‍💻": "from-blue-500/10 to-blue-600/5 text-blue-600",
-    "🤖": "from-purple-500/10 to-purple-600/5 text-purple-600",
-    "🎮": "from-green-500/10 to-green-600/5 text-green-600",
+    "🎓": "from-purple-500/10 to-purple-600/5 text-purple-600",
     "📱": "from-orange-500/10 to-orange-600/5 text-orange-600",
     "🔒": "from-red-500/10 to-red-600/5 text-red-600",
-    "📶": "from-cyan-500/10 to-cyan-600/5 text-cyan-600",
-    "💰": "from-amber-500/10 to-amber-600/5 text-amber-600",
     "🎨": "from-pink-500/10 to-pink-600/5 text-pink-600",
     "🎬": "from-rose-500/10 to-rose-600/5 text-rose-600",
     "🌐": "from-teal-500/10 to-teal-600/5 text-teal-600",
     "📊": "from-emerald-500/10 to-emerald-600/5 text-emerald-600",
-    "🧠": "from-indigo-500/10 to-indigo-600/5 text-indigo-600",
     "👑": "from-amber-500/10 to-amber-600/5 text-amber-600",
     "⭐": "from-yellow-500/10 to-yellow-600/5 text-yellow-600",
-    "🔥": "from-red-500/10 to-red-600/5 text-red-600",
     "📖": "from-amber-500/10 to-amber-600/5 text-amber-600",
     "💼": "from-blue-500/10 to-blue-600/5 text-blue-600",
     "🗣️": "from-green-500/10 to-green-600/5 text-green-600",
-    "📐": "from-orange-500/10 to-orange-600/5 text-orange-600",
     "🛡️": "from-red-500/10 to-red-600/5 text-red-600",
     "📁": "from-slate-500/10 to-slate-600/5 text-slate-600",
+    "🤖": "from-purple-500/10 to-purple-600/5 text-purple-600",
+    "🏫": "from-indigo-500/10 to-indigo-600/5 text-indigo-600",
   };
   return m[emoji] || "from-blue-500/10 to-blue-600/5 text-blue-600";
 }
@@ -80,7 +62,7 @@ export default function CoursesPage() {
   const [isPremium, setIsPremium] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [courses, setCourses] = useState<CourseWithFiles[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<CourseCategory[]>([]);
 
   useEffect(() => {
@@ -92,27 +74,34 @@ export default function CoursesPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [coursesRes, catsRes] = await Promise.all([
+        const [coursesRes, catsRes, profileRes] = await Promise.all([
           fetch("/api/courses?visibleOnly=1"),
           fetch("/api/courses/categories"),
+          fetch("/api/auth/me").catch(() => new Response("{}")),
         ]);
         const coursesData = await coursesRes.json() as { courses?: Course[] };
         const catsData = await catsRes.json() as { categories?: CourseCategory[] };
-        const allCats = catsData.categories ?? [];
+        const profile: any = await profileRes.json().catch(() => ({}));
 
-        const courseList = coursesData.courses ?? [];
-        const withFiles = await Promise.all(
-          courseList.map(async (c) => {
-            try {
-              const fRes = await fetch(`/api/courses/${c.id}/files`);
-              const fData = await fRes.json() as { files?: CourseFile[] };
-              return { ...c, files: fData.files ?? [] };
-            } catch { return { ...c, files: [] as CourseFile[] }; }
-          })
-        );
+        setCourses(coursesData.courses ?? []);
+        setCategories(catsData.categories?.filter(c => c.icon) ?? catsData.categories ?? []);
 
-        setCourses(withFiles);
-        setCategories(allCats.filter(c => c.isVisible));
+        if (profile.workerId || profile.username) {
+          setIsLoggedIn(true);
+          if (profile.membershipStatus === "premium" || profile.role === "premium") {
+            setIsPremium(true);
+          }
+        }
+
+        const wid = typeof window !== "undefined" ? localStorage.getItem("worker_id") : null;
+        if (wid && !profile.workerId) {
+          setIsLoggedIn(true);
+          try {
+            const pRes = await fetch(`/api/workers/profile?workerId=${wid}`);
+            const pData = await pRes.json();
+            if (pData.membershipStatus === "premium") setIsPremium(true);
+          } catch {}
+        }
       } catch (e) {
         console.error("Failed to load courses", e);
       } finally {
@@ -120,18 +109,6 @@ export default function CoursesPage() {
       }
     }
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    const wid = localStorage.getItem("worker_id");
-    if (!wid) return;
-    setIsLoggedIn(true);
-    fetch(`/api/workers/profile?workerId=${wid}`)
-      .then(r => r.json())
-      .then((d: any) => {
-        setIsPremium(d.membershipStatus === "premium");
-      })
-      .catch(() => {});
   }, []);
 
   const catNameMap = useMemo(() => {
@@ -143,14 +120,19 @@ export default function CoursesPage() {
   }, [categories]);
 
   const categoryOrder = useMemo(() => {
-    const seen = new Set<string>();
+    const seen = new Set<number>();
     const order: { id: number; name: string; nameBn: string | null; icon: string }[] = [];
     for (const c of courses) {
-      if (c.categoryId && !seen.has(String(c.categoryId))) {
-        seen.add(String(c.categoryId));
+      if (c.categoryId && !seen.has(c.categoryId)) {
+        seen.add(c.categoryId);
         const cat = catNameMap[c.categoryId];
         if (cat) {
-          order.push({ id: c.categoryId, name: cat.name, nameBn: cat.nameBn, icon: getCourseEmoji({ icon: "", cat: cat.name }) });
+          order.push({
+            id: c.categoryId,
+            name: cat.name,
+            nameBn: cat.nameBn,
+            icon: getCourseEmoji(c.icon, cat.name),
+          });
         }
       }
     }
@@ -160,8 +142,7 @@ export default function CoursesPage() {
   const countsByCat = useMemo(() => {
     const map: Record<string, number> = {};
     for (const c of courses) {
-      const key = String(c.categoryId || "uncategorized");
-      map[key] = (map[key] || 0) + 1;
+      map[String(c.categoryId || "uncategorized")] = (map[String(c.categoryId || "uncategorized")] || 0) + 1;
     }
     return map;
   }, [courses]);
@@ -184,11 +165,14 @@ export default function CoursesPage() {
     return result;
   }, [debouncedSearch, activeCat, courses, catNameMap]);
 
-  const isExternal = (url: string) =>
-    url.includes("terabox") || url.includes("1024tera") || url.includes("4funbox") ||
-    url.includes("drive.google") || url.includes("mega.nz") || url.includes("freecoursebd");
+  const canAccess = (course: Course) => {
+    if (!isLoggedIn) return false;
+    if (isPremium) return true;
+    return course.isPremium === 0;
+  };
 
-  const freeAccess = isPremium || !isLoggedIn;
+  const freeCount = courses.filter(c => c.isPremium === 0).length;
+  const premiumCount = courses.length - freeCount;
 
   return (
     <div className="min-h-screen bg-bg">
@@ -204,14 +188,14 @@ export default function CoursesPage() {
               ) : isPremium ? (
                 <span>👑 মোট {courses.length}টি রিসোর্স — প্রিমিয়াম এক্সেস</span>
               ) : (
-                <span>🎁 মোট {courses.length}টি রিসোর্স — {courses.length}টি ফ্রি</span>
+                <span>🎁 {freeCount}টি ফ্রি + {premiumCount}টি প্রিমিয়াম — লগইন করেছেন</span>
               )}
             </div>
             <h1 className="text-2xl md:text-4xl font-black text-white leading-tight">
               {isPremium ? "👑 সকল কোর্স, সফটওয়্যার &amp; রিসোর্স" : !isLoggedIn ? "📚 কোর্স, সফটওয়্যার &amp; রিসোর্স" : "🎁 কোর্স সমূহ"}
             </h1>
             <p className="text-white/80 font-semibold mt-3 max-w-xl mx-auto text-sm md:text-base">
-              {loading ? "তথ্য লোড হচ্ছে..." : !isLoggedIn ? `লগইন করে ${courses.length}টি রিসোর্স এক্সেস করুন` : isPremium ? `প্রিমিয়াম সদস্য হিসাবে ${courses.length}টি রিসোর্স এক্সেস করুন` : `${courses.length}টি রিসোর্স এক্সেস করুন`}
+              {loading ? "তথ্য লোড হচ্ছে..." : !isLoggedIn ? `লগইন করে ${courses.length}টি রিসোর্স এক্সেস করুন` : isPremium ? `প্রিমিয়াম সদস্য হিসাবে ${courses.length}টি রিসোর্স এক্সেস করুন` : `${freeCount}টি ফ্রি কোর্স এক্সেস করুন, প্রিমিয়ামে আপগ্রেড হয়ে ${premiumCount}টি অতিরিক্ত কোর্স আনলক করুন`}
             </p>
 
             <div className="mt-6 max-w-lg mx-auto relative">
@@ -285,58 +269,74 @@ export default function CoursesPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filtered.map((item) => {
-              const emoji = getCourseEmoji(item);
-              const bgColor = getCourseEmojiBg(emoji);
-              const firstFile = item.files.find(f => f.fileType === "link") || item.files[0];
-              const url = firstFile?.url || "#";
-
-              const catInfo = item.categoryId ? catNameMap[item.categoryId] : null;
-              const catDisplay = catInfo?.nameBn || catInfo?.name || "";
+              const emoji = getCourseEmoji(item.icon, item.categoryName || undefined);
+              const bgColor = getEmojiBg(emoji);
+              const url = item.fileUrl || "#";
+              const access = canAccess(item);
+              const catDisplay = (item.categoryId ? catNameMap[item.categoryId] : null)?.nameBn
+                || (item.categoryId ? catNameMap[item.categoryId]?.name : "")
+                || "";
 
               return (
-                <a
-                  key={item.id}
-                  href={freeAccess ? url : "#"}
-                  target={freeAccess ? "_blank" : undefined}
-                  rel={freeAccess ? "noopener noreferrer" : undefined}
-                  className={`block bg-white rounded-2xl border p-4 transition-all duration-200 ${
-                    freeAccess
-                      ? "border-border hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5 hover:border-primary/20 active:scale-[0.98] group cursor-pointer"
-                      : "border-border/60 opacity-85"
-                  }`}
-                >
-                  <div className="flex items-start gap-3.5">
-                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${bgColor} flex items-center justify-center text-lg shrink-0 transition-transform ${freeAccess ? "group-hover:scale-110 group-hover:rotate-3" : ""}`}>
-                      <span>{emoji}</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary/60">
-                          {catDisplay}
-                        </span>
-                        {item.isNew === 1 && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-700 text-[9px] font-bold">🆕 NEW</span>
+                <div key={item.id} className="relative">
+                  <a
+                    href={access ? url : "#"}
+                    target={access ? "_blank" : undefined}
+                    rel={access ? "noopener noreferrer" : undefined}
+                    className={`block bg-white rounded-2xl border p-4 transition-all duration-200 ${
+                      access
+                        ? "border-border hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5 hover:border-primary/20 active:scale-[0.98] group cursor-pointer"
+                        : "border-border/60 opacity-75"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${bgColor} flex items-center justify-center text-lg shrink-0 transition-transform ${access ? "group-hover:scale-110 group-hover:rotate-3" : ""}`}>
+                        <span>{emoji}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary/60">{catDisplay}</span>
+                          {item.isNew === 1 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-700 text-[9px] font-bold">🆕 NEW</span>
+                          )}
+                          {item.isPremium === 1 && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[9px] font-bold">👑 PREMIUM</span>
+                          )}
+                        </div>
+                        <h3 className={`font-bold text-sm leading-snug line-clamp-2 ${access ? "text-text group-hover:text-primary transition-colors" : "text-text"}`}>
+                          {item.titleBn || item.title}
+                        </h3>
+                        {item.description && (
+                          <p className="text-xs text-text-secondary/70 mt-1 line-clamp-2 leading-relaxed">
+                            {item.descriptionBn || item.description}
+                          </p>
                         )}
-                        {item.isPremium === 1 && !freeAccess && (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[9px] font-bold">👑 PREMIUM</span>
+                        {item.fileCount > 1 && (
+                          <p className="text-xs text-text-secondary/50 mt-1">+{item.fileCount - 1} more files</p>
                         )}
                       </div>
-                      <h3 className={`font-bold text-sm leading-snug line-clamp-2 ${freeAccess ? "text-text group-hover:text-primary transition-colors" : "text-text"}`}>
-                        {item.titleBn || item.title}
-                      </h3>
-                      {item.description && (
-                        <p className="text-xs text-text-secondary/70 mt-1 line-clamp-2 leading-relaxed">
-                          {item.descriptionBn || item.description}
-                        </p>
-                      )}
-                      {item.files.length > 1 && (
-                        <p className="text-xs text-text-secondary/50 mt-1">+{item.files.length - 1} more files</p>
-                      )}
                     </div>
-                  </div>
-                </a>
+                  </a>
+                  {!access && isLoggedIn && item.isPremium === 1 && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] rounded-2xl flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                      <a href="/dashboard/profile" className="px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold shadow-lg hover:bg-amber-600 transition-all">
+                        👑 প্রিমিয়াম হোন
+                      </a>
+                    </div>
+                  )}
+                </div>
               );
             })}
+          </div>
+        )}
+
+        {isLoggedIn && !isPremium && premiumCount > 0 && (
+          <div className="text-center mt-8 mb-4 p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/10">
+            <p className="text-lg font-bold text-primary mb-2">👑 প্রিমিয়াম মেম্বারশিপ নিন</p>
+            <p className="text-sm text-text-secondary mb-4">প্রিমিয়াম মেম্বার হয়ে {premiumCount}টি অতিরিক্ত প্রিমিয়াম কোর্স এক্সেস করুন</p>
+            <a href="/dashboard/profile" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+              👑 প্রিমিয়াম হোন এখনই
+            </a>
           </div>
         )}
       </div>

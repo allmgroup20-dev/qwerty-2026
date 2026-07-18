@@ -40,7 +40,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet" />
-          <link rel="preload" href="/favicon.svg" as="image" />
+        <link rel="preload" href="/favicon.svg" as="image" />
+        <link rel="dns-prefetch" href="https://jgcareer.pages.dev" />
       </head>
       <body className="min-h-screen bg-bg">
         <ClientLayout>{children}</ClientLayout>
