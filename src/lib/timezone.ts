@@ -1,5 +1,3 @@
-"use server";
-
 const DEFAULT_TIMEZONE = "Asia/Dhaka";
 
 export function getSystemTimezone(): string {
@@ -61,7 +59,7 @@ export function formatLocalTime(date: Date | string, timezone?: string): string 
   }
 }
 
-export function isScheduledTime(hourUTC: number, scheduleHour: number, timezone?: string): boolean {
+export function isScheduledTime(scheduleHour: number, timezone?: string): boolean {
   const tz = timezone || DEFAULT_TIMEZONE;
   const now = getLocalTime(tz);
   return now.getHours() === scheduleHour && now.getMinutes() < 5;

@@ -102,6 +102,7 @@ const sidebarGroups: SidebarGroup[] = [
     icon: "⚙️",
     links: [
       { href: "/company/settings", en: "Settings", bn: "সেটিংস", icon: "⚙️", desc: "সাইট সেটিংস — কোম্পানির নাম, বিবরণ, কনফিগারেশন" },
+      { href: "/company/maintenance", en: "Maintenance", bn: "রক্ষণাবেক্ষণ", icon: "🔧", desc: "সিস্টেম রক্ষণাবেক্ষণ — ডাটাবেজ ক্লিনআপ, ক্যাশে ও অটো-ক্লিনআপ শিডিউল" },
       { href: "/company/fingerprint", en: "Fingerprint", bn: "ফিঙ্গারপ্রিন্ট", icon: "🔐", desc: "বায়োমেট্রিক — ফিঙ্গারপ্রিন্ট লগইন রেকর্ড ও ব্যবস্থাপনা" },
       { href: "/company/privacy", en: "Privacy", bn: "প্রাইভেসি", icon: "🔒", desc: "গোপনীয়তা — ইউজার কনসেন্ট ও ডেটা সুরক্ষা তথ্য" },
       { href: "/company/test-mode", en: "Test Mode", bn: "টেস্ট মোড", icon: "🧪", desc: "টেস্ট মোড — মক ডেটা দিয়ে ফিচার টেস্টিং" },
