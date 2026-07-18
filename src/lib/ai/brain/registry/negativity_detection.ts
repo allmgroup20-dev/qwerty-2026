@@ -22,7 +22,7 @@ export const negativity_detection: DepartmentDef = {
           id: "mlm_trigger_detector", name: "Recruitment Trigger Detector", nameBn: "রিক্রুটমেন্ট ট্রিগার শনাক্তকারী",
           department: "negativity_detection", team: "trigger_analysis",
           description: "Detects recruitment, network marketing, team building related negative triggers",
-          descriptionBn: "রিক্রুটমেন্ট, নেটওয়ার্ক মার্কেটিং, টিম বিল্ডিং সংক্রান্ত নেতিবাচক ট্রিগার শনাক্ত করে",
+          descriptionBn: "রিক্রুটমেন্ট, নেটওয়ার্ক মার্কেটিং, সহযোগী বিল্ডিং সংক্রান্ত নেতিবাচক ট্রিগার শনাক্ত করে",
           expertise: "You specialize in detecting words like recruitment, network marketing, chain marketing, multi-level that trigger strong negative reactions in Bangladesh.",
           promptTemplate: "Analyze the conversation for recruitment/network marketing negative triggers. Words like 'রিক্রুটমেন্ট', 'network marketing', 'multi-level', 'chain', 'pyramid' trigger extreme negativity in Bangladesh. If detected, flag with severity and suggest alternative wording. Context: {{context}}. Language: {{language}}.",
           primaryModel: "gemma-4-26b", fallbackModels: ["gpt-5.4-mini"],

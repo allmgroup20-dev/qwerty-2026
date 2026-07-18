@@ -5,7 +5,11 @@ import { getCached, setCached, invalidateCache } from "@/lib/cache";
 
 export async function GET() {
   const cached = await getCached<any[]>("products", 30);
-  if (cached) return NextResponse.json({ products: cached });
+  if (cached) {
+    const resp = NextResponse.json({ products: cached });
+    resp.headers.set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120");
+    return resp;
+  }
 
   try {
     const products = await query<any>(
@@ -25,7 +29,9 @@ export async function GET() {
        FROM products WHERE is_active = 1 ORDER BY created_at DESC`
     );
     await setCached("products", products);
-    return NextResponse.json({ products });
+    const resp = NextResponse.json({ products });
+    resp.headers.set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120");
+    return resp;
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

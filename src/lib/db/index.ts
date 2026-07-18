@@ -77,8 +77,6 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN communication_preference TEXT DEFAULT 'whatsapp'`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN budget_range TEXT`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE workers ADD COLUMN religion TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN demo_bonus REAL DEFAULT 0`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN demo_bonus_original REAL DEFAULT 0`).run().catch(() => {});
 
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_tracking_prefs (
       worker_id TEXT PRIMARY KEY,
@@ -135,11 +133,8 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       order_status TEXT DEFAULT 'pending',
       shipping_address TEXT,
       transaction_id TEXT,
-      delivery_notes TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
-    await env.DB.prepare(`ALTER TABLE orders ADD COLUMN delivery_notes TEXT`).run().catch(() => {});
-
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS commissions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       commission_id TEXT UNIQUE NOT NULL,
@@ -165,15 +160,6 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       status TEXT DEFAULT 'pending',
       created_at TEXT DEFAULT (datetime('now')),
       processed_at TEXT
-    )`).run();
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS saved_accounts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      worker_id TEXT NOT NULL,
-      account_type TEXT NOT NULL,
-      account_number TEXT NOT NULL,
-      account_name TEXT,
-      is_default INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
     )`).run();
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS currencies (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -208,10 +194,7 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     `).run();
     await env.DB.prepare(`INSERT OR IGNORE INTO company_settings (setting_key, setting_value, setting_type) VALUES
       ('company_name', 'Jobayer Group Career', 'text'),
-      ('site_description', 'A premium JG Career and e-commerce platform for career growth', 'text'),
-      ('min_withdrawal_premium', '200', 'number'),
-      ('demo_bonus_enabled', '0', 'boolean'),
-      ('demo_bonus_deduction_percent', '10', 'number')
+      ('site_description', 'A premium JG Career and e-commerce platform for career growth', 'text')
     `).run();
     await env.DB.prepare(`INSERT OR IGNORE INTO company_users (username, password, name, role) VALUES
       ('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'Company Admin', 'superadmin')
@@ -903,6 +886,13 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_notifications_worker ON notifications(worker_id)`).run().catch(() => {});
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)`).run().catch(() => {});
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_behavior_scores_segment ON user_behavior_scores(segment)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_events_type ON user_events(event_type)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_events_created ON user_events(created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_workers_membership ON workers(membership_status)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_workers_created ON workers(created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_payment ON orders(payment_status)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_commissions_status ON commissions(status)`).run().catch(() => {});
 
     env.DB.prepare(`INSERT OR IGNORE INTO notification_preferences (worker_id, channel, category, enabled)
       SELECT w.worker_id, 'whatsapp', 'promotional', 1 FROM workers w

@@ -302,7 +302,7 @@ export default function CompanyMembersPage() {
                     <th className="text-left p-3 text-xs font-semibold text-primary">{lang === "bn" ? "নাম" : "Name"}</th>
                     <th className="text-left p-3 text-xs font-semibold text-primary">{lang === "bn" ? "ফোন" : "Phone"}</th>
                     <th className="text-center p-3 text-xs font-semibold text-primary">{lang === "bn" ? "লেভেল" : "Lv"}</th>
-                    <th className="text-center p-3 text-xs font-semibold text-primary">{lang === "bn" ? "টিম" : "Team"}</th>
+                    <th className="text-center p-3 text-xs font-semibold text-primary">{lang === "bn" ? "সহযোগী" : "Associates"}</th>
                     <th className="text-center p-3 text-xs font-semibold text-primary">{lang === "bn" ? "স্ট্যাটাস" : "Status"}</th>
                     <th className="text-center p-3 text-xs font-semibold text-primary">⭐</th>
                     <th className="text-center p-3 text-xs font-semibold text-primary">{lang === "bn" ? "লগইন" : "Login"}</th>

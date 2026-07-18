@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
 import { query, queryFirst } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
+import { getCached, setCached } from "@/lib/cache";
 
 export async function GET() {
   try {
+    const cached = await getCached<any>("company:finance", 60);
+    if (cached) {
+      const resp = NextResponse.json(cached);
+      resp.headers.set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120");
+      return resp;
+    }
+
     const db = await getDB();
 
     const totalRevenue = await queryFirst<{ s: number }>(
@@ -30,12 +38,16 @@ export async function GET() {
       db, "SELECT COUNT(*) as c FROM workers WHERE membership_status = 'active'"
     );
 
-    return NextResponse.json({
+    const result = {
       revenue: { total: totalRevenue?.s || 0, completed: completedOrders?.c || 0, pending: pendingOrders?.c || 0 },
       orders: { total: totalOrders?.c || 0, completed: completedOrders?.c || 0, pending: pendingOrders?.c || 0 },
       commissions: { total: totalCommissions?.s || 0, pending: pendingCommissions?.s || 0 },
       workers: { active: totalWorkers?.c || 0 },
-    });
+    };
+    await setCached("company:finance", result);
+    const resp = NextResponse.json(result);
+    resp.headers.set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120");
+    return resp;
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

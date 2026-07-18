@@ -20,6 +20,11 @@ export default function CommissionsPage() {
   );
   const commissions = data?.commissions ?? [];
 
+  const { data: profile } = useSWRFetch<{ demoBonus?: number; demoBonusOriginal?: number }>(
+    workerId ? `/api/workers/profile?workerId=${workerId}` : null,
+    { ttlMs: 300_000 }
+  );
+
   return (
     <div className="min-h-screen py-24 px-4">
       <div className="max-w-4xl mx-auto">
@@ -29,6 +34,32 @@ export default function CommissionsPage() {
         <p className="text-sm text-text-secondary mb-8">
           {lang === "bn" ? "আপনার সব উপার্জনের বিস্তারিত" : "Details of all your earnings"}
         </p>
+
+        {profile?.demoBonus && profile.demoBonus > 0 && (
+          <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🎁</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-800">
+                  {lang === "bn" ? "বোনাস ব্যালেন্স" : "Bonus Balance"}
+                </p>
+                <p className="text-xs text-amber-600 mt-0.5">
+                  {lang === "bn"
+                    ? "এটি একটি প্রোমোশনাল বোনাস। সরাসরি উত্তোলন করা যাবে না। রিয়েল কমিশন উত্তোলনের সময় স্বয়ংক্রিয়ভাবে সমন্বয় হবে।"
+                    : "Promotional bonus. Cannot be withdrawn directly. Auto-adjusted on real commission withdrawal."}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-amber-800">৳{profile.demoBonus.toLocaleString()}</p>
+                {profile.demoBonusOriginal && profile.demoBonusOriginal > 0 && (
+                  <p className="text-[10px] text-amber-500">
+                    {lang === "bn" ? "মোট" : "Total"}: ৳{profile.demoBonusOriginal.toLocaleString()} | {Math.round((profile.demoBonus / profile.demoBonusOriginal) * 100)}%
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex justify-center py-12">

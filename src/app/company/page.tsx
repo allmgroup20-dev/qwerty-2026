@@ -78,8 +78,7 @@ export default function CompanyDashboard() {
     Promise.all([
       fetch("/api/ai/agents/stats").then(r => r.json()).catch(() => null),
       fetch("/api/track/analytics").then(r => r.json() as Promise<Record<string, unknown>>).catch(() => null),
-      fetch("/api/products").then(r => r.json() as Promise<{ products?: unknown[] }>).catch(() => null),
-    ]).then(([agentData, analyticsData, productData]) => {
+    ]).then(([agentData, analyticsData]) => {
       if (agentData) setAgentStats(agentData as AgentStats);
       if (analyticsData) {
         if (analyticsData.segments) setSegments(analyticsData.segments as SegmentItem[]);

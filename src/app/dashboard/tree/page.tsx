@@ -52,7 +52,7 @@ function TreeNodeView({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
         </div>
         <div>
           <p className="text-sm font-medium text-primary">{node.name}</p>
-          <p className="text-xs text-text-secondary">ID: {node.worker_id} | {lang === "bn" ? "টিম" : "Team"}: {node.total_team_members}</p>
+          <p className="text-xs text-text-secondary">ID: {node.worker_id} | {lang === "bn" ? "সহযোগী" : "Associates"}: {node.total_team_members}</p>
         </div>
       </div>
       {expanded && node.children.length > 0 && (
@@ -81,10 +81,10 @@ export default function TreePage() {
     <div className="min-h-screen py-24 px-4">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-2xl font-bold text-primary mb-2">
-          {lang === "bn" ? "আমার টিম" : "My Team"}
+          {lang === "bn" ? "আমার সহযোগী" : "My Associates"}
         </h1>
         <p className="text-sm text-text-secondary mb-8">
-          {lang === "bn" ? "আপনার টিমের সম্পূর্ণ কাঠামো" : "Complete structure of your team"}
+          {lang === "bn" ? "আপনার সহযোগীদের সম্পূর্ণ কাঠামো" : "Complete structure of your associates"}
         </p>
         <Card>
           {loading ? (
@@ -95,7 +95,7 @@ export default function TreePage() {
             <TreeNodeView node={tree} />
           ) : (
             <p className="text-center text-text-secondary py-8">
-              {lang === "bn" ? "কোন টিম মেম্বার পাওয়া যায়নি" : "No team members found"}
+              {lang === "bn" ? "কোন সহযোগী পাওয়া যায়নি" : "No associates found"}
             </p>
           )}
         </Card>

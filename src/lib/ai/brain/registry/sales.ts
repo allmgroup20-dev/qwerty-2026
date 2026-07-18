@@ -275,7 +275,7 @@ export const sales: DepartmentDef = {
           id: "referral_closer", name: "Referral Closer", nameBn: "রেফারেল ক্লোজার",
           department: "sales", team: "closing_conversion",
           description: "Uses referral/team-building angle",
-          descriptionBn: "রেফারেল/টিম বিল্ডিং অ্যাঙ্গেল ব্যবহার করে",
+          descriptionBn: "রেফারেল/সহযোগী বিল্ডিং অ্যাঙ্গেল ব্যবহার করে",
           expertise: "You use referral opportunity: bring friends → earn more commissions → build a team → passive income.",
           promptTemplate: "Mention referral benefit. 'শুধু নিজে যোগ দিলেই নয়, বন্ধু-পরিজনকে নিয়ে আসলে আরও আয়' Explain team building. Language: {{language}}.",
           primaryModel: "gpt-5.4-mini", fallbackModels: ["gemma-4-26b"],

@@ -24,14 +24,13 @@ interface Channel {
   labelBn: string;
   enabled: boolean;
   status?: "active" | "paused";
-  recommended?: boolean;
 }
 
 const DEFAULT_CHANNELS: Channel[] = [
-  { id: "bkash", label: "bKash", labelBn: "বিকাশ", enabled: true, status: "active", recommended: false },
-  { id: "nagad", label: "Nagad", labelBn: "নগদ", enabled: true, status: "active", recommended: true },
-  { id: "rocket", label: "Rocket", labelBn: "রকেট", enabled: true, status: "active", recommended: false },
-  { id: "bank", label: "Bank", labelBn: "ব্যাংক", enabled: false, status: "active", recommended: false },
+  { id: "bkash", label: "bKash", labelBn: "বিকাশ", enabled: true, status: "active" },
+  { id: "nagad", label: "Nagad", labelBn: "নগদ", enabled: true, status: "active" },
+  { id: "rocket", label: "Rocket", labelBn: "রকেট", enabled: true, status: "active" },
+  { id: "bank", label: "Bank", labelBn: "ব্যাংক", enabled: false, status: "active" },
 ];
 
 const WEEKDAYS = [
@@ -349,10 +348,7 @@ function WithdrawalSettingsTab({ lang }: { lang: string }) {
   const [saved, setSaved] = useState(false);
 
   const [minWithdrawal, setMinWithdrawal] = useState("500");
-  const [premiumMinWithdrawal, setPremiumMinWithdrawal] = useState("200");
   const [registrationBonus, setRegistrationBonus] = useState("0");
-  const [demoBonusEnabled, setDemoBonusEnabled] = useState(false);
-  const [demoBonusDeduction, setDemoBonusDeduction] = useState("10");
   const [channels, setChannels] = useState<Channel[]>(DEFAULT_CHANNELS);
 
   // Payment schedule state
@@ -369,10 +365,7 @@ function WithdrawalSettingsTab({ lang }: { lang: string }) {
       if (data.settings) {
         const s = data.settings;
         setMinWithdrawal(s.min_withdrawal || "500");
-        setPremiumMinWithdrawal(s.min_withdrawal_premium || "200");
         setRegistrationBonus(s.registration_bonus || "0");
-        setDemoBonusEnabled(s.demo_bonus_enabled === "1");
-        setDemoBonusDeduction(s.demo_bonus_deduction_percent || "10");
         try {
           const bc = (s as any).banking_channels ? JSON.parse((s as any).banking_channels) : null;
           if (bc && Array.isArray(bc)) setChannels(bc);
@@ -403,22 +396,11 @@ function WithdrawalSettingsTab({ lang }: { lang: string }) {
     );
   };
 
-  const toggleRecommended = (id: string) => {
-    setChannels((prev) =>
-      prev.map((ch) =>
-        ch.id === id ? { ...ch, recommended: !ch.recommended } : ch
-      )
-    );
-  };
-
   const handleSave = async () => {
     setSaving(true);
     const settings = [
       { key: "min_withdrawal", value: minWithdrawal },
-      { key: "min_withdrawal_premium", value: premiumMinWithdrawal },
       { key: "registration_bonus", value: registrationBonus },
-      { key: "demo_bonus_enabled", value: demoBonusEnabled ? "1" : "0" },
-      { key: "demo_bonus_deduction_percent", value: demoBonusDeduction },
       { key: "banking_channels", value: JSON.stringify(channels) },
     ];
     try {
@@ -462,43 +444,13 @@ function WithdrawalSettingsTab({ lang }: { lang: string }) {
         <h3 className="font-bold text-primary mb-4">{lang === "bn" ? "ফাইন্যান্স" : "Finance"}</h3>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "সাধারণের জন্য ন্যূনতম উইথড্র" : "Regular Min Withdrawal"} (৳)</label>
+            <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "ন্যূনতম উইথড্র" : "Min Withdrawal"} (৳)</label>
             <input type="number" value={minWithdrawal} onChange={(e) => setMinWithdrawal(e.target.value)} className="input-field" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "প্রিমিয়ামের জন্য ন্যূনতম উইথড্র" : "Premium Min Withdrawal"} (৳) ⭐</label>
-            <input type="number" value={premiumMinWithdrawal} onChange={(e) => setPremiumMinWithdrawal(e.target.value)} className="input-field" />
           </div>
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "রেজিস্ট্রেশন বোনাস" : "Registration Bonus"} (৳)</label>
             <input type="number" value={registrationBonus} onChange={(e) => setRegistrationBonus(e.target.value)} className="input-field" />
           </div>
-          <div className="sm:col-span-2 flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-border">
-            <button
-              type="button"
-              onClick={() => setDemoBonusEnabled(!demoBonusEnabled)}
-              className={`relative w-12 h-6 rounded-full transition-all ${demoBonusEnabled ? "bg-amber-500" : "bg-gray-300"}`}
-            >
-              <div className={`absolute w-5 h-5 bg-white rounded-full top-0.5 transition-all shadow-sm ${demoBonusEnabled ? "left-6" : "left-0.5"}`} />
-            </button>
-            <span className="text-sm font-medium text-primary flex-1">
-              {lang === "bn" ? "ফেক/ডেমো বোনাস (শুধু দেখানো হবে, তোলা যাবে না)" : "Fake/Demo Bonus (display only, non-withdrawable)"}
-            </span>
-          </div>
-          {demoBonusEnabled && (
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">
-                {lang === "bn" ? "উইথড্রে কাটার %" : "Deduction % on Withdrawal"}
-              </label>
-              <div className="flex items-center gap-2">
-                <input type="number" value={demoBonusDeduction} onChange={(e) => setDemoBonusDeduction(e.target.value)} className="input-field w-24" min="0" max="100" />
-                <span className="text-xs text-text-secondary">%</span>
-                <p className="text-xs text-text-secondary ml-2">
-                  {lang === "bn" ? "প্রতিবার রিয়েল কমিশন উত্তোলনে এই % ডেমো বোনাস থেকে কাটা হবে" : "This % deducted from demo bonus on each real commission withdrawal"}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </Card>
 
@@ -611,22 +563,6 @@ function WithdrawalSettingsTab({ lang }: { lang: string }) {
                 </span>
               </div>
               <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => toggleRecommended(ch.id)}
-                  disabled={!ch.enabled}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                    !ch.enabled
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : ch.recommended
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-white text-text-secondary border border-border"
-                  }`}
-                >
-                  {ch.recommended
-                    ? (lang === "bn" ? "★ রিকমেন্ডেড" : "★ Recommended")
-                    : (lang === "bn" ? "রিকমেন্ড" : "Recommend")}
-                </button>
                 <button
                   type="button"
                   onClick={() => toggleChannelStatus(ch.id)}

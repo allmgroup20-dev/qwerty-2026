@@ -50,25 +50,6 @@ export async function POST(request: NextRequest) {
       ).catch(() => {});
     }
 
-    // Demo bonus registration
-    try {
-      const demoSetting = await queryFirst<{ setting_value: string }>(
-        env, "SELECT setting_value FROM company_settings WHERE setting_key = 'demo_bonus_enabled'"
-      );
-      if (demoSetting && demoSetting.setting_value === "1") {
-        const bonusSetting = await queryFirst<{ setting_value: string }>(
-          env, "SELECT setting_value FROM company_settings WHERE setting_key = 'registration_bonus'"
-        );
-        const bonusAmount = parseFloat(bonusSetting?.setting_value || "0");
-        if (bonusAmount > 0) {
-          await execute(env,
-            "UPDATE workers SET demo_bonus = ?, demo_bonus_original = ? WHERE worker_id = ?",
-            [bonusAmount, bonusAmount, workerId]
-          );
-        }
-      }
-    } catch {}
-
     // Log attribution
     const attributionChannel = utmSource || referralSource || "direct";
     await execute(env,

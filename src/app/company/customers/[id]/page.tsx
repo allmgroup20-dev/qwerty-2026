@@ -235,7 +235,7 @@ export default function Customer360Page() {
               <div className="space-y-2 text-sm">
                 {w.sponsor_id ? <div className="flex justify-between"><span className="text-text-secondary">{t("Sponsor", "স্পনসর")}</span><span>{w.sponsor_name || w.sponsor_id}</span></div> : null}
                 <div className="flex justify-between"><span className="text-text-secondary">{t("Level", "লেভেল")}</span><span>{w.level ?? 1}</span></div>
-                <div className="flex justify-between"><span className="text-text-secondary">{t("Team", "টিম")}</span><span>{w.total_team_members ?? 0}</span></div>
+                <div className="flex justify-between"><span className="text-text-secondary">{t("Associates", "সহযোগী")}</span><span>{w.total_team_members ?? 0}</span></div>
                 <div className="flex justify-between"><span className="text-text-secondary">{t("Balance", "ব্যালেন্স")}</span><span>{w.balance ?? 0} ৳</span></div>
                 <div className="flex justify-between"><span className="text-text-secondary">{t("Status", "স্ট্যাটাস")}</span><span className="capitalize">{w.membership_status}</span></div>
               </div>

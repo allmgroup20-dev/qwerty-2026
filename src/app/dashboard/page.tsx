@@ -251,6 +251,33 @@ export default function WorkerDashboard() {
           <StatCard label={lang === "bn" ? "পদবী" : "Position"} value={lang === "bn" && worker.levelNameBn ? worker.levelNameBn : (worker.levelName || `Level ${worker.level}`)} color="text-accent" />
         </div>
 
+        {/* Demo Bonus */}
+        {worker.demoBonus > 0 && (
+          <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🎁</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-800">
+                  {lang === "bn" ? "আপনার বোনাস" : "Your Bonus"}
+                </p>
+                <p className="text-xs text-amber-600 mt-0.5">
+                  {lang === "bn"
+                    ? "এটি একটি প্রোমোশনাল বোনাস। সরাসরি উত্তোলন করা যাবে না। রিয়েল কমিশন উত্তোলনের সময় স্বয়ংক্রিয়ভাবে সমন্বয় হবে।"
+                    : "This is a promotional bonus. Cannot be withdrawn directly. Auto-adjusted when real commissions are withdrawn."}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-amber-800">৳{worker.demoBonus.toLocaleString()}</p>
+                {worker.demoBonusOriginal > 0 && (
+                  <p className="text-[10px] text-amber-500">
+                    {lang === "bn" ? "মোট" : "Total"}: ৳{worker.demoBonusOriginal.toLocaleString()} | {Math.round((worker.demoBonus / worker.demoBonusOriginal) * 100)}%
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Personalized Section */}
         {worker.goal && (
           <div className="mb-8 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
@@ -288,8 +315,8 @@ export default function WorkerDashboard() {
               </svg>
             </div>
             <div>
-              <p className="font-semibold text-primary text-sm">{lang === "bn" ? "আমার টিম" : "My Team"}</p>
-              <p className="text-xs text-text-secondary">{worker.totalTeamMembers} {lang === "bn" ? "মেম্বার" : "Members"}</p>
+              <p className="font-semibold text-primary text-sm">{lang === "bn" ? "আমার সহযোগী" : "My Associates"}</p>
+              <p className="text-xs text-text-secondary">{worker.totalTeamMembers} {lang === "bn" ? "সহযোগী" : "Associates"}</p>
             </div>
           </Link>
 

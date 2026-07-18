@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureDB } from "@/lib/db";
+import { getCached, setCached } from "@/lib/cache";
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,6 +17,9 @@ export async function GET(req: NextRequest) {
     }
 
     if (allCustomers) {
+      const cached = await getCached<any[]>("analytics:customers", 60);
+      if (cached) return NextResponse.json({ customers: cached });
+
       const db = await ensureDB();
       const { results: customers } = await db.prepare(`
         SELECT w.worker_id, w.name, w.phone, w.email, w.membership_status,
@@ -27,7 +31,9 @@ export async function GET(req: NextRequest) {
         WHERE w.membership_status = 'active'
         ORDER BY w.created_at DESC
       `).bind().all() as { results: any[] };
-      return NextResponse.json({ customers: customers || [] });
+      const data = customers || [];
+      await setCached("analytics:customers", data);
+      return NextResponse.json({ customers: data });
     }
 
     if (workerId) {
@@ -46,6 +52,13 @@ export async function GET(req: NextRequest) {
         totalEvents: eventCount?.c || 0,
         recentEvents: recentEvents.results || [],
       });
+    }
+
+    const cached = await getCached<any>("analytics:overview", 60);
+    if (cached) {
+      const resp = NextResponse.json(cached);
+      resp.headers.set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120");
+      return resp;
     }
 
     const db = await ensureDB();
@@ -91,14 +104,18 @@ export async function GET(req: NextRequest) {
       segmentData.push({ segment: "unscored", count: totalWorkers.c - scored });
     }
 
-    return NextResponse.json({
+    const result = {
       segments: segmentData,
       totalWorkers: totalWorkers?.c || 0,
       topInterestCategories,
       eventStats: eventStats.results || [],
       totalEvents: totalEvents?.c || 0,
       predictions: predictionStats || { total_scored: 0, churn_risk: 0, high_intent: 0, high_lead: 0, high_ltv: 0, avg_churn: 0, avg_intent: 0, avg_lead: 0 },
-    });
+    };
+    await setCached("analytics:overview", result);
+    const resp = NextResponse.json(result);
+    resp.headers.set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120");
+    return resp;
   } catch (err) {
     console.error("Analytics error:", err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
