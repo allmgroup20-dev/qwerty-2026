@@ -17,7 +17,22 @@ export async function GET() {
       { DB: db },
       "SELECT * FROM ai_model_failover_state WHERE id = 1"
     );
-    return NextResponse.json({ keys: keys.map(k => ({ ...k, key_value: k.key_value ? k.key_value.substring(0, 8) + "..." : "" })), models, failover: failover[0] || null });
+    const globalToggle = await query<{ setting_value: string }>(
+      { DB: db },
+      "SELECT setting_value FROM company_settings WHERE setting_key = 'ai_system_active'"
+    );
+    const agentConfigs = await query<{ agent_id: string; enabled: number }>(
+      { DB: db },
+      "SELECT agent_id, enabled FROM brain_agent_config"
+    );
+    const disabledMap: Record<string, boolean> = {};
+    for (const c of agentConfigs) disabledMap[c.agent_id] = !c.enabled;
+    return NextResponse.json({
+      keys: keys.map(k => ({ ...k, key_value: k.key_value ? k.key_value.substring(0, 8) + "..." : "" })),
+      models, failover: failover[0] || null,
+      aiSystemActive: globalToggle.length === 0 || globalToggle[0].setting_value !== "0",
+      disabledAgents: disabledMap,
+    });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Failed" }, { status: 500 });
   }
@@ -68,6 +83,33 @@ export async function POST(request: NextRequest) {
       case "reset_failover":
         await execute({ DB: db },
           "UPDATE ai_model_failover_state SET exhausted_models = '', current_key_slot = 1, current_model_index = 0, today_responses = 0, last_reset_date = datetime('now'), updated_at = datetime('now') WHERE id = 1"
+        );
+        return NextResponse.json({ ok: true });
+
+      case "global_toggle":
+        if (body.is_active === undefined) return NextResponse.json({ error: "is_active required" }, { status: 400 });
+        const existing = await query(
+          { DB: db },
+          "SELECT id FROM company_settings WHERE setting_key = 'ai_system_active'"
+        );
+        if (existing.length > 0) {
+          await execute({ DB: db },
+            "UPDATE company_settings SET setting_value = ? WHERE setting_key = 'ai_system_active'",
+            [body.is_active ? "1" : "0"]
+          );
+        } else {
+          await execute({ DB: db },
+            "INSERT INTO company_settings (setting_key, setting_value) VALUES ('ai_system_active', ?)",
+            [body.is_active ? "1" : "0"]
+          );
+        }
+        return NextResponse.json({ ok: true });
+
+      case "toggle_provider":
+        if (!body.provider) return NextResponse.json({ error: "provider required" }, { status: 400 });
+        await execute({ DB: db },
+          "UPDATE ai_models SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END WHERE provider = ?",
+          [body.provider]
         );
         return NextResponse.json({ ok: true });
 

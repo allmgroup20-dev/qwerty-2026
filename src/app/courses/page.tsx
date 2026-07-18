@@ -10,9 +10,9 @@ interface CourseCategory {
 interface Course {
   id: number; title: string; titleBn: string | null;
   description: string | null; descriptionBn: string | null;
-  categoryId: number | null; isNew: number; isVisible: number;
+  categoryIds: number[]; isNew: number; isVisible: number;
   icon: string; price: number; isPremium: number;
-  categoryName: string | null; categoryNameBn: string | null;
+  categoryNames: string[]; categoryNamesBn: string[];
   fileUrl: string | null; fileCount: number;
 }
 
@@ -112,7 +112,7 @@ export default function CoursesPage() {
   }, []);
 
   const catNameMap = useMemo(() => {
-    const map: Record<number, { name: string; nameBn: string | null; parentId: number | null }> = {};
+    const map: Record<number, { name: string; nameBn: string | null }> = {};
     for (const cat of categories) map[cat.id] = cat;
     return map;
   }, [categories]);
@@ -143,16 +143,18 @@ export default function CoursesPage() {
     const seen = new Set<number>();
     const order: { id: number; name: string; nameBn: string | null; icon: string }[] = [];
     for (const c of courses) {
-      if (c.categoryId && !seen.has(c.categoryId)) {
-        seen.add(c.categoryId);
-        const cat = catNameMap[c.categoryId];
-        if (cat) {
-          order.push({
-            id: c.categoryId,
-            name: cat.name,
-            nameBn: cat.nameBn,
-            icon: getCourseEmoji(c.icon, cat.name),
-          });
+      for (const catId of c.categoryIds || []) {
+        if (!seen.has(catId)) {
+          seen.add(catId);
+          const cat = catNameMap[catId];
+          if (cat) {
+            order.push({
+              id: catId,
+              name: cat.name,
+              nameBn: cat.nameBn,
+              icon: getCourseEmoji(c.icon, cat.name),
+            });
+          }
         }
       }
     }
@@ -162,7 +164,10 @@ export default function CoursesPage() {
   const countsByCat = useMemo(() => {
     const map: Record<string, number> = {};
     for (const c of courses) {
-      map[String(c.categoryId || "uncategorized")] = (map[String(c.categoryId || "uncategorized")] || 0) + 1;
+      const ids = c.categoryIds?.length ? c.categoryIds : [0];
+      for (const id of ids) {
+        map[String(id)] = (map[String(id)] || 0) + 1;
+      }
     }
     return map;
   }, [courses]);
@@ -170,7 +175,7 @@ export default function CoursesPage() {
   const filtered = useMemo(() => {
     let result = [...courses];
     if (activeCat !== "all") {
-      result = result.filter((c) => String(c.categoryId) === activeCat);
+      result = result.filter((c) => (c.categoryIds || []).includes(parseInt(activeCat)));
     }
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
@@ -179,7 +184,7 @@ export default function CoursesPage() {
           c.title.toLowerCase().includes(q) ||
           (c.titleBn || "").toLowerCase().includes(q) ||
           (c.description || "").toLowerCase().includes(q) ||
-          (catNameMap[c.categoryId || -1]?.name || "").toLowerCase().includes(q)
+          (c.categoryNames || []).some(n => n.toLowerCase().includes(q))
       );
     }
     return result;
@@ -289,13 +294,14 @@ export default function CoursesPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filtered.map((item) => {
-              const emoji = getCourseEmoji(item.icon, item.categoryName || undefined);
+              const emoji = getCourseEmoji(item.icon, (item.categoryNames || [])[0]);
               const bgColor = getEmojiBg(emoji);
               const url = item.fileUrl || "#";
               const access = canAccess(item);
-              const catDisplay = (item.categoryId ? catPathMap[item.categoryId] : null)?.nameBn
-                || (item.categoryId ? catPathMap[item.categoryId]?.name : "")
-                || "";
+              const firstCatId = (item.categoryIds || [])[0];
+              const catDisplay = firstCatId
+                ? (catPathMap[firstCatId]?.nameBn || catPathMap[firstCatId]?.name || "")
+                : "";
 
               return (
                 <div key={item.id} className="relative">

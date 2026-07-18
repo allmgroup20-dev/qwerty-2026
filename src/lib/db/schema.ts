@@ -696,6 +696,11 @@ export const courses = sqliteTable("courses", {
   updatedAt: text("updated_at"),
 });
 
+export const courseCategoryMap = sqliteTable("course_category_map", {
+  courseId: integer("course_id").notNull(),
+  categoryId: integer("category_id").notNull(),
+});
+
 export const courseFiles = sqliteTable("course_files", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   courseId: integer("course_id").notNull(),

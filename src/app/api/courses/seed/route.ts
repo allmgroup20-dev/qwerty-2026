@@ -38,6 +38,7 @@ export async function POST() {
 
     // ── Clear existing data ──
     await batch(db, [
+      { sql: "DELETE FROM course_category_map" },
       { sql: "DELETE FROM course_files" },
       { sql: "DELETE FROM courses" },
       { sql: "DELETE FROM course_categories" },
@@ -65,10 +66,16 @@ export async function POST() {
         const catId = catMap.get(canonCat) || null;
 
         stmts.push({
-          sql: `INSERT INTO courses (id, title, title_bn, description, description_bn, category_id, is_new, is_visible, icon, price, is_premium)
-               VALUES (?, ?, ?, ?, ?, ?, 0, 1, ?, 0, 0)`,
-          params: [courseId, course.title, null, course.desc, null, catId, course.icon || "📌"],
+          sql: `INSERT INTO courses (id, title, title_bn, description, description_bn, is_new, is_visible, icon, price, is_premium)
+               VALUES (?, ?, ?, ?, ?, 0, 1, ?, 0, 0)`,
+          params: [courseId, course.title, null, course.desc, null, course.icon || "📌"],
         });
+        if (catId) {
+          stmts.push({
+            sql: "INSERT OR IGNORE INTO course_category_map (course_id, category_id) VALUES (?, ?)",
+            params: [courseId, catId],
+          });
+        }
         stmts.push({
           sql: `INSERT INTO course_files (course_id, label, label_bn, url, file_type, sort_order)
                VALUES (?, ?, ?, ?, 'link', 0)`,

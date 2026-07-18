@@ -5,6 +5,7 @@ import type { Intent, DepartmentId, MessageCtx, BrainResult, AgentDef, CrossDept
 import { getConversationRules } from "../conversation-rules";
 import { getMemory, setMemory, buildMemoryContext } from "./memory";
 import { getDB } from "@/lib/db";
+import { query } from "@/lib/db/queries";
 import { getActivePromptOverride } from "./agent-tuning";
 
 // ── Intent → Department routing ──
@@ -257,6 +258,31 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   const start = Date.now();
   const fallbackDept: DepartmentId = ctx.isWorker ? "member_success" : "sales";
 
+  // ── Global AI toggle check ──
+  let db: any;
+  let disabledAgents: Record<string, boolean> = {};
+  try {
+    db = await getDB();
+    const gToggle = await query<{ setting_value: string }>(
+      { DB: db },
+      "SELECT setting_value FROM company_settings WHERE setting_key = 'ai_system_active'"
+    );
+    if (gToggle.length > 0 && gToggle[0].setting_value === "0") {
+      return {
+        text: ctx.language === "bn"
+          ? "ক্ষমা করবেন, বর্তমানে AI সিস্টেমটি নিষ্ক্রিয় রয়েছে। দয়া করে পরে আবার চেষ্টা করুন।"
+          : "Sorry, the AI system is currently disabled. Please try again later.",
+        model: "system", tokens: 0, agentsUsed: [], departmentsUsed: [], department: "customer_experience",
+        intent: "general", ms: Date.now() - start, chainType: "none",
+      };
+    }
+    const disabledRows = await query<{ agent_id: string }>(
+      { DB: db },
+      "SELECT agent_id FROM brain_agent_config WHERE enabled = 0"
+    );
+    for (const r of disabledRows) disabledAgents[r.agent_id] = true;
+  } catch {}
+
   const { intent, department } = await detectIntent(ctx.text, ctx, fallbackDept);
 
   // ── Greeting shortcut: skip 27-agent chain for simple greetings ──
@@ -272,10 +298,8 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   }
 
   // ── Load persistent memory for this user ──
-  let db: any;
   let memories: any[] = [];
   try {
-    db = await getDB();
     memories = await getMemory(db, ctx.phone);
   } catch {}
 
@@ -287,9 +311,19 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   const departmentsUsed: DepartmentId[] = [];
   let chainContext = "";
 
+  // ── Load persistent memory for this user ──
+  let memories: any[] = [];
+  try {
+    memories = await getMemory(db, ctx.phone);
+  } catch {}
+
   if (isCrossDept && crossDeptSteps) {
     // Execute cross-department chain
     for (const step of crossDeptSteps) {
+      if (disabledAgents[step.agentId]) {
+        chainContext += `\n[${step.agentId}]: (disabled)`;
+        continue;
+      }
       const agentData = findAgent(step.agentId);
       if (!agentData) {
         chainContext += `\n[${step.agentId}]: (not found)`;
@@ -330,6 +364,10 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
     }
 
     for (const agent of selectedAgents) {
+      if (disabledAgents[agent.id]) {
+        chainContext += `\n[${agent.name}]: (disabled)`;
+        continue;
+      }
       try {
         const contextVars = buildContext(ctx, intent, chainContext, memories);
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
@@ -353,6 +391,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   try {
     const negAgentIds = NEGATIVITY_CHAINS.negativity_scan;
     for (const agentId of negAgentIds) {
+      if (disabledAgents[agentId]) continue;
       const agentData = findAgent(agentId);
       if (!agentData || agentData.department !== "negativity_detection") continue;
       const agent = agentData.agent;

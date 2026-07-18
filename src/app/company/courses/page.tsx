@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +12,7 @@ interface CourseCategory {
   nameBn: string | null;
   icon: string;
   isVisible: number;
+  parentId: number | null;
 }
 
 interface Course {
@@ -20,7 +21,9 @@ interface Course {
   titleBn: string | null;
   description: string | null;
   descriptionBn: string | null;
-  categoryId: number | null;
+  categoryIds: number[];
+  categoryNames: string[];
+  categoryNamesBn: string[];
   isNew: number;
   isVisible: number;
   icon: string;
@@ -28,8 +31,6 @@ interface Course {
   isPremium: number;
   createdAt: string;
   updatedAt: string;
-  categoryName: string | null;
-  categoryNameBn: string | null;
 }
 
 interface CourseFile {
@@ -44,7 +45,7 @@ interface CourseFile {
 
 const emptyForm = () => ({
   title: "", titleBn: "", description: "", descriptionBn: "",
-  categoryId: "", isNew: 1, isVisible: 1, icon: "📌", price: "", isPremium: 0,
+  categoryIds: [] as number[], isNew: 1, isVisible: 1, icon: "📌", price: "", isPremium: 0,
 });
 
 export default function CompanyCoursesPage() {
@@ -75,11 +76,35 @@ export default function CompanyCoursesPage() {
     setForm(emptyForm()); setEditingId(null); setShowAdd(false); setError(""); setFiles([]);
   };
 
+  // Build tree for checkbox display
+  const buildTree = (items: CourseCategory[], parentId: number | null = null, depth = 0): (CourseCategory & { depth: number })[] => {
+    const result: (CourseCategory & { depth: number })[] = [];
+    for (const item of items) {
+      const p = item.parentId === parentId || (item.parentId === null && parentId === null && depth === 0);
+      if (p) {
+        result.push({ ...item, depth });
+        result.push(...buildTree(items, item.id, depth + 1));
+      }
+    }
+    return result;
+  };
+
+  const catTree = useMemo(() => buildTree(categories), [categories]);
+
+  const toggleCategory = (id: number) => {
+    setForm(prev => ({
+      ...prev,
+      categoryIds: prev.categoryIds.includes(id)
+        ? prev.categoryIds.filter(c => c !== id)
+        : [...prev.categoryIds, id],
+    }));
+  };
+
   const startEdit = async (c: Course) => {
-    const catId = c.categoryId ? String(c.categoryId) : "";
     setForm({
       title: c.title, titleBn: c.titleBn || "", description: c.description || "", descriptionBn: c.descriptionBn || "",
-      categoryId: catId, isNew: c.isNew, isVisible: c.isVisible, icon: c.icon || "📌",
+      categoryIds: c.categoryIds || [],
+      isNew: c.isNew, isVisible: c.isVisible, icon: c.icon || "📌",
       price: String(c.price || 0), isPremium: c.isPremium,
     });
     setEditingId(c.id);
@@ -97,7 +122,7 @@ export default function CompanyCoursesPage() {
       const payload = {
         title: form.title, titleBn: form.titleBn || null, description: form.description || null,
         descriptionBn: form.descriptionBn || null,
-        categoryId: form.categoryId ? parseInt(form.categoryId) : null,
+        categoryIds: form.categoryIds,
         isNew: form.isNew, isVisible: form.isVisible, icon: form.icon || "📌",
         price: parseFloat(form.price) || 0, isPremium: form.isPremium,
       };
@@ -115,7 +140,7 @@ export default function CompanyCoursesPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(lang === "bn" ? "নিশ্চিতভাবে কোর্সটি ডিলিট করবেন?" : "Are you sure you want to delete this course?")) return;
+    if (!confirm(lang === "bn" ? "নিশ্চিতভাবে রিসোর্সটি ডিলিট করবেন?" : "Are you sure you want to delete this resource?")) return;
     try { const res = await fetch(`/api/courses/${id}`, { method: "DELETE" }); if (res.ok) refreshCourses(); } catch {}
   };
 
@@ -149,9 +174,10 @@ export default function CompanyCoursesPage() {
     } catch {}
   };
 
-  const catName = (c: Course) => {
-    if (lang === "bn") return c.categoryNameBn || c.categoryName || "";
-    return c.categoryName || "";
+  const catNames = (c: Course) => {
+    const names = lang === "bn" && c.categoryNamesBn?.length
+      ? c.categoryNamesBn : c.categoryNames;
+    return names?.join(", ") || "";
   };
 
   return (
@@ -192,21 +218,29 @@ export default function CompanyCoursesPage() {
 
         {showAdd && (
           <Card className="mb-6 animate-fade-up">
-              <h3 className="font-bold text-primary mb-4">
-                {editingId ? (lang === "bn" ? "রিসোর্স সম্পাদনা করুন" : "Edit Resource") : (lang === "bn" ? "নতুন রিসোর্স যোগ করুন" : "Add New Resource")}
-              </h3>
+            <h3 className="font-bold text-primary mb-4">
+              {editingId ? (lang === "bn" ? "রিসোর্স সম্পাদনা করুন" : "Edit Resource") : (lang === "bn" ? "নতুন রিসোর্স যোগ করুন" : "Add New Resource")}
+            </h3>
 
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
               <input type="text" placeholder={lang === "bn" ? "শিরোনাম (ইংরেজি)" : "Title (EN)"} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" required />
               <input type="text" placeholder={lang === "bn" ? "শিরোনাম (বাংলা)" : "Title (BN)"} value={form.titleBn} onChange={(e) => setForm({ ...form, titleBn: e.target.value })} className="input-field" />
-              <select value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })} className="input-field">
-                <option value="">{lang === "bn" ? "ক্যাটাগরি নির্বাচন করুন" : "Select Category"}</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.icon} {lang === "bn" && cat.nameBn ? cat.nameBn : cat.name}</option>
-                ))}
-              </select>
               <input type="text" placeholder={lang === "bn" ? "আইকন (ইমোজি)" : "Icon (Emoji)"} value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} className="input-field" />
               <input type="number" placeholder={lang === "bn" ? "মূল্য (যদি প্রযোজ্য হয়)" : "Price (if applicable)"} value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="input-field" />
+            </div>
+
+            <div className="border-t border-border pt-4 mb-4">
+              <h4 className="font-semibold text-sm text-primary mb-2">{lang === "bn" ? "ক্যাটাগরি (একাধিক সিলেক্ট করুন)" : "Categories (select multiple)"}</h4>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-1 max-h-48 overflow-y-auto p-2 border border-border rounded-xl">
+                {catTree.map((cat) => (
+                  <label key={cat.id} className="flex items-center gap-2 cursor-pointer select-none text-sm py-1"
+                    style={{ paddingLeft: `${cat.depth * 16 + 4}px` }}>
+                    <input type="checkbox" checked={form.categoryIds.includes(cat.id)}
+                      onChange={() => toggleCategory(cat.id)} className="w-4 h-4 accent-primary" />
+                    <span>{cat.icon} {lang === "bn" && cat.nameBn ? cat.nameBn : cat.name}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="border-t border-border pt-4 mb-4">
@@ -239,7 +273,7 @@ export default function CompanyCoursesPage() {
 
             {editingId && (
               <div className="border-t border-border pt-4 mb-4">
-                <h4 className="font-semibold text-sm text-primary mb-2">{lang === "bn" ? "কোর্স ফাইল/লিংক" : "Course Files/Links"}</h4>
+                <h4 className="font-semibold text-sm text-primary mb-2">{lang === "bn" ? "রিসোর্স ফাইল/লিংক" : "Resource Files/Links"}</h4>
                 <div className="space-y-2 mb-3">
                   {files.map((f) => (
                     <div key={f.id} className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg text-sm">
@@ -297,7 +331,7 @@ export default function CompanyCoursesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 text-sm text-text-secondary">{catName(c)}</td>
+                    <td className="p-4 text-sm text-text-secondary">{catNames(c)}</td>
                     <td className="p-4 text-center">
                       <button onClick={() => toggleField(c.id, "isNew", c.isNew ? 0 : 1)} className={`px-2.5 py-1 rounded-full text-xs font-medium ${c.isNew ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-400"}`}>
                         {c.isNew ? "🆕" : "—"}

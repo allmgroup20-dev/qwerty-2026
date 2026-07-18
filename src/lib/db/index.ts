@@ -376,6 +376,15 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     )`).run();
     await env.DB.prepare(`ALTER TABLE course_categories ADD COLUMN sort_order INTEGER DEFAULT 0`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE course_categories ADD COLUMN parent_id INTEGER DEFAULT NULL`).run().catch(() => {});
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS course_category_map (
+      course_id INTEGER NOT NULL,
+      category_id INTEGER NOT NULL,
+      PRIMARY KEY (course_id, category_id)
+    )`).run();
+    // Migrate existing category_id from courses to junction table (idempotent)
+    await env.DB.prepare(`INSERT OR IGNORE INTO course_category_map (course_id, category_id)
+      SELECT id, category_id FROM courses WHERE category_id IS NOT NULL
+    `).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS courses (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
