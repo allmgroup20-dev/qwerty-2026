@@ -196,8 +196,8 @@ function cleanJsonResponse(text: string): string {
   return jsonMatch ? jsonMatch[0] : text;
 }
 
-function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, memories?: any[]): Record<string, any> {
-  const memoryStr = memories ? buildMemoryContext(memories) : "";
+function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, userMemories?: any[]): Record<string, any> {
+  const memoryStr = userMemories ? buildMemoryContext(userMemories) : "";
   return {
     language: ctx.language === "bn" ? "Bengali" : ctx.language === "en" ? "English" : "Bengali with English mix",
     customerName: ctx.name || "Valued Customer",
@@ -273,7 +273,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
           ? "ক্ষমা করবেন, বর্তমানে AI সিস্টেমটি নিষ্ক্রিয় রয়েছে। দয়া করে পরে আবার চেষ্টা করুন।"
           : "Sorry, the AI system is currently disabled. Please try again later.",
         model: "system", tokens: 0, agentsUsed: [], departmentsUsed: [], department: "customer_experience",
-        intent: "general", ms: Date.now() - start, chainType: "none",
+        intent: "general", ms: Date.now() - start,         chainType: undefined,
       };
     }
     const disabledRows = await query<{ agent_id: string }>(
@@ -298,9 +298,9 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   }
 
   // ── Load persistent memory for this user ──
-  let memories: any[] = [];
+  let userMemories: any[] = [];
   try {
-    memories = await getMemory(db, ctx.phone);
+    userMemories = await getMemory(db, ctx.phone);
   } catch {}
 
   // ── Try cross-department chain first ──
@@ -310,12 +310,6 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   const agentsUsed: string[] = [];
   const departmentsUsed: DepartmentId[] = [];
   let chainContext = "";
-
-  // ── Load persistent memory for this user ──
-  let memories: any[] = [];
-  try {
-    memories = await getMemory(db, ctx.phone);
-  } catch {}
 
   if (isCrossDept && crossDeptSteps) {
     // Execute cross-department chain
@@ -331,7 +325,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
       }
       const agent = agentData.agent;
       try {
-        const contextVars = buildContext(ctx, intent, chainContext, memories);
+        const contextVars = buildContext(ctx, intent, chainContext, userMemories);
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -369,7 +363,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         continue;
       }
       try {
-        const contextVars = buildContext(ctx, intent, chainContext, memories);
+        const contextVars = buildContext(ctx, intent, chainContext, userMemories);
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -396,7 +390,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
       if (!agentData || agentData.department !== "negativity_detection") continue;
       const agent = agentData.agent;
       try {
-        const contextVars = buildContext(ctx, intent, chainContext, memories);
+        const contextVars = buildContext(ctx, intent, chainContext, userMemories);
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -422,7 +416,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         if (!agentData) continue;
         const agent = agentData.agent;
         try {
-          const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, memories), previousOutput: chainContext, negativityFindings };
+          const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, userMemories), previousOutput: chainContext, negativityFindings };
           const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
           const agentPrompt = buildAgentPrompt(agent, ctxWithFindings, promptOverride || undefined);
           const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -443,7 +437,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
       const kbData = findAgent(kbAgentId);
       if (kbData) {
         const agent = kbData.agent;
-        const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, memories), previousOutput: chainContext, negativityFindings };
+        const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, userMemories), previousOutput: chainContext, negativityFindings };
         const promptOverride = await getActivePromptOverride(db, agent.id).catch(() => null);
         const agentPrompt = buildAgentPrompt(agent, ctxWithFindings, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
