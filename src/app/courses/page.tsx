@@ -98,7 +98,7 @@ export default function CoursesPage() {
           setIsLoggedIn(true);
           try {
             const pRes = await fetch(`/api/workers/profile?workerId=${wid}`);
-            const pData = await pRes.json();
+            const pData = await pRes.json() as Record<string, any>;
             if (pData.membershipStatus === "premium") setIsPremium(true);
           } catch {}
         }
