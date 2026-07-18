@@ -111,6 +111,12 @@ export default function CoursesPage() {
     fetchData();
   }, []);
 
+  const catNameMap = useMemo(() => {
+    const map: Record<number, { name: string; nameBn: string | null; parentId: number | null }> = {};
+    for (const cat of categories) map[cat.id] = cat;
+    return map;
+  }, [categories]);
+
   const catPathMap = useMemo(() => {
     const map = new Map<number, CourseCategory>();
     for (const c of categories) map.set(c.id, c);
@@ -139,7 +145,7 @@ export default function CoursesPage() {
     for (const c of courses) {
       if (c.categoryId && !seen.has(c.categoryId)) {
         seen.add(c.categoryId);
-        const cat = catPathMap[c.categoryId];
+        const cat = catNameMap[c.categoryId];
         if (cat) {
           order.push({
             id: c.categoryId,
@@ -151,7 +157,7 @@ export default function CoursesPage() {
       }
     }
     return order;
-  }, [courses, catPathMap]);
+  }, [courses, catNameMap]);
 
   const countsByCat = useMemo(() => {
     const map: Record<string, number> = {};
@@ -173,7 +179,7 @@ export default function CoursesPage() {
           c.title.toLowerCase().includes(q) ||
           (c.titleBn || "").toLowerCase().includes(q) ||
           (c.description || "").toLowerCase().includes(q) ||
-          (catPathMap[c.categoryId || -1]?.name || "").toLowerCase().includes(q)
+          (catNameMap[c.categoryId || -1]?.name || "").toLowerCase().includes(q)
       );
     }
     return result;
@@ -243,7 +249,7 @@ export default function CoursesPage() {
               }`}
             >
                 <span>🏠</span>
-              <span>{lang === "bn" ? `সব (${courses.length})` : `All (${courses.length})`}</span>
+              <span>সব ({courses.length})</span>
             </button>
             {categoryOrder.map((cat) => {
               const count = countsByCat[String(cat.id)] || 0;
