@@ -67,7 +67,10 @@ export async function GET(request: NextRequest) {
 
     if (worker) {
       const sponsorChain = await getSponsorUpline(env, existing.worker_id);
-      await distributeCommissions(env, orderId, existing.worker_id, existing.total_amount, existing.currency, sponsorChain, existing.product_id ?? undefined);
+      const result = await distributeCommissions(env, orderId, existing.worker_id, existing.total_amount, existing.currency, sponsorChain, existing.product_id ?? undefined);
+      if (result.success && result.distributed > 0) {
+        await execute(env, "UPDATE orders SET commission_status = 'paid' WHERE order_id = ?", [orderId]);
+      }
 
       try {
         const apiKey = process.env.WHATSAPP_API_KEY || "";

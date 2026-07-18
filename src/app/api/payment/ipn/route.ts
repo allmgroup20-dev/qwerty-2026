@@ -56,7 +56,10 @@ export async function POST(request: NextRequest) {
     );
 
     const sponsorChain = await getSponsorUpline(env, order.worker_id);
-    await distributeCommissions(env, orderId, order.worker_id, order.total_amount, order.currency, sponsorChain, order.product_id ?? undefined);
+    const result = await distributeCommissions(env, orderId, order.worker_id, order.total_amount, order.currency, sponsorChain, order.product_id ?? undefined);
+    if (result.success && result.distributed > 0) {
+      await execute(env, "UPDATE orders SET commission_status = 'paid' WHERE order_id = ?", [orderId]);
+    }
 
     const worker = await queryFirst<{ name: string; phone: string }>(
       env, "SELECT name, phone FROM workers WHERE worker_id = ?", [order.worker_id]

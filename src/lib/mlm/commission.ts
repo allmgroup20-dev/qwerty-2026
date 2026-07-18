@@ -93,8 +93,12 @@ export async function distributeCommissions(
               const commissionId = generateId("COM");
               await execute(env,
                 `INSERT INTO commissions (commission_id, order_id, from_worker_id, to_worker_id, level_number, percentage, fixed_amount, total_amount, currency, status)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'paid')`,
                 [commissionId, orderId, fromWorkerId, comm.workerId, comm.levelNumber, comm.percentage, comm.fixedAmount, comm.totalAmount, currency]
+              );
+              await execute(env,
+                "UPDATE workers SET balance = balance + ?, total_earned = total_earned + ? WHERE worker_id = ?",
+                [comm.totalAmount, comm.totalAmount, comm.workerId]
               );
               distributed++;
             }
@@ -119,8 +123,12 @@ export async function distributeCommissions(
     const commissionId = generateId("COM");
     await execute(env,
       `INSERT INTO commissions (commission_id, order_id, from_worker_id, to_worker_id, level_number, percentage, fixed_amount, total_amount, currency, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'paid')`,
       [commissionId, orderId, fromWorkerId, comm.workerId, comm.levelNumber, comm.percentage, comm.fixedAmount, comm.totalAmount, currency]
+    );
+    await execute(env,
+      "UPDATE workers SET balance = balance + ?, total_earned = total_earned + ? WHERE worker_id = ?",
+      [comm.totalAmount, comm.totalAmount, comm.workerId]
     );
     distributed++;
   }
