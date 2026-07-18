@@ -1,19 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query, execute } from "@/lib/db/queries";
+import { query, queryFirst, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 import { getCached, setCached, invalidateCache } from "@/lib/cache";
 
-export async function GET() {
-  const cached = await getCached<any[]>("products", 30);
-  if (cached) {
-    const resp = NextResponse.json({ products: cached });
+export async function GET(req: NextRequest) {
+  const limit = Math.min(Math.max(parseInt(req.nextUrl.searchParams.get("limit") || "20") || 20, 1), 100);
+  const offset = Math.max(parseInt(req.nextUrl.searchParams.get("offset") || "0") || 0, 0);
+
+  const cached = await getCached<any>("products", 30);
+  if (cached && offset === 0) {
+    const sliced = cached.slice(0, limit);
+    const resp = NextResponse.json({ products: sliced, total: cached.length, limit, offset });
     resp.headers.set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120");
     return resp;
   }
 
   try {
+    const db = await getDB();
+    const total = await queryFirst<{ c: number }>(
+      db, "SELECT COUNT(*) as c FROM products WHERE is_active = 1"
+    );
     const products = await query<any>(
-      await getDB(),
+      db,
       `SELECT id, name, name_bn as nameBn, description, description_bn as descriptionBn,
               price, min_price as minPrice, max_price as maxPrice,
               ai_price_enabled as aiPriceEnabled,
@@ -26,10 +34,11 @@ export async function GET() {
               product_type as productType,
               direct_buy as directBuy,
               created_at as createdAt
-       FROM products WHERE is_active = 1 ORDER BY created_at DESC`
+       FROM products WHERE is_active = 1 ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      [limit, offset]
     );
-    await setCached("products", products);
-    const resp = NextResponse.json({ products });
+    if (offset === 0) await setCached("products", products);
+    const resp = NextResponse.json({ products, total: total?.c || 0, limit, offset });
     resp.headers.set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120");
     return resp;
   } catch (error) {
