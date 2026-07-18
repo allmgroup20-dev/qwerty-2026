@@ -148,7 +148,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
     } else if (path.startsWith("/company/whatsapp") || path.startsWith("/dashboard/messenger") || path.startsWith("/dashboard/telegram") || path.startsWith("/dashboard/platforms") || path.startsWith("/company/translations")) {
       setExpandedGroups(["communication"]);
     } else {
-      setExpandedGroups(["system"]);
+      setExpandedGroups(["system"]); // also matches /company/maintenance, /company/fingerprint, etc.
     }
   }, [pathname]);
 
