@@ -105,6 +105,7 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/company/privacy", en: "Privacy", bn: "প্রাইভেসি", icon: "🔒", desc: "গোপনীয়তা — ইউজার কনসেন্ট ও ডেটা সুরক্ষা তথ্য" },
       { href: "/company/test-mode", en: "Test Mode", bn: "টেস্ট মোড", icon: "🧪", desc: "টেস্ট মোড — মক ডেটা দিয়ে ফিচার টেস্টিং" },
       { href: "/company/updates", en: "Updates", bn: "আপডেট", icon: "🔄", desc: "আপডেট লগ — প্ল্যাটফর্মের নতুন ফিচার ও চেঞ্জলগ" },
+      { href: "/company/maintenance", en: "Maintenance", bn: "রক্ষণাবেক্ষণ", icon: "🔧", desc: "সিস্টেম মেইনটেন্যান্স — ডাটাবেজ ক্লিনআপ, ক্যাশে ও পারফরম্যান্স" },
     ],
   },
 ];

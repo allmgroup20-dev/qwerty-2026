@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const unlocks = await query<any>(
       await getDB(),
       `SELECT u.id, u.worker_id as workerId, u.course_id as courseId, u.unlocked_at as unlockedAt, u.unlocked_by as unlockedBy
-       FROM user_unlocks u WHERE u.worker_id = ?`,
+       FROM user_unlocks u WHERE u.worker_id = ? ORDER BY u.unlocked_at DESC LIMIT 100`,
       [workerId]
     );
     return NextResponse.json({ unlocks });

@@ -20,6 +20,7 @@ export default function CompanySettingsPage() {
     primaryColor: "#1E3A5A",
     secondaryColor: "#FFD700",
     actionColor: "#28A745",
+    timezone: "Asia/Dhaka",
   });
 
   useEffect(() => {

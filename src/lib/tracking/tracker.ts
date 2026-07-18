@@ -144,12 +144,14 @@ async function trackSessionEnd() {
 
 async function sendEvent(data: Record<string, unknown>) {
   if (isCompanyLoggedIn()) return;
+  const workerId = getWorkerId();
+  if (!workerId) return;
   try {
     const payload: Record<string, unknown> = {
       ...data,
       deviceInfo: getDeviceInfo().raw,
       sessionId,
-      workerId: getWorkerId(),
+      workerId,
     };
     fetch("/api/track/event", {
       method: "POST",

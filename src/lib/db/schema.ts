@@ -759,3 +759,110 @@ export const aiLeads = sqliteTable("ai_leads", {
   createdAt: text("created_at"),
   updatedAt: text("updated_at"),
 });
+
+// ─── Orphan tables (referenced by API routes but missing from schema) ───
+
+export const savedAccounts = sqliteTable("saved_accounts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  accountType: text("account_type").notNull(),
+  accountNumber: text("account_number").notNull(),
+  accountName: text("account_name"),
+  isDefault: integer("is_default").default(0),
+  createdAt: text("created_at").default("datetime('now')"),
+});
+
+export const customFlows = sqliteTable("custom_flows", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  description: text("description"),
+  steps: text("steps"),
+  departmentIds: text("department_ids"),
+  createdBy: text("created_by"),
+  isActive: integer("is_active").default(1),
+  runCount: integer("run_count").default(0),
+  lastRunAt: text("last_run_at"),
+  createdAt: text("created_at"),
+  updatedAt: text("updated_at"),
+});
+
+export const brainUsage = sqliteTable("brain_usage", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  phone: text("phone"),
+  text: text("text"),
+  intent: text("intent"),
+  primaryDepartment: text("primary_department"),
+  departmentsUsed: text("departments_used"),
+  agentsUsed: text("agents_used"),
+  chainType: text("chain_type"),
+  modelUsed: text("model_used"),
+  tokensUsed: integer("tokens_used"),
+  processingMs: integer("processing_ms"),
+  success: integer("success").default(1),
+  errorMessage: text("error_message"),
+  createdAt: text("created_at").default("datetime('now')"),
+});
+
+export const agentFeedback = sqliteTable("agent_feedback", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  phone: text("phone"),
+  rating: integer("rating"),
+  feedbackText: text("feedback_text"),
+  intent: text("intent"),
+  department: text("department"),
+  modelUsed: text("model_used"),
+  processingMs: integer("processing_ms"),
+  messageId: text("message_id"),
+  createdAt: text("created_at").default("datetime('now')"),
+});
+
+export const agentMemory = sqliteTable("agent_memory", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  phone: text("phone").notNull(),
+  agentId: text("agent_id"),
+  key: text("key").notNull(),
+  value: text("value"),
+  category: text("category"),
+  priority: integer("priority").default(0),
+  expiresAt: text("expires_at"),
+  createdAt: text("created_at").default("datetime('now')"),
+  updatedAt: text("updated_at"),
+});
+
+export const agentSchedule = sqliteTable("agent_schedule", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  phone: text("phone"),
+  agentId: text("agent_id"),
+  taskType: text("task_type").notNull(),
+  cronExpression: text("cron_expression"),
+  params: text("params"),
+  enabled: integer("enabled").default(1),
+  lastRunAt: text("last_run_at"),
+  nextRunAt: text("next_run_at"),
+  createdAt: text("created_at").default("datetime('now')"),
+});
+
+export const dynamicEmployees = sqliteTable("dynamic_employees", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  parentEmployeeId: text("parent_employee_id"),
+  employeeId: text("employee_id").notNull(),
+  name: text("name"),
+  nameBn: text("name_bn"),
+  description: text("description"),
+  expertise: text("expertise"),
+  promptTemplate: text("prompt_template"),
+  primaryModel: text("primary_model"),
+  status: text("status").default("active"),
+  deletedAt: text("deleted_at"),
+  createdAt: text("created_at").default("datetime('now')"),
+});
+
+export const maintenanceLog = sqliteTable("maintenance_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  action: text("action").notNull(),
+  tableName: text("table_name"),
+  rowsDeleted: integer("rows_deleted").default(0),
+  status: text("status").default("success"),
+  details: text("details"),
+  createdAt: text("created_at").default("datetime('now')"),
+});

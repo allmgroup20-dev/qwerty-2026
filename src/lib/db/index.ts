@@ -949,6 +949,54 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
 
+    // Orphan tables (referenced by API routes but missing)
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS saved_accounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      account_type TEXT NOT NULL,
+      account_number TEXT NOT NULL,
+      account_name TEXT,
+      is_default INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS custom_flows (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT,
+      steps TEXT, department_ids TEXT, created_by TEXT, is_active INTEGER DEFAULT 1,
+      run_count INTEGER DEFAULT 0, last_run_at TEXT, created_at TEXT, updated_at TEXT
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS brain_usage (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT, text TEXT, intent TEXT,
+      primary_department TEXT, departments_used TEXT, agents_used TEXT, chain_type TEXT,
+      model_used TEXT, tokens_used INTEGER, processing_ms INTEGER, success INTEGER DEFAULT 1,
+      error_message TEXT, created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS agent_feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT, rating INTEGER,
+      feedback_text TEXT, intent TEXT, department TEXT, model_used TEXT,
+      processing_ms INTEGER, message_id TEXT, created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS agent_memory (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT NOT NULL, agent_id TEXT,
+      key TEXT NOT NULL, value TEXT, category TEXT, priority INTEGER DEFAULT 0,
+      expires_at TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS agent_schedule (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT, agent_id TEXT,
+      task_type TEXT NOT NULL, cron_expression TEXT, params TEXT, enabled INTEGER DEFAULT 1,
+      last_run_at TEXT, next_run_at TEXT, created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS dynamic_employees (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, parent_employee_id TEXT, employee_id TEXT NOT NULL,
+      name TEXT, name_bn TEXT, description TEXT, expertise TEXT, prompt_template TEXT,
+      primary_model TEXT, status TEXT DEFAULT 'active', deleted_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS maintenance_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL, table_name TEXT,
+      rows_deleted INTEGER DEFAULT 0, status TEXT DEFAULT 'success', details TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
     g[DONE_FLAG] = true;
     g[DONE_LOCK] = false;
 
@@ -968,6 +1016,25 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_workers_created ON workers(created_at)`).run().catch(() => {});
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_payment ON orders(payment_status)`).run().catch(() => {});
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_commissions_status ON commissions(status)`).run().catch(() => {});
+
+    // ─── Missing indexes (performance optimization) ───
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_sessions_worker ON user_sessions(worker_id, created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_searches_worker ON user_searches(worker_id, created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_communication_worker ON communication_history(worker_id, created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_withdrawals_worker ON withdrawals(worker_id, created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(is_read, worker_id)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_queue_status ON wa_message_queue(status, priority, created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_wa_logs_phone ON wa_logs(phone, created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_ai_conv_phone ON ai_conversations(phone)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_ai_leads_status ON ai_leads(status, priority_score)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_phonebooks_worker ON user_phonebooks(worker_id)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_mlm_tree_level ON mlm_tree(level_number)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_complaints_worker ON complaints(worker_id)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_attribution_channel ON attribution_log(channel)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_devices_worker ON user_devices(worker_id, last_seen_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_saved_accounts_worker ON saved_accounts(worker_id)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_brain_usage_created ON brain_usage(created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_agent_feedback_created ON agent_feedback(created_at)`).run().catch(() => {});
 
     env.DB.prepare(`INSERT OR IGNORE INTO notification_preferences (worker_id, channel, category, enabled)
       SELECT w.worker_id, 'whatsapp', 'promotional', 1 FROM workers w

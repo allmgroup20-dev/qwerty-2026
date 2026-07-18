@@ -28,7 +28,8 @@ export async function GET(req: NextRequest) {
          FROM workers w
          LEFT JOIN mlm_tree t ON t.worker_id = w.worker_id
          WHERE w.membership_status = 'active'
-         ORDER BY w.created_at ASC`
+         ORDER BY w.created_at ASC
+         LIMIT 2000`
       ),
       query<any>(
         env,

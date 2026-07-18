@@ -41,14 +41,24 @@ export function NotificationBell() {
   };
 
   const markAllRead = async () => {
-    for (const n of notifications) {
-      await fetch(`/api/notifications/${n.id}/read`, { method: "PUT" });
-    }
+    const ids = notifications.map(n => n.id);
+    if (ids.length === 0) return;
+    await fetch("/api/notifications/mark-read", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
     setNotifications([]);
     setUnreadCount(0);
   };
 
-  useEffect(() => { load(); const iv = setInterval(load, 30000); return () => clearInterval(iv); }, [workerId]);
+  useEffect(() => { load(); }, [workerId]);
+
+  useEffect(() => {
+    if (!open) return;
+    const iv = setInterval(load, 30000);
+    return () => clearInterval(iv);
+  }, [open, workerId]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
