@@ -163,24 +163,25 @@ export default function CompanyCoursesPage() {
             <p className="text-sm text-text-secondary mt-1">{courses.length} {lang === "bn" ? "টি কোর্স" : "courses"}</p>
           </div>
           <div className="flex gap-2">
-            {courses.length === 0 && (
-              <Button variant="outline" onClick={async () => {
-                setSeeding(true); setError("");
-                try {
-                  const res = await fetch("/api/courses/seed", { method: "POST" });
-                  const data = await res.json() as { error?: string; coursesSeeded?: number; categoriesSeeded?: number };
-                  if (!res.ok) throw new Error(data.error || "Seed failed");
-                  refreshCourses(); refreshCats();
-                  alert(lang === "bn"
-                    ? `${data.categoriesSeeded}টি ক্যাটাগরি ও ${data.coursesSeeded}টি কোর্স ইম্পোর্ট হয়েছে`
-                    : `${data.categoriesSeeded} categories and ${data.coursesSeeded} courses imported`);
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : "Seed failed");
-                } finally { setSeeding(false); }
-              }} disabled={seeding}>
-                {seeding ? "⏳" : "🌱"} {lang === "bn" ? "স্ট্যাটিক ডাটা ইম্পোর্ট" : "Import Static Data"}
-              </Button>
-            )}
+            <Button variant="outline" onClick={async () => {
+              if (courses.length > 0 && !confirm(lang === "bn"
+                ? `${courses.length} টি কোর্স আছে। আবার ইম্পোর্ট করলে পুরনো ডাটা মুছে নতুন করে বসবে। নিশ্চিত?`
+                : `${courses.length} courses exist. Re-importing will delete all and re-seed. Confirm?`)) return;
+              setSeeding(true); setError("");
+              try {
+                const res = await fetch("/api/courses/seed", { method: "POST" });
+                const data = await res.json() as { error?: string; coursesSeeded?: number; categoriesSeeded?: number };
+                if (!res.ok) throw new Error(data.error || "Seed failed");
+                refreshCourses(); refreshCats();
+                alert(lang === "bn"
+                  ? `${data.categoriesSeeded}টি ক্যাটাগরি ও ${data.coursesSeeded}টি কোর্স ইম্পোর্ট হয়েছে`
+                  : `${data.categoriesSeeded} categories and ${data.coursesSeeded} courses imported`);
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Seed failed");
+              } finally { setSeeding(false); }
+            }} disabled={seeding}>
+              {seeding ? "⏳" : "🌱"} {lang === "bn" ? (courses.length > 0 ? "পুনরায় ইম্পোর্ট" : "স্ট্যাটিক ডাটা ইম্পোর্ট") : (courses.length > 0 ? "Re-import Data" : "Import Static Data")}
+            </Button>
             <Button onClick={() => { resetForm(); setShowAdd(!showAdd); }}>
               {lang === "bn" ? "নতুন কোর্স" : "Add Course"}
             </Button>
