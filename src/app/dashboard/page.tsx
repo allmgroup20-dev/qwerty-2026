@@ -54,6 +54,7 @@ export default function WorkerDashboard() {
     products: { id: number; name: string; nameBn: string | null; price: number; imageUrl: string | null; score: number }[];
     topCategories: string[];
   } | null>(null);
+  // Dashboard analytics state
   const [analytics, setAnalytics] = useState<{
     interests: { categoryScores: Record<string, number>; topCategories: string[] } | null;
     behavior: Record<string, unknown> | null;

@@ -1,95 +1,157 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLanguageStore } from "@/lib/store";
+
+const DISMISS_RESET_MINUTES = 60;
+const MAX_DISMISS_BEFORE_PAUSE = 10;
+const REAPPEAR_DELAY_MS = 4500;
 
 export default function SmartInstall() {
   const { lang } = useLanguageStore();
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const deferredPrompt = useRef<any>(null);
+  const [visible, setVisible] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(true);
+  const [browser, setBrowser] = useState<"chrome" | "safari" | "firefox" | "other">("other");
 
   useEffect(() => {
-    // Check if already installed
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setIsInstalled(true);
       return;
     }
 
-    // iOS detection
     const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
     setIsIOS(iOS);
 
-    // Check dismiss cookie
-    try {
-      const dismissed = localStorage.getItem("pwa_dismissed");
-      if (dismissed) {
-        const daysAgo = (Date.now() - parseInt(dismissed)) / 86400000;
-        if (daysAgo < 7) return;
-        localStorage.removeItem("pwa_dismissed");
-      }
-    } catch {}
-    setIsDismissed(false);
+    // Detect browser
+    const ua = navigator.userAgent;
+    if (ua.includes("Chrome") || ua.includes("Edge") || ua.includes("Brave") || ua.includes("Opera") || ua.includes("Samsung")) {
+      setBrowser(iOS ? "safari" : "chrome"); // iOS Chrome/Edge uses Safari WebKit
+    } else if (ua.includes("Firefox")) {
+      setBrowser(iOS ? "safari" : "firefox");
+    } else if (ua.includes("Safari") && !ua.includes("Chrome")) {
+      setBrowser("safari");
+    }
 
-    // Listen for beforeinstallprompt (Chrome/Edge/Android)
     const handlePrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
-      setShowPrompt(true);
+      deferredPrompt.current = e;
+      setVisible(true);
     };
 
-    // Listen for app installed
     const handleInstalled = () => {
       setIsInstalled(true);
-      setShowPrompt(false);
-      try { localStorage.setItem("pwa_installed", "1"); } catch {}
+      setVisible(false);
     };
 
     window.addEventListener("beforeinstallprompt", handlePrompt);
     window.addEventListener("appinstalled", handleInstalled);
 
-    // For iOS and desktop, show after a delay if no beforeinstallprompt
-    if (!window.matchMedia("(display-mode: browser)").matches) return;
-    
+    // Dismiss counter
+    let dismissCount = 0;
+    try {
+      dismissCount = parseInt(localStorage.getItem("pwa_dismiss_count") || "0");
+    } catch {}
+
+    // Pause check
+    try {
+      const pauseUntil = localStorage.getItem("pwa_pause_until");
+      if (pauseUntil) {
+        const remaining = parseInt(pauseUntil) - Date.now();
+        if (remaining > 0) return; // Still paused
+        localStorage.removeItem("pwa_pause_until");
+      }
+    } catch {}
+
+    // Show after short delay if not already shown by beforeinstallprompt
     const timer = setTimeout(() => {
-      if (!deferredPrompt && !isInstalled && !isIOS) {
-        // Desktop Chrome shows install icon in address bar automatically
-        // Just show the guide banner
+      if (!deferredPrompt.current && !isInstalled) {
+        if (iOS) {
+          setVisible(true);
+        } else {
+          setVisible(true);
+        }
       }
-      if (isIOS) {
-        setShowPrompt(true); // Show iOS guide
-      }
-    }, 5000);
+    }, 2000);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handlePrompt);
       window.removeEventListener("appinstalled", handleInstalled);
       clearTimeout(timer);
     };
-  }, [deferredPrompt, isInstalled, isIOS]);
+  }, []);
 
-  function handleInstall() {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choice: { outcome: string }) => {
-        if (choice.outcome === "accepted") {
-          setIsInstalled(true);
-        }
-        setDeferredPrompt(null);
-        setShowPrompt(false);
-      });
+  useEffect(() => {
+    if (!visible || isInstalled) return;
+    // Reevaluate visible — if dismissed too many times, pause for an hour
+    try {
+      const count = parseInt(localStorage.getItem("pwa_dismiss_count") || "0");
+      if (count >= MAX_DISMISS_BEFORE_PAUSE) {
+        const pauseUntil = Date.now() + DISMISS_RESET_MINUTES * 60 * 1000;
+        localStorage.setItem("pwa_pause_until", String(pauseUntil));
+        localStorage.setItem("pwa_dismiss_count", "0");
+        setVisible(false);
+      }
+    } catch {}
+  }, [visible, isInstalled]);
+
+  async function handleInstall() {
+    if (deferredPrompt.current) {
+      deferredPrompt.current.prompt();
+      const choice = await deferredPrompt.current.userChoice;
+      deferredPrompt.current = null;
+      if (choice.outcome === "accepted") {
+        setIsInstalled(true);
+        setVisible(false);
+      }
+      return;
+    }
+
+    if (isIOS) {
+      try {
+        await navigator.share({
+          title: "JG Career",
+          text: "Jobayer Group Career - Build Your Career With Us",
+          url: window.location.origin,
+        });
+      } catch {}
+      return;
+    }
+
+    if (browser === "safari" && navigator.share) {
+      try {
+        await navigator.share({
+          title: "JG Career",
+          text: "Jobayer Group Career - Build Your Career With Us",
+          url: window.location.origin,
+        });
+      } catch {}
     }
   }
 
   function handleDismiss() {
-    setShowPrompt(false);
-    setDeferredPrompt(null);
-    try { localStorage.setItem("pwa_dismissed", String(Date.now())); } catch {}
+    setVisible(false);
+    deferredPrompt.current = null;
+    try {
+      let count = parseInt(localStorage.getItem("pwa_dismiss_count") || "0");
+      count += 1;
+      localStorage.setItem("pwa_dismiss_count", String(count));
+    } catch {}
+
+    // Reappear after 4-5 seconds
+    setTimeout(() => {
+      try {
+        const pauseUntil = localStorage.getItem("pwa_pause_until");
+        if (pauseUntil && parseInt(pauseUntil) > Date.now()) return;
+        if (!isInstalled) setVisible(true);
+      } catch {}
+    }, REAPPEAR_DELAY_MS);
   }
 
-  if (isInstalled || !showPrompt) return null;
+  if (isInstalled || !visible) return null;
+
+  const showOneClick = deferredPrompt.current;
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-50 md:bottom-8 md:left-auto md:right-8 md:w-80 animate-slide-up">
@@ -104,7 +166,7 @@ export default function SmartInstall() {
 
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B35] to-[#FFD700] flex items-center justify-center text-white font-bold text-sm">
-JGC
+            JGC
           </div>
           <div>
             <div className="text-sm font-bold text-primary">JG Career</div>
@@ -115,17 +177,31 @@ JGC
         </div>
 
         {isIOS ? (
-          <div className="text-xs text-text-secondary leading-relaxed">
+          <button
+            onClick={handleInstall}
+            className="w-full py-2.5 bg-gradient-to-r from-[#FF6B35] to-[#FF8C00] text-white text-sm font-bold rounded-xl hover:from-[#e55a2b] hover:to-[#e67e00] transition-all shadow-lg shadow-orange-200 active:scale-95"
+          >
+            {lang === "bn" ? "📲 এখনই ইনস্টল করুন" : "📲 Install App"}
+          </button>
+        ) : showOneClick ? (
+          <button
+            onClick={handleInstall}
+            className="w-full py-2.5 bg-gradient-to-r from-[#FF6B35] to-[#FF8C00] text-white text-sm font-bold rounded-xl hover:from-[#e55a2b] hover:to-[#e67e00] transition-all shadow-lg shadow-orange-200 active:scale-95"
+          >
+            {lang === "bn" ? "⚡ এখনই ইনস্টল করুন" : "⚡ Install Now"}
+          </button>
+        ) : browser === "firefox" ? (
+          <div className="text-xs text-text-secondary leading-relaxed text-center">
             {lang === "bn"
-              ? "iOS এ Safari → শেয়ার বাটন → হোম স্ক্রিনে যোগ করুন"
-              : "iOS: Safari → Share button → Add to Home Screen"}
+              ? "ফায়ারফক্সে ইনস্টল করতে ব্রাউজারের মেনু থেকে Install সিলেক্ট করুন"
+              : "To install on Firefox, select 'Install' from the browser menu"}
           </div>
         ) : (
           <button
             onClick={handleInstall}
             className="w-full py-2.5 bg-gradient-to-r from-[#FF6B35] to-[#FF8C00] text-white text-sm font-bold rounded-xl hover:from-[#e55a2b] hover:to-[#e67e00] transition-all shadow-lg shadow-orange-200 active:scale-95"
           >
-            {lang === "bn" ? "⚡ এখনই ইনস্টল করুন" : "⚡ Install Now"}
+            {lang === "bn" ? "📲 ইনস্টল করুন" : "📲 Install App"}
           </button>
         )}
       </div>
