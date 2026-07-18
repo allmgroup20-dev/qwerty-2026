@@ -63,12 +63,12 @@ export async function GET(req: NextRequest) {
 
     const db = await ensureDB();
 
-    const [segments, totalWorkers, topInterests, eventStats, totalEvents, predictionStats] = await Promise.all([
-      db.prepare("SELECT segment, COUNT(*) as count FROM user_behavior_scores GROUP BY segment ORDER BY count DESC").bind().all() as Promise<{ results: { segment: string; count: number }[] }>,
-      db.prepare("SELECT COUNT(*) as c FROM workers WHERE membership_status = 'active'").bind().first() as Promise<{ c: number } | undefined>,
-      db.prepare("SELECT category_scores FROM user_interests WHERE category_scores IS NOT NULL AND category_scores != '{}'").bind().all() as Promise<{ results: { category_scores: string }[] }>,
-      db.prepare("SELECT event_type, COUNT(*) as count FROM user_events GROUP BY event_type ORDER BY count DESC").bind().all() as Promise<{ results: { event_type: string; count: number }[] }>,
-      db.prepare("SELECT COUNT(*) as c FROM user_events").bind().first() as Promise<{ c: number } | undefined>,
+    const results = await db.batch([
+      db.prepare("SELECT segment, COUNT(*) as count FROM user_behavior_scores GROUP BY segment ORDER BY count DESC"),
+      db.prepare("SELECT COUNT(*) as c FROM workers WHERE membership_status = 'active'"),
+      db.prepare("SELECT category_scores FROM user_interests WHERE category_scores IS NOT NULL AND category_scores != '{}'"),
+      db.prepare("SELECT event_type, COUNT(*) as count FROM user_events WHERE created_at >= datetime('now', '-7 days') GROUP BY event_type ORDER BY count DESC"),
+      db.prepare("SELECT COUNT(*) as c FROM user_events WHERE created_at >= datetime('now', '-7 days')"),
       db.prepare(`SELECT
         COUNT(*) as total_scored,
         SUM(CASE WHEN churn_probability >= 50 THEN 1 ELSE 0 END) as churn_risk,
@@ -78,11 +78,18 @@ export async function GET(req: NextRequest) {
         AVG(churn_probability) as avg_churn,
         AVG(purchase_intent) as avg_intent,
         AVG(lead_score) as avg_lead
-      FROM user_behavior_scores`).bind().first() as Promise<Record<string, any> | undefined>,
+      FROM user_behavior_scores`),
     ]);
 
+    const segmentsBatch = results[0].results as { segment: string; count: number }[];
+    const totalWorkersBatch = results[1].results as { c: number }[];
+    const topInterestsBatch = results[2].results as { category_scores: string }[];
+    const eventStatsBatch = results[3].results as { event_type: string; count: number }[];
+    const totalEventsBatch = results[4].results as { c: number }[];
+    const predictionStatsBatch = results[5].results as Record<string, any>[];
+
     const interestAgg: Record<string, { total: number; count: number }> = {};
-    for (const row of topInterests.results) {
+    for (const row of topInterestsBatch) {
       try {
         const scores = JSON.parse(row.category_scores) as Record<string, number>;
         for (const [cat, score] of Object.entries(scores)) {
@@ -98,19 +105,20 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.avgScore - a.avgScore)
       .slice(0, 10);
 
-    const scored = segments.results.reduce((s, r) => s + r.count, 0);
-    const segmentData = segments.results.map(r => ({ segment: r.segment, count: r.count }));
-    if (totalWorkers && totalWorkers.c > scored) {
-      segmentData.push({ segment: "unscored", count: totalWorkers.c - scored });
+    const scored = segmentsBatch.reduce((s, r) => s + r.count, 0);
+    const segmentData = segmentsBatch.map(r => ({ segment: r.segment, count: r.count }));
+    const totalWorkersVal = totalWorkersBatch[0]?.c || 0;
+    if (totalWorkersVal > scored) {
+      segmentData.push({ segment: "unscored", count: totalWorkersVal - scored });
     }
 
     const result = {
       segments: segmentData,
-      totalWorkers: totalWorkers?.c || 0,
+      totalWorkers: totalWorkersVal,
       topInterestCategories,
-      eventStats: eventStats.results || [],
-      totalEvents: totalEvents?.c || 0,
-      predictions: predictionStats || { total_scored: 0, churn_risk: 0, high_intent: 0, high_lead: 0, high_ltv: 0, avg_churn: 0, avg_intent: 0, avg_lead: 0 },
+      eventStats: eventStatsBatch || [],
+      totalEvents: totalEventsBatch[0]?.c || 0,
+      predictions: predictionStatsBatch[0] || { total_scored: 0, churn_risk: 0, high_intent: 0, high_lead: 0, high_ltv: 0, avg_churn: 0, avg_intent: 0, avg_lead: 0 },
     };
     await setCached("analytics:overview", result);
     const resp = NextResponse.json(result);

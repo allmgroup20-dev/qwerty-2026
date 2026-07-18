@@ -45,3 +45,20 @@ export async function invalidateCache(key: string): Promise<void> {
     await kv.delete(key);
   } catch {}
 }
+
+const memoStore = new Map<string, { data: unknown; ts: number }>();
+
+export function memo<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
+  const existing = memoStore.get(key);
+  if (existing && Date.now() - existing.ts < ttlMs) {
+    return Promise.resolve(existing.data as T);
+  }
+  return fn().then(data => {
+    memoStore.set(key, { data, ts: Date.now() });
+    return data;
+  });
+}
+
+export function clearMemo(): void {
+  memoStore.clear();
+}
