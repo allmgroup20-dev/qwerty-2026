@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
     if (workerId) { conditions.push("worker_id = ?"); params.push(workerId); }
     if (eventType) { conditions.push("event_type = ?"); params.push(eventType); }
     if (search) {
+      conditions.push("created_at > datetime('now', '-30 days')");
       conditions.push("(page_url LIKE ? OR search_keyword LIKE ? OR page_category LIKE ?)");
       const p = `%${search}%`;
       params.push(p, p, p);

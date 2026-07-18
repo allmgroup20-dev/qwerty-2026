@@ -13,8 +13,8 @@ export async function POST(req: NextRequest) {
 
     for (const log of waLogs.results) {
       const match = await db.prepare(
-        "SELECT worker_id FROM workers WHERE phone = ? OR phone LIKE ?"
-      ).bind(log.phone, `%${log.phone}%`).first() as { worker_id: string } | undefined;
+        "SELECT worker_id FROM workers WHERE phone = ?"
+      ).bind(log.phone).first() as { worker_id: string } | undefined;
 
       if (match) {
         await db.prepare(

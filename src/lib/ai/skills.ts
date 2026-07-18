@@ -36,7 +36,7 @@ export async function findSkill(text: string, phone = ""): Promise<string | null
     const db = await ensureDB();
     const skills = await query<Skill>(
       { DB: db },
-      "SELECT id, keywords, answer, usage_count FROM ai_skills ORDER BY usage_count DESC"
+      "SELECT id, keywords, answer, usage_count FROM ai_skills ORDER BY usage_count DESC LIMIT 500"
     );
     if (skills.length === 0) return null;
 
@@ -125,7 +125,7 @@ export async function getSkillHistory(): Promise<any[]> {
   const db = await ensureDB();
   const skills = await query<Skill>(
     { DB: db },
-    "SELECT s.*, COALESCE(u.employee_name, '') as updated_by_name FROM ai_skills s LEFT JOIN (SELECT DISTINCT phone, name as employee_name FROM workers) u ON u.phone = s.updated_by ORDER BY s.updated_at DESC"
+    "SELECT s.*, COALESCE(u.employee_name, '') as updated_by_name FROM ai_skills s LEFT JOIN (SELECT DISTINCT phone, name as employee_name FROM workers) u ON u.phone = s.updated_by ORDER BY s.updated_at DESC LIMIT 500"
   );
 
   const result = [];

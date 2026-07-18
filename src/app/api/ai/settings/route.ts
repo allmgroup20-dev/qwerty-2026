@@ -8,11 +8,11 @@ export async function GET() {
     const [keys, models, failover] = await Promise.all([
       query<{ id: number; key_value: string; provider: string; is_active: number }>(
         { DB: db },
-        "SELECT id, key_value, provider, is_active FROM ai_api_keys ORDER BY id ASC"
+        "SELECT id, key_value, provider, is_active FROM ai_api_keys ORDER BY id ASC LIMIT 100"
       ),
       query<{ id: number; model_id: string; name: string; tier: number; provider: string; is_active: number }>(
         { DB: db },
-        "SELECT id, model_id, name, tier, provider, is_active FROM ai_models ORDER BY tier ASC, name ASC"
+        "SELECT id, model_id, name, tier, provider, is_active FROM ai_models ORDER BY tier ASC, name ASC LIMIT 100"
       ),
       query(
         { DB: db },

@@ -33,12 +33,12 @@ export async function POST(request: NextRequest) {
 
       if (!wid) return NextResponse.json({ error: "Identifier required" }, { status: 400 });
 
-      const exists = await query<{ c: number }>(
+      const exists = await query<{ found: number }>(
         env,
-        "SELECT COUNT(*) as c FROM biometric_credentials WHERE worker_id = ? AND user_type = ?",
+        "SELECT 1 as found FROM biometric_credentials WHERE worker_id = ? AND user_type = ? LIMIT 1",
         [wid, ut]
       );
-      if (!Number(exists[0]?.c)) {
+      if (!exists[0]?.found) {
         return NextResponse.json({ error: "No biometric credentials found" }, { status: 404 });
       }
       return NextResponse.json({ challenge: genChallenge(), userType: ut });

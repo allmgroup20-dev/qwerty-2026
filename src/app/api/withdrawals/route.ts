@@ -124,6 +124,7 @@ export async function GET(request: NextRequest) {
       : `SELECT w.id, w.withdrawal_id as withdrawalId, w.worker_id as workerId, w.amount, w.currency, w.payment_method as paymentMethod, w.account_number as accountNumber, w.status, w.processed_at as processedAt, w.created_at as createdAt, wr.name as workerName
          FROM withdrawals w
          LEFT JOIN workers wr ON w.worker_id = wr.worker_id
+         WHERE w.created_at > datetime('now', '-6 months')
          ORDER BY w.created_at DESC LIMIT 50`;
     const params = workerId ? [workerId] : [];
     const withdrawals = await query(await getDB(), sql, params);

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     if (allSessions) {
       const db = await ensureDB();
       const { results: sessions } = await db.prepare(
-        "SELECT id, worker_id, session_start, session_end, duration_seconds, ip_address, user_agent, device_type, browser, os, screen_resolution, referrer, city, country, timezone, language, utm_source, utm_campaign, created_at FROM user_sessions ORDER BY created_at DESC LIMIT 200"
+        "SELECT id, worker_id, session_start, session_end, duration_seconds, ip_address, user_agent, device_type, browser, os, screen_resolution, referrer, city, country, timezone, language, utm_source, utm_campaign, created_at FROM user_sessions WHERE created_at > datetime('now', '-30 days') ORDER BY created_at DESC LIMIT 200"
       ).bind().all() as { results: any[] };
       return NextResponse.json({ sessions: sessions || [] });
     }

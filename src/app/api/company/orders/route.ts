@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const params: string[] = [];
 
     if (search) {
+      conditions.push("o.created_at > datetime('now', '-3 months')");
       conditions.push("(o.order_id LIKE ? OR w.name LIKE ? OR w.phone LIKE ? OR o.product_name LIKE ?)");
       params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
     }

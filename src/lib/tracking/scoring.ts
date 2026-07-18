@@ -79,7 +79,7 @@ export async function computeWorkerInterests(workerId: string): Promise<void> {
   const now = new Date().toISOString();
 
   const events = await db.prepare(
-    "SELECT event_type, page_category, search_keyword, product_category, created_at FROM user_events WHERE worker_id = ? AND created_at IS NOT NULL ORDER BY created_at DESC"
+    "SELECT event_type, page_category, search_keyword, product_category, created_at FROM user_events WHERE worker_id = ? AND created_at IS NOT NULL ORDER BY created_at DESC LIMIT 1000"
   ).bind(workerId).all() as { results: { event_type: string; page_category: string | null; search_keyword: string | null; product_category: string | null; created_at: string }[] };
 
   for (const ev of events.results) {
@@ -162,7 +162,7 @@ export async function computeWorkerBehaviorScore(workerId: string): Promise<void
   const now = new Date().toISOString();
 
   const eventStats = await db.prepare(
-    "SELECT event_type, created_at FROM user_events WHERE worker_id = ? AND created_at IS NOT NULL ORDER BY created_at DESC"
+    "SELECT event_type, created_at FROM user_events WHERE worker_id = ? AND created_at IS NOT NULL ORDER BY created_at DESC LIMIT 1000"
   ).bind(workerId).all() as { results: { event_type: string; created_at: string }[] };
 
   const events = eventStats.results;
@@ -238,7 +238,7 @@ export async function computeWorkerBehaviorScore(workerId: string): Promise<void
 export async function scoreAllWorkers(): Promise<{ scored: number; errors: number }> {
   const db = await ensureDB();
   const workers = await db.prepare(
-    "SELECT DISTINCT worker_id FROM user_events UNION SELECT worker_id FROM workers WHERE membership_status = 'active'"
+    "SELECT DISTINCT worker_id FROM user_events WHERE created_at > datetime('now', '-30 days') UNION SELECT worker_id FROM workers WHERE membership_status = 'active'"
   ).bind().all() as { results: { worker_id: string }[] };
 
   let scored = 0;

@@ -121,7 +121,7 @@ async function collectSectorData(agent: Agent) {
   } else {
     const rows = await query<{ role: string; messages: string; pain_points?: string; interests?: string }>(
       { DB: db },
-      "SELECT role, messages, pain_points, interests FROM ai_conversations ORDER BY created_at DESC LIMIT 100"
+      "SELECT role, messages, pain_points, interests FROM ai_conversations WHERE created_at > datetime('now', '-7 days') ORDER BY created_at DESC LIMIT 100"
     );
     conversations = rows.map((r) => ({ role: r.role, content: r.messages, pain_points: r.pain_points, interests: r.interests }));
   }

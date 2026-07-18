@@ -20,7 +20,7 @@ async function computeLTV(db: D1Database, workerId: string) {
   if (!worker) return { workerId, error: "Worker not found" };
 
   const ordersRes = await db.prepare(
-    "SELECT total_amount, created_at FROM orders WHERE worker_id = ? AND payment_status = 'completed' ORDER BY created_at ASC"
+    "SELECT total_amount, created_at FROM orders WHERE worker_id = ? AND payment_status = 'completed' ORDER BY created_at ASC LIMIT 500"
   ).bind(workerId).all() as { results: { total_amount: number; created_at: string }[] };
   const orders = ordersRes.results;
 

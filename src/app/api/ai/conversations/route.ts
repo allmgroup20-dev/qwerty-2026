@@ -16,7 +16,7 @@ export async function GET(request: Request) {
         created_at: string; updated_at: string;
       }>(
         { DB: db },
-        "SELECT id, phone, role, messages, summary, language, source, created_at, updated_at FROM ai_conversations WHERE phone = ? ORDER BY updated_at DESC",
+        "SELECT id, phone, role, messages, summary, language, source, created_at, updated_at FROM ai_conversations WHERE phone = ? ORDER BY updated_at DESC LIMIT 50",
         [phone]
       );
 

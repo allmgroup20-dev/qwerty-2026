@@ -15,7 +15,7 @@ export async function GET() {
   try {
     const rows = await query<{ id: number; username: string; name: string; role: string; created_at: string }>(
       await getDB(),
-      "SELECT id, username, name, role, created_at FROM company_users ORDER BY created_at DESC"
+      "SELECT id, username, name, role, created_at FROM company_users ORDER BY created_at DESC LIMIT 100"
     );
     return NextResponse.json({ users: rows });
   } catch (error) {

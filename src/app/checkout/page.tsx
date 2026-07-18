@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useLanguageStore, useCartStore } from "@/lib/store";
@@ -20,9 +20,7 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "" });
   const [workerId, setWorkerId] = useState<string | null>(null);
-  const [hasPhysical, setHasPhysical] = useState(false);
-  const [sslEnabled, setSslEnabled] = useState(true);
-  const [codEnabled, setCodEnabled] = useState(true);
+  const [products, setProducts] = useState<any>(null);
   const [selectedMethod, setSelectedMethod] = useState<string>("sslcommerz");
   const [orderId, setOrderId] = useState<string | null>(null);
 
@@ -47,37 +45,25 @@ function CheckoutContent() {
       .catch(() => {})
       .finally(() => {
         const productId = searchParams.get("product");
-        const aiPriceParam = searchParams.get("aiPrice");
-        if (productId) {
-          useCartStore.getState().clearCart();
+        if (productId || items.length > 0) {
           (async () => {
             try {
               const res = await fetch("/api/products");
-              const data = await res.json() as { products?: { id: number; name: string; nameBn?: string; price: number; currency: string; productType: string; directBuy: number; aiPriceEnabled?: number }[] };
-              const p = data.products?.find(x => x.id === parseInt(productId));
-              if (p) {
-                let usePrice = p.price;
-                if (aiPriceParam) {
-                  usePrice = parseFloat(aiPriceParam);
-                } else if (p.aiPriceEnabled === 1 && wid) {
-                  try {
-                    const aiRes = await fetch("/api/ai-price", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ workerId: wid, productIds: [p.id] }),
-                    });
-                    const aiData = await aiRes.json() as { prices?: Record<number, { aiPrice: number }> };
-                    if (aiData.prices?.[p.id]) usePrice = aiData.prices[p.id].aiPrice;
-                  } catch {}
+              const data: any = await res.json();
+              setProducts(data);
+              if (productId) {
+                useCartStore.getState().clearCart();
+                const p = data.products?.find((x: any) => x.id === parseInt(productId));
+                if (p) {
+                  useCartStore.getState().addItem({
+                    productId: p.id,
+                    name: lang === "bn" && p.nameBn ? p.nameBn : p.name,
+                    price: p.price,
+                    currency: p.currency || "BDT",
+                    quantity: 1,
+                    productType: p.productType,
+                  });
                 }
-                useCartStore.getState().addItem({
-                  productId: p.id,
-                  name: lang === "bn" && p.nameBn ? p.nameBn : p.name,
-                  price: usePrice,
-                  currency: p.currency || "BDT",
-                  quantity: 1,
-                  productType: p.productType,
-                });
               }
             } catch {}
           })();
@@ -86,30 +72,24 @@ function CheckoutContent() {
       });
   }, []);
 
-  useEffect(() => {
-    if (items.length > 0) {
-      (async () => {
-        try {
-          const res = await fetch("/api/products");
-          const data = await res.json() as { products?: { id: number; productType: string; enableSslcommerz: number; enableCod: number }[] };
-          let physical = false;
-          if (data.products) {
-            items.forEach(item => {
-              const p = data.products?.find(x => x.id === item.productId);
-              if (p) {
-                if (p.productType === "physical") physical = true;
-                if (item === items[0]) {
-                  setSslEnabled(p.enableSslcommerz === 1);
-                  setCodEnabled(p.enableCod === 1);
-                }
-              }
-            });
+  const { hasPhysical, sslEnabled, codEnabled } = useMemo(() => {
+    let physical = false;
+    let ssl = true;
+    let cod = true;
+    if (products?.products) {
+      items.forEach(item => {
+        const p = products.products.find((x: any) => x.id === item.productId);
+        if (p) {
+          if (p.productType === "physical") physical = true;
+          if (item === items[0]) {
+            ssl = p.enableSslcommerz === 1;
+            cod = p.enableCod === 1;
           }
-          setHasPhysical(physical);
-        } catch { setHasPhysical(true); }
-      })();
+        }
+      });
     }
-  }, [items]);
+    return { hasPhysical: physical, sslEnabled: ssl, codEnabled: cod };
+  }, [products, items]);
 
   useEffect(() => {
     if (!sslEnabled && codEnabled) setSelectedMethod("cod");

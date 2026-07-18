@@ -109,8 +109,9 @@ export async function POST(request: NextRequest) {
        FROM workers w
        LEFT JOIN user_behavior_scores ube ON ube.worker_id = w.worker_id
        WHERE w.membership_status = 'active'
-       ORDER BY last_activity DESC`
-    );
+       ORDER BY last_activity DESC
+       LIMIT 100`
+     );
 
     const now = Date.now();
     let affected = 0;

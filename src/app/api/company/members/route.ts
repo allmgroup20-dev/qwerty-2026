@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const db = await getDB();
     const where = search
-      ? "WHERE (w.name LIKE ? OR w.worker_id LIKE ? OR w.phone LIKE ?)"
+      ? "WHERE w.created_at > datetime('now', '-3 months') AND (w.name LIKE ? OR w.worker_id LIKE ? OR w.phone LIKE ?)"
       : "";
     const params = search ? [`%${search}%`, `%${search}%`, `%${search}%`] : [];
 

@@ -76,27 +76,27 @@ async function computeChurnPrediction(db: D1Database, worker: WorkerData) {
   const { worker_id } = worker;
 
   const eventsRes = await db.prepare(
-    "SELECT event_type, created_at, page_category FROM user_events WHERE worker_id = ? AND created_at IS NOT NULL ORDER BY created_at DESC"
+    "SELECT event_type, created_at, page_category FROM user_events WHERE worker_id = ? AND created_at IS NOT NULL ORDER BY created_at DESC LIMIT 500"
   ).bind(worker_id).all() as { results: EventRow[] };
   const events = eventsRes.results;
 
   const searchesRes = await db.prepare(
-    "SELECT created_at FROM user_searches WHERE worker_id = ? AND created_at IS NOT NULL ORDER BY created_at DESC"
+    "SELECT created_at FROM user_searches WHERE worker_id = ? AND created_at IS NOT NULL ORDER BY created_at DESC LIMIT 500"
   ).bind(worker_id).all() as { results: SearchRow[] };
   const searches = searchesRes.results;
 
   const sessionsRes = await db.prepare(
-    "SELECT session_start, duration FROM user_sessions WHERE worker_id = ? ORDER BY session_start DESC"
+    "SELECT session_start, duration FROM user_sessions WHERE worker_id = ? ORDER BY session_start DESC LIMIT 500"
   ).bind(worker_id).all() as { results: SessionRow[] };
   const sessions = sessionsRes.results;
 
   const ordersRes = await db.prepare(
-    "SELECT created_at, total_amount FROM orders WHERE worker_id = ? AND payment_status = 'completed' ORDER BY created_at DESC"
+    "SELECT created_at, total_amount FROM orders WHERE worker_id = ? AND payment_status = 'completed' ORDER BY created_at DESC LIMIT 500"
   ).bind(worker_id).all() as { results: OrderRow[] };
   const orders = ordersRes.results;
 
   const commsRes = await db.prepare(
-    "SELECT created_at, direction, channel FROM communication_history WHERE worker_id = ? ORDER BY created_at DESC"
+    "SELECT created_at, direction, channel FROM communication_history WHERE worker_id = ? ORDER BY created_at DESC LIMIT 500"
   ).bind(worker_id).all() as { results: CommRow[] };
   const comms = commsRes.results;
 
