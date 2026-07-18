@@ -5,33 +5,45 @@ import { ensureDB } from "@/lib/db";
 export async function GET() {
   try {
     const db = await ensureDB();
-    const keys = await query<{ id: number; key_value: string; provider: string; is_active: number }>(
-      { DB: db },
-      "SELECT id, key_value, provider, is_active FROM ai_api_keys ORDER BY id ASC"
-    );
-    const models = await query<{ id: number; model_id: string; name: string; tier: number; provider: string; is_active: number }>(
-      { DB: db },
-      "SELECT id, model_id, name, tier, provider, is_active FROM ai_models ORDER BY tier ASC, name ASC"
-    );
-    const failover = await query(
-      { DB: db },
-      "SELECT * FROM ai_model_failover_state WHERE id = 1"
-    );
-    const globalToggle = await query<{ setting_value: string }>(
-      { DB: db },
-      "SELECT setting_value FROM company_settings WHERE setting_key = 'ai_system_active'"
-    );
-    const agentConfigs = await query<{ agent_id: string; enabled: number }>(
-      { DB: db },
-      "SELECT agent_id, enabled FROM brain_agent_config"
-    );
-    const disabledMap: Record<string, boolean> = {};
-    for (const c of agentConfigs) disabledMap[c.agent_id] = !c.enabled;
+    const [keys, models, failover] = await Promise.all([
+      query<{ id: number; key_value: string; provider: string; is_active: number }>(
+        { DB: db },
+        "SELECT id, key_value, provider, is_active FROM ai_api_keys ORDER BY id ASC"
+      ),
+      query<{ id: number; model_id: string; name: string; tier: number; provider: string; is_active: number }>(
+        { DB: db },
+        "SELECT id, model_id, name, tier, provider, is_active FROM ai_models ORDER BY tier ASC, name ASC"
+      ),
+      query(
+        { DB: db },
+        "SELECT * FROM ai_model_failover_state WHERE id = 1"
+      ),
+    ]);
+
+    let aiSystemActive = true;
+    try {
+      const g = await query<{ setting_value: string }>(
+        { DB: db },
+        "SELECT setting_value FROM company_settings WHERE setting_key = 'ai_system_active'"
+      );
+      if (g.length > 0) aiSystemActive = g[0].setting_value !== "0";
+    } catch {}
+
+    let disabledAgents: Record<string, boolean> = {};
+    try {
+      const configs = await query<{ agent_id: string; enabled: number }>(
+        { DB: db },
+        "SELECT agent_id, enabled FROM brain_agent_config"
+      );
+      for (const c of configs) disabledAgents[c.agent_id] = !c.enabled;
+    } catch {}
+
+    const failoverState = failover[0] || null;
+
     return NextResponse.json({
       keys: keys.map(k => ({ ...k, key_value: k.key_value ? k.key_value.substring(0, 8) + "..." : "" })),
-      models, failover: failover[0] || null,
-      aiSystemActive: globalToggle.length === 0 || globalToggle[0].setting_value !== "0",
-      disabledAgents: disabledMap,
+      models, failover: failoverState, failoverState,
+      aiSystemActive, disabledAgents,
     });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Failed" }, { status: 500 });
