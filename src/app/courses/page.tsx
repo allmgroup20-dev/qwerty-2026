@@ -41,6 +41,8 @@ function getCourseImage(img: string | null | undefined, logo: string | null | un
 
 export default function CoursesPage() {
   const { lang } = useLanguageStore();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [viewMode, setViewMode] = useState<"all" | "institution">("all");
@@ -168,6 +170,15 @@ export default function CoursesPage() {
     }
     return result;
   }, [debouncedSearch, courses]);
+
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedCourses = useMemo(() => {
+    const start = (safePage - 1) * itemsPerPage;
+    return filtered.slice(start, start + itemsPerPage);
+  }, [filtered, safePage]);
 
   const canAccess = (course: Course) => {
     if (!isLoggedIn) return false;
@@ -303,56 +314,52 @@ export default function CoursesPage() {
         </div>
       </div>
 
-      {/* ── প্রতিষ্ঠান ও প্রশিক্ষক সেকশন ── */}
-      {institutions.length + sortedTrainers.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 md:pt-8 pb-3">
-          {institutions.length > 0 && (
-            <div className="mb-5">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">🏛️</span>
-                <h2 className="text-sm font-black text-text">{lang === "bn" ? "প্রতিষ্ঠানসমূহ" : "Institutions"}</h2>
+      {/* ── প্রতিষ্ঠান ও প্রশিক্ষক সেকশন (বাম→ডান স্ক্রল) ── */}
+      {institutions.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 md:pt-8 pb-2">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🏛️</span>
+            <h2 className="text-sm font-black text-text">{lang === "bn" ? "প্রতিষ্ঠানসমূহ" : "Institutions"}</h2>
+          </div>
+          <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-3 -mx-4 sm:-mx-6 px-4 sm:px-6">
+            {sortedInst.map(inst => (
+              <div key={inst.id} className="flex flex-col items-center text-center shrink-0 w-28 sm:w-32 bg-white rounded-2xl border border-border p-4 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
+                onClick={() => { setViewMode("institution"); setExpandedInstId(inst.id); window.scrollTo({ top: document.getElementById("course-list")?.offsetTop, behavior: "smooth" }); }}>
+                <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-primary/5 to-info/5 flex items-center justify-center mb-3 border border-border/50">
+                  {inst.logo_url ? (
+                    <img src={inst.logo_url} alt="" className="w-full h-full object-contain p-1.5" />
+                  ) : (
+                    <span className="text-2xl font-black text-primary">{(inst.name_bn || inst.name).charAt(0)}</span>
+                  )}
+                </div>
+                <p className="text-sm font-bold text-text leading-snug line-clamp-2">{lang === "bn" ? inst.name_bn || inst.name : inst.name}</p>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {sortedInst.map(inst => (
-                  <div key={inst.id} className="bg-white rounded-2xl border border-border p-4 flex flex-col items-center text-center hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
-                    onClick={() => { setViewMode("institution"); setExpandedInstId(inst.id); window.scrollTo({ top: document.getElementById("course-list")?.offsetTop, behavior: "smooth" }); }}>
-                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-primary/5 to-info/5 flex items-center justify-center mb-2.5 border border-border/50">
-                      {inst.logo_url ? (
-                        <img src={inst.logo_url} alt="" className="w-full h-full object-contain p-1" />
-                      ) : (
-                        <span className="text-xl font-black text-primary">{(inst.name_bn || inst.name).charAt(0)}</span>
-                      )}
-                    </div>
-                    <p className="text-xs font-bold text-text leading-snug line-clamp-2">{lang === "bn" ? inst.name_bn || inst.name : inst.name}</p>
-                  </div>
-                ))}
+            ))}
+          </div>
+        </div>
+      )}
+      {sortedTrainers.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-2">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">👨‍🏫</span>
+            <h2 className="text-sm font-black text-text">{lang === "bn" ? "প্রশিক্ষকবৃন্দ" : "Trainers"}</h2>
+          </div>
+          <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-3 -mx-4 sm:-mx-6 px-4 sm:px-6">
+            {sortedTrainers.map(t => (
+              <div key={t.id} className="flex flex-col items-center text-center shrink-0 w-28 sm:w-32 bg-white rounded-2xl border border-border p-4 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
+                onClick={() => { setViewMode("institution"); setExpandedTrainerId(t.id); window.scrollTo({ top: document.getElementById("course-list")?.offsetTop, behavior: "smooth" }); }}>
+                <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-info/5 to-orange/5 flex items-center justify-center mb-3 border border-border/50">
+                  {t.image_url ? (
+                    <img src={t.image_url} alt={t.name_bn || t.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl font-black text-info">{(t.name_bn || t.name).charAt(0)}</span>
+                  )}
+                </div>
+                <p className="text-sm font-bold text-text leading-snug line-clamp-2">{t.name_bn || t.name}</p>
+                <p className="text-[11px] text-text-secondary/60 mt-1 line-clamp-1">{t.specialty_bn || t.specialty_en || ""}</p>
               </div>
-            </div>
-          )}
-          {sortedTrainers.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">👨‍🏫</span>
-                <h2 className="text-sm font-black text-text">{lang === "bn" ? "প্রশিক্ষকবৃন্দ" : "Trainers"}</h2>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {sortedTrainers.map(t => (
-                  <div key={t.id} className="bg-white rounded-2xl border border-border p-4 flex flex-col items-center text-center hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
-                    onClick={() => { setViewMode("institution"); setExpandedTrainerId(t.id); window.scrollTo({ top: document.getElementById("course-list")?.offsetTop, behavior: "smooth" }); }}>
-                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-info/5 to-orange/5 flex items-center justify-center mb-2.5 border border-border/50">
-                      {t.image_url ? (
-                        <img src={t.image_url} alt={t.name_bn || t.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-xl font-black text-info">{(t.name_bn || t.name).charAt(0)}</span>
-                      )}
-                    </div>
-                    <p className="text-xs font-bold text-text leading-snug line-clamp-2">{t.name_bn || t.name}</p>
-                    <p className="text-[10px] text-text-secondary/60 mt-0.5 line-clamp-1">{t.specialty_bn || t.specialty_en || ""}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       )}
 
@@ -363,6 +370,7 @@ export default function CoursesPage() {
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${viewMode === "all" ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-white border-border text-text-secondary hover:border-primary/30 hover:text-text"}`}>
               <span>🏠</span>
               <span>সব ({count})</span>
+              {viewMode === "all" && totalPages > 1 && <span className="text-[10px] opacity-60 ml-1">{safePage}/{totalPages}</span>}
             </button>
             <button onClick={() => { setViewMode("institution"); setExpandedInstId(null); setExpandedTrainerId(null); }}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all shrink-0 cursor-pointer ${viewMode === "institution" ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-white border-border text-text-secondary hover:border-primary/30 hover:text-text"}`}>
@@ -383,9 +391,23 @@ export default function CoursesPage() {
                 <p className="text-text-secondary/60 text-sm mt-2">অন্য কীওয়ার্ড দিয়ে সার্চ করুন</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-                {filtered.map(c => courseCard(c))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                  {paginatedCourses.map(c => courseCard(c))}
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-8">
+                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage <= 1}
+                      className="w-10 h-10 rounded-xl border border-border bg-white flex items-center justify-center text-sm font-bold text-text hover:bg-gray-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer">‹</button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                      <button key={p} onClick={() => setCurrentPage(p)}
+                        className={`min-w-[40px] h-10 rounded-xl border text-sm font-bold transition-all cursor-pointer ${p === safePage ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-white border-border text-text-secondary hover:border-primary/30 hover:text-text"}`}>{p}</button>
+                    ))}
+                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages}
+                      className="w-10 h-10 rounded-xl border border-border bg-white flex items-center justify-center text-sm font-bold text-text hover:bg-gray-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer">›</button>
+                  </div>
+                )}
+              </>
             )}
           </>
         ) : (
