@@ -59,31 +59,28 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       is_active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
-    // Batch all idempotent ALTER TABLE statements (much faster than 22 sequential round-trips)
-    const alterStmts = [
-      `ALTER TABLE workers ADD COLUMN google_id TEXT`,
-      `ALTER TABLE workers ADD COLUMN facebook_id TEXT`,
-      `ALTER TABLE workers ADD COLUMN preferred_language TEXT DEFAULT 'bn'`,
-      `ALTER TABLE workers ADD COLUMN age_group TEXT`,
-      `ALTER TABLE workers ADD COLUMN occupation TEXT`,
-      `ALTER TABLE workers ADD COLUMN education_level TEXT`,
-      `ALTER TABLE workers ADD COLUMN interests_updated_at TEXT`,
-      `ALTER TABLE workers ADD COLUMN gender TEXT`,
-      `ALTER TABLE workers ADD COLUMN country TEXT`,
-      `ALTER TABLE workers ADD COLUMN city TEXT`,
-      `ALTER TABLE workers ADD COLUMN goal TEXT`,
-      `ALTER TABLE workers ADD COLUMN preferred_learning_time TEXT`,
-      `ALTER TABLE workers ADD COLUMN referral_source TEXT`,
-      `ALTER TABLE workers ADD COLUMN communication_preference TEXT DEFAULT 'whatsapp'`,
-      `ALTER TABLE workers ADD COLUMN budget_range TEXT`,
-      `ALTER TABLE workers ADD COLUMN religion TEXT`,
-      `ALTER TABLE workers ADD COLUMN resource_income REAL DEFAULT 0`,
-      `ALTER TABLE workers ADD COLUMN resource_income_original REAL DEFAULT 0`,
-      `ALTER TABLE commission_levels ADD COLUMN commission_type TEXT DEFAULT 'both'`,
-      `ALTER TABLE commission_levels ADD COLUMN min_referral_base INTEGER DEFAULT 3`,
-      `ALTER TABLE commission_levels ADD COLUMN level_name_bn TEXT`,
-    ].map(sql => env.DB.prepare(sql));
-    env.DB.batch(alterStmts).catch(() => {});
+    // Individual ALTER TABLE (batch would roll back entire group if one column already exists)
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN google_id TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN facebook_id TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN preferred_language TEXT DEFAULT 'bn'`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN age_group TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN occupation TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN education_level TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN interests_updated_at TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN gender TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN country TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN city TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN goal TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN preferred_learning_time TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN referral_source TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN communication_preference TEXT DEFAULT 'whatsapp'`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN budget_range TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN religion TEXT`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN resource_income REAL DEFAULT 0`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE workers ADD COLUMN resource_income_original REAL DEFAULT 0`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN commission_type TEXT DEFAULT 'both'`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN min_referral_base INTEGER DEFAULT 3`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN level_name_bn TEXT`).run().catch(() => {});
 
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_tracking_prefs (
       worker_id TEXT PRIMARY KEY,
