@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, queryFirst, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
-import { hashWorkerPassword, generateToken, generateWorkerId , getJwtSecret } from "@/lib/auth";
+import { hashWorkerPassword, generateToken, generateWorkerId } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       }
     } catch {}
 
-    const token = await generateToken(workerId, getJwtSecret());
+    const token = await generateToken(workerId, process.env.JWT_SECRET || "default-secret");
     return NextResponse.json({ token, workerId, name: displayName }, { status: 201 });
   } catch (error) {
     console.error("Register error:", error);

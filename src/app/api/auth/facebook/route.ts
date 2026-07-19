@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryFirst, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
-import { generateToken, generateWorkerId, hashWorkerPassword , getJwtSecret } from "@/lib/auth";
+import { generateToken, generateWorkerId, hashWorkerPassword } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (worker) {
-      const token = await generateToken(worker.worker_id, getJwtSecret());
+      const token = await generateToken(worker.worker_id, process.env.JWT_SECRET || "default-secret");
       return NextResponse.json({ token, workerId: worker.worker_id, name: worker.name });
     }
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       );
       if (worker) {
         await execute(env, "UPDATE workers SET facebook_id = ? WHERE worker_id = ?", [facebookId, worker.worker_id]);
-        const token = await generateToken(worker.worker_id, getJwtSecret());
+        const token = await generateToken(worker.worker_id, process.env.JWT_SECRET || "default-secret");
         return NextResponse.json({ token, workerId: worker.worker_id, name: worker.name });
       }
     }
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       [workerId, name, phone, hashedPw, facebookId]
     );
 
-    const token = await generateToken(workerId, getJwtSecret());
+    const token = await generateToken(workerId, process.env.JWT_SECRET || "default-secret");
     return NextResponse.json({ token, workerId, name }, { status: 201 });
   } catch (error) {
     console.error("Facebook auth error:", error);

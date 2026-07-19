@@ -51,6 +51,7 @@ export default function WorkerDashboard() {
   const [newAccNumber, setNewAccNumber] = useState("");
   const [newAccName, setNewAccName] = useState("");
   const [selectedAccId, setSelectedAccId] = useState<number | null>(null);
+  const [referralRedirectPath, setReferralRedirectPath] = useState("/register");
   const [analytics, setAnalytics] = useState<{
     totalPageViews: number;
     totalSessions: number;
@@ -103,6 +104,7 @@ export default function WorkerDashboard() {
         setSavedAccounts(accounts);
         if (accounts.length) setSelectedAccId(accounts[0].id);
         if (data.analytics) setAnalytics(data.analytics);
+        setReferralRedirectPath(s.referral_redirect_path || "/register");
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -384,11 +386,11 @@ export default function WorkerDashboard() {
             <div className="flex gap-2">
               <input
                 readOnly
-                value={`${typeof window !== "undefined" ? window.location.origin : ""}/register?ref=${worker.workerId}`}
+                value={`${typeof window !== "undefined" ? window.location.origin : ""}${referralRedirectPath}?ref=${worker.workerId}`}
                 className="input-field text-xs flex-1"
               />
               <button
-                onClick={() => navigator.clipboard.writeText(`${typeof window !== "undefined" ? window.location.origin : ""}/register?ref=${worker.workerId}`)}
+                onClick={() => navigator.clipboard.writeText(`${typeof window !== "undefined" ? window.location.origin : ""}${referralRedirectPath}?ref=${worker.workerId}`)}
                 className="btn-primary text-xs !px-4 !py-2.5"
               >
                 {lang === "bn" ? "কপি" : "Copy"}

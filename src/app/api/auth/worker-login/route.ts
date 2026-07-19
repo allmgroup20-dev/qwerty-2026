@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryFirst } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
-import { verifyWorkerPassword, generateToken , getJwtSecret } from "@/lib/auth";
+import { verifyWorkerPassword, generateToken } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    const token = await generateToken(worker.worker_id, getJwtSecret());
+    const token = await generateToken(worker.worker_id, process.env.JWT_SECRET || "default-secret");
     return NextResponse.json({ token, workerId: worker.worker_id, name: worker.name });
   } catch (error) {
     console.error("Worker login error:", error);
