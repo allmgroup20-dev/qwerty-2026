@@ -47,7 +47,7 @@ export async function sendTelegramMessage(
 export async function setWebhook(botToken?: string): Promise<{ success: boolean; error?: string }> {
   try {
     const token = botToken || await getBotToken();
-    const webhookUrl = `${process.env.PUBLIC_URL || "https://jobayer-group-career.workers.dev"}/api/telegram/webhook`;
+    const webhookUrl = `${process.env.PUBLIC_URL || "https://career.jobayergroup.com"}/api/telegram/webhook`;
     const res = await fetch(`${TG_API}${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`, { method: "POST" });
     const data = await res.json() as { ok: boolean; description?: string; result?: boolean };
     if (!data.ok) return { success: false, error: data.description };

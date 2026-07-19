@@ -45,7 +45,7 @@ export async function analyzeRecentErrors(): Promise<{
       `${p.route}: avg=${Math.round(Number(p.avg_duration_ms))}ms, errors=${p.error_count}/${p.request_count} req`
     ).join("\n");
 
-    const prompt = `You are a site reliability engineer for jobayer-group-career.workers.dev (Next.js on Cloudflare Workers, D1 database, KV cache). Analyze these errors and give a structured report.
+    const prompt = `You are a site reliability engineer for career.jobayergroup.com (Next.js on Cloudflare Workers, D1 database, KV cache). Analyze these errors and give a structured report.
 
 ERRORS (last 24h):
 ${errorSummary}

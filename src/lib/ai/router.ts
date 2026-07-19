@@ -176,7 +176,7 @@ async function tryModel(
     Authorization: `Bearer ${apiKey}`,
   };
   if (provider === "openrouter") {
-    headers["HTTP-Referer"] = "https://jobayer-group-career.workers.dev";
+    headers["HTTP-Referer"] = "https://career.jobayergroup.com";
   }
 
   const timeoutMs = TIMEOUT_MS[modelId] || TIMEOUT_MS.default;

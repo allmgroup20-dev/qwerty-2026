@@ -3,7 +3,7 @@ import { execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 import { SslcommerzService } from "@/lib/payment/sslcommerz";
 
-const SITE_URL = process.env.SITE_URL || "https://jobayer-group-career.allmgroup20.workers.dev";
+const SITE_URL = process.env.SITE_URL || "https://career.jobayergroup.com";
 
 export async function POST(request: NextRequest) {
   try {

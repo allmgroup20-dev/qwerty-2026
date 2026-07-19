@@ -10,7 +10,7 @@ import dns from "dns";
 
 // ====== Configuration ======
 const PORT = parseInt(process.env.PORT || "8080", 10);
-const APP_URL = (process.env.APP_URL || "https://jobayer-group-career.workers.dev").replace(/\/+$/, "");
+const APP_URL = (process.env.APP_URL || "https://career.jobayergroup.com").replace(/\/+$/, "");
 const AUTH_DIR = process.env.AUTH_DIR || path.join(process.cwd(), "auth");
 const ACCOUNT_ID = process.env.WA_ACCOUNT_ID || "web_main";
 

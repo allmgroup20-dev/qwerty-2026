@@ -46,7 +46,7 @@ export async function sendMessengerMessage(
 export async function setMessengerWebhook(verifyToken: string, pageToken?: string): Promise<{ success: boolean; error?: string }> {
   try {
     const token = pageToken || await getPageToken();
-    const webhookUrl = `${process.env.PUBLIC_URL || "https://jobayer-group-career.workers.dev"}/api/messenger/webhook`;
+    const webhookUrl = `${process.env.PUBLIC_URL || "https://career.jobayergroup.com"}/api/messenger/webhook`;
     const res = await fetch(`https://graph.facebook.com/v18.0/me/subscribed_apps?access_token=${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
