@@ -41,6 +41,9 @@ export class SystemErrorBoundary extends Component<Props, State> {
           <p className="text-sm text-text-secondary mb-4">
             This section encountered an error. It has been reported for review.
           </p>
+          {this.state.error && process.env.NODE_ENV === "development" && (
+            <pre className="text-xs text-red-600 bg-red-50 p-3 rounded-xl mb-4 max-w-full overflow-auto text-left">{this.state.error.message}</pre>
+          )}
           <button
             onClick={() => this.setState({ hasError: false, error: null })}
             className="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition-colors"

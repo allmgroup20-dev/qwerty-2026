@@ -39,7 +39,7 @@ export default function Footer() {
                 { en: "Live Updates", bn: "লাইভ", href: "/live-updates" },
                 { en: "Reviews", bn: "মতামত", href: "/reviews" },
                 { en: "Trainers", bn: "প্রশিক্ষক", href: "/trainers" },
-                { en: "FAQ", bn: "FAQ", href: "/faq" },
+                { en: "Reviews", bn: "মতামত", href: "/reviews" },
               ].map((item) => (
                 <Link key={item.href} href={item.href} className="text-white/60 hover:text-secondary text-sm transition-colors">
                   {lang === "bn" ? item.bn : item.en}

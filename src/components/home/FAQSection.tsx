@@ -40,7 +40,7 @@ export default function FAQSection() {
       </div>
 
       <div className="text-center mt-4">
-        <Link href="/faq" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-bg border border-border text-info font-bold text-sm hover:bg-info/5 transition-all">
+        <Link href="/reviews" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-bg border border-border text-info font-bold text-sm hover:bg-info/5 transition-all">
           📖 {lang === "bn" ? `সব প্রশ্ন ও উত্তর দেখুন (${faqs.length}টি)` : `View All ${faqs.length} FAQs`}
         </Link>
       </div>
