@@ -90,9 +90,6 @@ export default function SalaryTable({ onNewSuccess }: Props) {
         <p className="text-sm font-semibold text-text-secondary mt-1">
           {lang === "bn" ? liveSalaryText.subtitleBn : liveSalaryText.subtitleEn}
         </p>
-        <div className="mt-2 inline-block mx-auto px-3 py-1 rounded-full bg-info/10 border border-info/20 text-[11px] font-bold text-text-secondary">
-          {lang === "bn" ? liveSalaryText.disclaimerBn : liveSalaryText.disclaimerEn}
-        </div>
       </div>
 
       <div className="mt-5 rounded-xl bg-bg border border-border overflow-hidden">

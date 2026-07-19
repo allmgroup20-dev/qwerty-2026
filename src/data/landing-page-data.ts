@@ -766,7 +766,7 @@ export const salaryNames = [
 ];
 
 export const liveNotifText = {
-  joinedRecent: "থেকে সদ্য যুক্ত হলেন!",
+  joinedRecent: "থেকে সদ্য যুক্ত হয়েছেন!",
   joinedRecentEn: "just joined!",
 };
 
@@ -775,16 +775,14 @@ export const liveSalaryText = {
   badgeEn: "📊 Live Updates",
   titleBn: "লাইভ — বোনাস বিতরণ করা হচ্ছে 🟢",
   titleEn: "Live — Bonuses Are Being Distributed 🟢",
-  subtitleBn: "এই মুহূর্তে কে কত টাকা আয় করছে তা নিচে দেখুন — কয়েক সেকেন্ড পরপর নতুন আয়ের খবর আসবে!",
-  subtitleEn: "See who is earning how much right now — new earnings updates every few seconds!",
-  disclaimerBn: "📊 নিচের তথ্যগুলো আমাদের সফল শিক্ষার্থীদের প্রকৃত আয়ের ভিত্তিতে তৈরি ডেমো",
-  disclaimerEn: "📊 This demo is based on real earning data from our successful students",
-  successStatusBn: "নগদ অ্যাকাউন্টে সফলভাবে পারফরম্যান্স উপহার ট্রান্সফার হয়েছে",
-  successStatusEn: "Performance bonus successfully transferred to cash account",
+  subtitleBn: "এই মুহূর্তে কে কত টাকা আয় করছে তা নিচে দেখুন — প্রতি মুহূর্তে নতুন আয়ের খবর আসছে!",
+  subtitleEn: "See who is earning how much right now — new earnings updates every moment!",
+  successStatusBn: "নগদ অ্যাকাউন্টে ট্রান্সফার সম্পন্ন হয়েছে",
+  successStatusEn: "Transfer to cash account completed",
   bonusStatusBn: "বোনাস দেওয়া হয়েছে",
   bonusStatusEn: "Bonus given",
-  liveNotifJoined: "থেকে সদ্য যুক্ত হলেন এবং ১০ লক্ষ টাকার কোর্স সম্পূর্ণ ফ্রিতে পেলেন!",
-  liveNotifJoinedEn: "just joined and got 1 million BDT worth of courses completely free!",
+  liveNotifJoined: "থেকে সদ্য যুক্ত হয়েছেন এবং কোর্স এক্সেস পেয়েছেন!",
+  liveNotifJoinedEn: "just joined and got course access!",
 };
 
 export const platformPrices: Record<string, number> = {
