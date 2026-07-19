@@ -2,6 +2,8 @@ importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox
 
 workbox.setConfig({ debug: false });
 
+const CACHE_NAMES = ['pages', 'static-assets', 'images', 'next-assets'];
+
 workbox.routing.registerRoute(
   ({ request }) => request.mode === 'navigate',
   new workbox.strategies.StaleWhileRevalidate({ cacheName: 'pages' })
@@ -38,7 +40,7 @@ workbox.routing.registerRoute(
 
 workbox.routing.registerRoute(
   ({ url }) => url.pathname.startsWith('/_next/'),
-  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'next-assets' })
+  new workbox.strategies.NetworkFirst({ cacheName: 'next-assets' })
 );
 
 self.addEventListener('message', (event) => {
@@ -48,5 +50,15 @@ self.addEventListener('message', (event) => {
 self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    Promise.all([
+      clients.claim(),
+      caches.keys().then((keys) =>
+        Promise.all(keys
+          .filter((key) => !CACHE_NAMES.includes(key))
+          .map((key) => caches.delete(key))
+        )
+      ),
+    ])
+  );
 });
