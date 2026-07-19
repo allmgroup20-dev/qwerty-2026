@@ -33,7 +33,7 @@ export default function MyComplaintsPage() {
   useEffect(() => {
     if (!workerId) return;
     fetch(`/api/complaints?workerId=${encodeURIComponent(workerId)}`)
-      .then(r => r.json())
+      .then(r => r.json() as Promise<{ complaints: Complaint[] }>)
       .then(d => setComplaints(d.complaints || []))
       .catch(() => {})
       .finally(() => setLoading(false));

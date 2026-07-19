@@ -11,6 +11,8 @@ interface Complaint {
   workerId: string;
   courseIds: string;
   description: string;
+  category: string;
+  priority: string;
   status: string;
   adminNote: string | null;
   createdAt: string;
@@ -86,7 +88,8 @@ export default function ComplaintsPage() {
                   <th className="text-left p-4 text-sm font-semibold text-primary">ID</th>
                   <th className="text-left p-4 text-sm font-semibold text-primary">{lang === "bn" ? "ইউজার" : "User"}</th>
                   <th className="text-left p-4 text-sm font-semibold text-primary">{lang === "bn" ? "রিসোর্স আইডি" : "Course IDs"}</th>
-                  <th className="text-left p-4 text-sm font-semibold text-primary">{lang === "bn" ? "বিবরণ" : "Description"}</th>
+                  <th className="text-left p-4 text-sm font-semibold text-primary">{lang === "bn" ? "ধরন" : "Category"}</th>
+                  <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "প্রায়োরিটি" : "Priority"}</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "স্ট্যাটাস" : "Status"}</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "তারিখ" : "Date"}</th>
                   <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "কাজ" : "Actions"}</th>
@@ -100,7 +103,21 @@ export default function ComplaintsPage() {
                     <td className="p-4 text-sm text-text-secondary">
                       {JSON.parse(c.courseIds).map((id: number) => `#${id}`).join(", ")}
                     </td>
-                    <td className="p-4 text-sm text-text-secondary max-w-xs truncate">{c.description}</td>
+                    <td className="p-4 text-sm">
+                      <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
+                        {c.category || "other"}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                        c.priority === "critical" ? "bg-red-100 text-red-700" :
+                        c.priority === "high" ? "bg-orange-100 text-orange-700" :
+                        c.priority === "low" ? "bg-gray-100 text-gray-600" :
+                        "bg-blue-100 text-blue-700"
+                      }`}>
+                        {(c.priority || "medium").toUpperCase()}
+                      </span>
+                    </td>
                     <td className="p-4 text-center">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusColor(c.status)}`}>
                         {c.status}
