@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const workerId = searchParams.get("workerId");
 
     let sql = `SELECT c.id, c.worker_id as workerId, c.course_ids as courseIds, c.description,
-               c.status, c.admin_note as adminNote, c.created_at as createdAt, c.resolved_at as resolvedAt
+               c.category, c.priority, c.status, c.admin_note as adminNote, c.created_at as createdAt, c.resolved_at as resolvedAt
                FROM complaints c WHERE 1=1`;
     const params: unknown[] = [];
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
-      workerId: string; courseIds: number[]; description: string;
+      workerId: string; courseIds: number[]; description: string; category?: string; priority?: string;
     };
 
     if (!body.workerId || !body.courseIds?.length || !body.description) {
@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
 
     const db = await getDB();
     await execute(db,
-      `INSERT INTO complaints (worker_id, course_ids, description) VALUES (?, ?, ?)`,
-      [body.workerId, JSON.stringify(body.courseIds), body.description]
+      `INSERT INTO complaints (worker_id, course_ids, description, category, priority) VALUES (?, ?, ?, ?, ?)`,
+      [body.workerId, JSON.stringify(body.courseIds), body.description, body.category || "other", body.priority || "medium"]
     );
 
     return NextResponse.json({ success: true }, { status: 201 });

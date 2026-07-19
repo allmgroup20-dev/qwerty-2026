@@ -404,6 +404,8 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     )`).run();
     await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_unlocks_worker ON user_unlocks(worker_id)`).run().catch(() => {});
     await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status)`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE complaints ADD COLUMN category TEXT DEFAULT 'other'`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE complaints ADD COLUMN priority TEXT DEFAULT 'medium'`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS course_ratings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       course_id INTEGER NOT NULL,
@@ -1116,6 +1118,16 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       suggested_fixes TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS health_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      status TEXT NOT NULL DEFAULT 'unknown',
+      db_ok INTEGER DEFAULT 1,
+      cache_ok INTEGER DEFAULT 1,
+      memory_mb REAL,
+      uptime_seconds REAL,
+      details TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
 
     g[DONE_FLAG] = true;
     g[DONE_LOCK] = false;
@@ -1171,6 +1183,8 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_system_logs_created ON system_logs(created_at)`).run().catch(() => {});
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_perf_snapshots_route ON perf_snapshots(route, created_at)`).run().catch(() => {});
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_ai_reports_type ON ai_analysis_reports(report_type, created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_health_history_created ON health_history(created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_health_history_status ON health_history(status, created_at)`).run().catch(() => {});
 
     env.DB.prepare(`INSERT OR IGNORE INTO notification_preferences (worker_id, channel, category, enabled)
       SELECT w.worker_id, 'whatsapp', 'promotional', 1 FROM workers w

@@ -718,6 +718,8 @@ export const complaints = sqliteTable("complaints", {
   workerId: text("worker_id").notNull(),
   courseIds: text("course_ids").notNull(),
   description: text("description").notNull(),
+  category: text("category").default("other"),
+  priority: text("priority").default("medium"),
   status: text("status").default("pending"),
   adminNote: text("admin_note"),
   createdAt: text("created_at"),

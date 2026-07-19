@@ -51,6 +51,8 @@ export default function CourseDetailPage() {
   const [unlocking, setUnlocking] = useState(false);
   const [complaintOpen, setComplaintOpen] = useState(false);
   const [complaintDesc, setComplaintDesc] = useState("");
+  const [complaintCategory, setComplaintCategory] = useState("content");
+  const [complaintPriority, setComplaintPriority] = useState("medium");
   const [submitting, setSubmitting] = useState(false);
   const [ratings, setRatings] = useState<RatingData | null>(null);
   const [userRating, setUserRating] = useState(0);
@@ -165,9 +167,9 @@ export default function CourseDetailPage() {
     if (!workerId || !course || !complaintDesc.trim()) return;
     setSubmitting(true);
     try {
-      const res = await fetch("/api/complaints", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workerId, courseIds: [course.id], description: complaintDesc }) });
+      const res = await fetch("/api/complaints", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workerId, courseIds: [course.id], description: complaintDesc, category: complaintCategory, priority: complaintPriority }) });
       if (!res.ok) { const d = await res.json() as { error?: string }; throw new Error(d.error || "Failed"); }
-      setComplaintOpen(false); setComplaintDesc(""); alert("কমপ্লেইন পাঠানো হয়েছে");
+      setComplaintOpen(false); setComplaintDesc(""); setComplaintCategory("content"); setComplaintPriority("medium"); alert("কমপ্লেইন পাঠানো হয়েছে");
     } catch (err) { alert(err instanceof Error ? err.message : "Failed"); } finally { setSubmitting(false); }
   };
 
@@ -369,7 +371,23 @@ export default function CourseDetailPage() {
               <h3 className="font-bold text-primary">⚠️ রিপোর্ট করুন</h3>
               <button onClick={() => setComplaintOpen(false)} className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-sm cursor-pointer">✕</button>
             </div>
-            <textarea value={complaintDesc} onChange={e => setComplaintDesc(e.target.value)} placeholder="আপনার সমস্যা জানান..." className="input-field min-h-[120px] resize-none mb-4" />
+            <div className="flex gap-2 mb-3">
+              <select value={complaintCategory} onChange={e => setComplaintCategory(e.target.value)} className="flex-1 px-3 py-2 rounded-xl border border-border bg-white text-sm outline-none">
+                <option value="content">📄 কন্টেন্ট</option>
+                <option value="technical">⚙️ টেকনিক্যাল</option>
+                <option value="access">🔒 এক্সেস</option>
+                <option value="quality">⭐ কোয়ালিটি</option>
+                <option value="payment">💳 পেমেন্ট</option>
+                <option value="other">📝 অন্যান্য</option>
+              </select>
+              <select value={complaintPriority} onChange={e => setComplaintPriority(e.target.value)} className="flex-1 px-3 py-2 rounded-xl border border-border bg-white text-sm outline-none">
+                <option value="low">🟢 নিম্ন</option>
+                <option value="medium">🟡 মাঝারি</option>
+                <option value="high">🟠 উচ্চ</option>
+                <option value="critical">🔴 জরুরি</option>
+              </select>
+            </div>
+            <textarea value={complaintDesc} onChange={e => setComplaintDesc(e.target.value)} placeholder="আপনার সমস্যা বিস্তারিত জানান..." className="input-field min-h-[100px] resize-none mb-4" />
             <div className="flex gap-3">
               <Button onClick={handleComplaint} loading={submitting} disabled={!complaintDesc.trim()}>পাঠান</Button>
               <Button variant="ghost" onClick={() => setComplaintOpen(false)}>বাতিল</Button>
