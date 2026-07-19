@@ -5,10 +5,10 @@ import { verifyCompanyToken, hashCompanyPassword, verifyCompanyPassword } from "
 
 const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
 
-function getAuthUser(request: NextRequest) {
+async function getAuthUser(request: NextRequest) {
   const token = request.cookies.get("company_token")?.value;
   if (!token) return null;
-  return verifyCompanyToken(token, JWT_SECRET);
+  return await verifyCompanyToken(token, JWT_SECRET);
 }
 
 export async function GET() {
@@ -25,7 +25,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = getAuthUser(request);
+    const auth = await getAuthUser(request);
     if (!auth) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const auth = getAuthUser(request);
+    const auth = await getAuthUser(request);
     if (!auth) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }

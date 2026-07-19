@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    const token = generateToken(worker.worker_id, process.env.JWT_SECRET || "default-secret");
+    const token = await generateToken(worker.worker_id, process.env.JWT_SECRET || "default-secret");
     return NextResponse.json({ token, workerId: worker.worker_id, name: worker.name });
   } catch (error) {
     console.error("Worker login error:", error);

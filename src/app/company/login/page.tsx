@@ -31,6 +31,11 @@ export default function CompanyLoginPage() {
     }
   };
 
+  function base64url(buf: ArrayBuffer): string {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)))
+      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
   const handleFingerprint = async () => {
     if (!username) return alert(lang === "bn" ? "প্রথমে ইউজারনেম দিন" : "Enter username first");
     setLoading(true);
@@ -41,7 +46,7 @@ export default function CompanyLoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "begin", workerId: username, userType: "company" }),
       });
-      const bioData = await bioRes.json() as { error?: string; challenge?: string };
+      const bioData = await bioRes.json() as { error?: string; challengeId?: string; challenge?: string };
       if (!bioRes.ok) throw new Error(
         bioData.error === "No biometric credentials found"
           ? (lang === "bn" ? "ফিঙ্গারপ্রিন্ট সেটআপ করা নেই। কোম্পানি > ফিঙ্গারপ্রিন্ট থেকে সেটআপ করুন" : "No fingerprint setup. Go to Company > Fingerprint to set up")
@@ -50,17 +55,34 @@ export default function CompanyLoginPage() {
       if (!window.PublicKeyCredential) {
         throw new Error(lang === "bn" ? "এই ব্রাউজার ফিঙ্গারপ্রিন্ট সাপোর্ট করে না" : "Browser does not support fingerprint");
       }
+      const { challengeId, challenge } = bioData;
+
+      const challengeBytes = Uint8Array.from(atob(challenge!.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
       const credential = (await navigator.credentials.get({
         publicKey: {
-          challenge: Uint8Array.from(atob(bioData.challenge!), (c) => c.charCodeAt(0)),
+          challenge: challengeBytes,
+          rpId: window.location.hostname,
           userVerification: "required" as UserVerificationRequirement,
         },
       })) as PublicKeyCredential;
-      const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+
+      const resp = credential.response as any;
+      const credId = base64url(credential.rawId);
+      const cdJSON = btoa(String.fromCharCode(...new Uint8Array(resp.clientDataJSON)));
+      const authData = btoa(String.fromCharCode(...new Uint8Array(resp.authenticatorData)));
+      const sig = btoa(String.fromCharCode(...new Uint8Array(resp.signature)));
+
       const finishRes = await fetch("/api/auth/biometric/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "complete", credentialId: credId }),
+        body: JSON.stringify({
+          action: "complete",
+          challengeId,
+          credentialId: credId,
+          clientDataJSON: cdJSON,
+          authenticatorData: authData,
+          signature: sig,
+        }),
       });
       const finishData = await finishRes.json() as { error?: string; token?: string; userType?: string };
       if (!finishRes.ok) throw new Error(finishData.error || "Biometric auth failed");

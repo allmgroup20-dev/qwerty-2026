@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const token = generateToken(workerId, process.env.JWT_SECRET || "default-secret");
+    const token = await generateToken(workerId, process.env.JWT_SECRET || "default-secret");
     return NextResponse.json({ token, workerId, name: displayName }, { status: 201 });
   } catch (error) {
     console.error("Register error:", error);

@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated as company" }, { status: 401 });
     }
 
-    const payload = verifyCompanyToken(companyToken, process.env.JWT_SECRET || "default-secret");
+    const payload = await verifyCompanyToken(companyToken, process.env.JWT_SECRET || "default-secret");
     if (!payload) {
       return NextResponse.json({ error: "Invalid or expired company session" }, { status: 401 });
     }
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Worker not found" }, { status: 404 });
     }
 
-    const token = generateToken(worker.worker_id, process.env.JWT_SECRET || "default-secret");
+    const token = await generateToken(worker.worker_id, process.env.JWT_SECRET || "default-secret");
 
     return NextResponse.json({ token, workerId: worker.worker_id, name: worker.name });
   } catch (error) {

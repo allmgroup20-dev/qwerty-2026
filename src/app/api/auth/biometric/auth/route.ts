@@ -3,19 +3,18 @@ import { query } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 import { generateToken } from "@/lib/auth";
 import { generateCompanyToken } from "@/lib/auth/company-auth";
+import { issueChallenge, consumeChallenge, verifyAuthentication } from "@/lib/auth/webauthn";
 
 export async function POST(request: NextRequest) {
   try {
-    const { action, credentialId, workerId, phone, userType } = await request.json() as {
-      action: "challenge" | "begin" | "complete"; credentialId?: string; workerId?: string; phone?: string; userType?: string;
-    };
+    const body = await request.json() as Record<string, string>;
+    const { action, credentialId, workerId, phone, userType, challengeId, clientDataJSON, authenticatorData, signature } = body;
 
     const env = await getDB();
-    const genChallenge = () => btoa(crypto.getRandomValues(new Uint8Array(32)).reduce((s, b) => s + String.fromCharCode(b), ""));
 
     if (action === "challenge") {
-      // For discoverable credentials — no user identity needed, just return a server challenge
-      return NextResponse.json({ challenge: genChallenge() });
+      const { id, challenge } = issueChallenge();
+      return NextResponse.json({ challengeId: id, challenge });
     }
 
     if (action === "begin") {
@@ -41,27 +40,58 @@ export async function POST(request: NextRequest) {
       if (!exists[0]?.found) {
         return NextResponse.json({ error: "No biometric credentials found" }, { status: 404 });
       }
-      return NextResponse.json({ challenge: genChallenge(), userType: ut });
+
+      const { id, challenge } = issueChallenge();
+      return NextResponse.json({ challengeId: id, challenge, userType: ut });
     }
 
     if (action === "complete") {
-      if (!credentialId) return NextResponse.json({ error: "credentialId required" }, { status: 400 });
-      const creds = await query<{ worker_id: string; user_type: string }>(
+      if (!credentialId || !clientDataJSON || !authenticatorData || !signature || !challengeId) {
+        return NextResponse.json({ error: "Missing assertion data" }, { status: 400 });
+      }
+
+      const expectedChallenge = consumeChallenge(challengeId);
+      if (!expectedChallenge) {
+        return NextResponse.json({ error: "Challenge expired or invalid. Please try again." }, { status: 400 });
+      }
+
+      const creds = await query<{ worker_id: string; user_type: string; public_key: string }>(
         env,
-        "SELECT worker_id, user_type FROM biometric_credentials WHERE credential_id = ?",
+        "SELECT worker_id, user_type, public_key FROM biometric_credentials WHERE credential_id = ?",
         [credentialId]
       );
       if (creds.length === 0) {
         return NextResponse.json({ error: "Credential not found" }, { status: 404 });
       }
-      const { worker_id: wid, user_type: ut } = creds[0];
+
+      const { worker_id: wid, user_type: ut, public_key: pubKeyStr } = creds[0];
+
+      let storedPublicKey: any;
+      try { storedPublicKey = JSON.parse(pubKeyStr); } catch {
+        return NextResponse.json({ error: "Invalid stored credential" }, { status: 500 });
+      }
+
+      const origin = request.headers.get("origin") || "";
+      const isValid = await verifyAuthentication(
+        storedPublicKey,
+        clientDataJSON,
+        authenticatorData,
+        signature,
+        expectedChallenge,
+        origin
+      );
+
+      if (!isValid) {
+        return NextResponse.json({ error: "Biometric verification failed: signature mismatch" }, { status: 401 });
+      }
+
       const jwtSecret = process.env.JWT_SECRET || "default-secret";
 
       if (ut === "company") {
-        const token = generateCompanyToken(wid, jwtSecret);
+        const token = await generateCompanyToken(wid, jwtSecret);
         return NextResponse.json({ token, workerId: wid, userType: "company" });
       } else {
-        const token = generateToken(wid, jwtSecret);
+        const token = await generateToken(wid, jwtSecret);
         return NextResponse.json({ token, workerId: wid, userType: "worker" });
       }
     }

@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   if (!token) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  const payload = verifyCompanyToken(token, process.env.JWT_SECRET || "default-secret");
+  const payload = await verifyCompanyToken(token, process.env.JWT_SECRET || "default-secret");
   if (!payload) {
     return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
   }

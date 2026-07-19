@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    const token = generateCompanyToken(admin.username, process.env.JWT_SECRET || "default-secret");
+    const token = await generateCompanyToken(admin.username, process.env.JWT_SECRET || "default-secret");
     const response = NextResponse.json({ token, username: admin.username, name: admin.name, role: admin.role });
     response.cookies.set("company_token", token, {
       httpOnly: true,

@@ -41,6 +41,11 @@ export default function LoginPage() {
     }
   };
 
+  function base64url(buf: ArrayBuffer): string {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)))
+      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
   const handleBiometric = async () => {
     setLoading(true);
     setError("");
@@ -53,20 +58,36 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "challenge" }),
       });
-      const chalData = await chalRes.json() as { challenge?: string; error?: string };
+      const chalData = await chalRes.json() as { challengeId?: string; challenge?: string; error?: string };
       if (!chalRes.ok) throw new Error(chalData.error || "Failed to get challenge");
+      const { challengeId, challenge } = chalData;
 
+      const challengeBytes = Uint8Array.from(atob(challenge!.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
       const credential = (await navigator.credentials.get({
         publicKey: {
-          challenge: Uint8Array.from(atob(chalData.challenge!), (c) => c.charCodeAt(0)),
+          challenge: challengeBytes,
+          rpId: window.location.hostname,
           userVerification: "required" as UserVerificationRequirement,
         },
       })) as PublicKeyCredential;
-      const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+
+      const resp = credential.response as any;
+      const credId = base64url(credential.rawId);
+      const cdJSON = btoa(String.fromCharCode(...new Uint8Array(resp.clientDataJSON)));
+      const authData = btoa(String.fromCharCode(...new Uint8Array(resp.authenticatorData)));
+      const sig = btoa(String.fromCharCode(...new Uint8Array(resp.signature)));
+
       const finishRes = await fetch("/api/auth/biometric/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "complete", credentialId: credId }),
+        body: JSON.stringify({
+          action: "complete",
+          challengeId,
+          credentialId: credId,
+          clientDataJSON: cdJSON,
+          authenticatorData: authData,
+          signature: sig,
+        }),
       });
       const finishData = await finishRes.json() as { error?: string; token?: string; workerId?: string; userType?: string };
       if (!finishRes.ok) throw new Error(finishData.error || "Biometric auth failed");

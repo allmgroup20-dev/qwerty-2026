@@ -77,56 +77,68 @@ export default function ProfilePage() {
     }
   };
 
+  function base64url(buf: ArrayBuffer): string {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)))
+      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
   const handleSetupFingerprint = async () => {
     if (!window.PublicKeyCredential) {
       return alert(lang === "bn" ? "এই ব্রাউজার ফিঙ্গারপ্রিন্ট সাপোর্ট করে না" : "Browser does not support fingerprint");
     }
     setBioLoading(true);
     try {
-      // Generate a unique credential ID
-      const rawId = crypto.getRandomValues(new Uint8Array(32));
-      const credentialId = btoa(String.fromCharCode(...rawId));
-      // Generate a simple key pair using Web Crypto
-      const keyPair = await crypto.subtle.generateKey(
-        { name: "ECDSA", namedCurve: "P-256" },
-        true,
-        ["sign", "verify"]
-      );
-      const publicKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
-      const publicKeyStr = JSON.stringify(publicKeyJwk);
+      // 1. Get server challenge
+      const chalRes = await fetch("/api/auth/biometric/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "challenge", workerId, userType: "worker" }),
+      });
+      const chalData = await chalRes.json() as { challengeId?: string; challenge?: string };
+      if (!chalRes.ok) throw new Error(chalData.challenge || "Failed to get challenge");
+      const { challengeId, challenge } = chalData;
+      if (!challenge) throw new Error("No challenge received");
 
-      // Create WebAuthn credential (discoverable = residentKey)
+      // 2. Create WebAuthn credential with server challenge
+      const challengeBytes = Uint8Array.from(atob(challenge.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
+      const userId = form.phone || workerId || "unknown";
+      const userName = form.name || userId;
+      const userBytes = new TextEncoder().encode(userId);
       const credential = await navigator.credentials.create({
         publicKey: {
-          challenge: rawId,
-          rp: { name: "Jobayer Group Career" },
-          user: {
-            id: rawId,
-            name: form.phone,
-            displayName: form.name,
-          },
+          challenge: challengeBytes,
+          rp: { id: window.location.hostname, name: "Jobayer Group Career" },
+          user: { id: userBytes, name: userId, displayName: userName },
           pubKeyCredParams: [{ alg: -7, type: "public-key" }],
-          authenticatorSelection: {
-            authenticatorAttachment: "platform",
-            userVerification: "required",
-            residentKey: "required",
-          },
+          authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "required" },
           timeout: 60000,
         },
       }) as PublicKeyCredential;
 
-      const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+      const respData = credential.response as any;
+      const credId = base64url(credential.rawId);
+      const attObj = btoa(String.fromCharCode(...new Uint8Array(respData.attestationObject)));
+      const cdJSON = btoa(String.fromCharCode(...new Uint8Array(respData.clientDataJSON)));
+
+      // 3. Send to server for verification
       const res = await fetch("/api/auth/biometric/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          workerId: form.workerId,
+          action: "complete",
+          challengeId,
+          workerId,
           credentialId: credId,
-          publicKey: publicKeyStr,
+          attestationObject: attObj,
+          clientDataJSON: cdJSON,
           deviceName: navigator.userAgent.slice(0, 50),
+          userType: "worker",
         }),
       });
-      if (!res.ok) throw new Error("Registration failed");
+      if (!res.ok) {
+        const errData = await res.json() as { error?: string };
+        throw new Error(errData.error || "Registration failed");
+      }
       setBioRegistered(true);
       alert(lang === "bn" ? "ফিঙ্গারপ্রিন্ট সেটআপ সম্পন্ন" : "Fingerprint setup complete");
     } catch (err: any) {
