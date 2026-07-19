@@ -42,7 +42,7 @@ export async function processQueue(batchSize = 3): Promise<number> {
       [item.id]
     );
 
-    const result = await sendMessage(item.to, item.text, item.accountId);
+    const result = await sendMessage(item.to, item.text);
 
     if (result.success) {
       await execute(

@@ -1,15 +1,9 @@
-import { execute, queryFirst } from "@/lib/db/queries";
-import { ensureDB } from "@/lib/db";
-
 const GRAPH_API = "https://graph.facebook.com/v18.0/me/messages";
 
-export async function getPageToken(): Promise<string> {
+function getPageToken(): string {
   const token = process.env.MESSENGER_PAGE_TOKEN;
-  if (token) return token;
-  const db = await ensureDB();
-  const bot = await queryFirst<{ token: string }>({ DB: db }, "SELECT token FROM fb_pages WHERE is_active = 1 LIMIT 1");
-  if (bot?.token) return bot.token;
-  throw new Error("No Facebook Page token. Set MESSENGER_PAGE_TOKEN env var or add a page in /dashboard/messenger");
+  if (!token) throw new Error("MESSENGER_PAGE_TOKEN env var not set");
+  return token;
 }
 
 export async function sendMessengerMessage(
@@ -18,7 +12,7 @@ export async function sendMessengerMessage(
   pageToken?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const token = pageToken || await getPageToken();
+    const token = pageToken || getPageToken();
     const res = await fetch(`${GRAPH_API}?access_token=${token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -31,12 +25,6 @@ export async function sendMessengerMessage(
     if (!res.ok || data.error) {
       return { success: false, error: data.error?.message || "Messenger API error" };
     }
-    const db = await ensureDB();
-    await execute(
-      { DB: db },
-      "INSERT INTO fb_logs (sender_id, message, direction, status, created_at) VALUES (?, ?, 'outbound', 'sent', datetime('now'))",
-      [senderId, text]
-    );
     return { success: true, messageId: data.message_id };
   } catch (e) {
     return { success: false, error: (e as Error).message };
@@ -45,7 +33,7 @@ export async function sendMessengerMessage(
 
 export async function setMessengerWebhook(verifyToken: string, pageToken?: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const token = pageToken || await getPageToken();
+    const token = pageToken || getPageToken();
     const webhookUrl = `${process.env.PUBLIC_URL || "https://career.jobayergroup.com"}/api/messenger/webhook`;
     const res = await fetch(`https://graph.facebook.com/v18.0/me/subscribed_apps?access_token=${token}`, {
       method: "POST",
