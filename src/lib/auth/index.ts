@@ -3,7 +3,8 @@ export {
   verifyPassword as verifyWorkerPassword, 
   generateToken, 
   verifyToken, 
-  generateWorkerId 
+  generateWorkerId,
+  getJwtSecret
 } from "./worker-auth";
 
 export { 

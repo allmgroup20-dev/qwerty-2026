@@ -10,6 +10,20 @@ async function signHMAC(secret: string, data: string): Promise<string> {
     .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+let _jwtSecretWarned = false;
+
+export function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (!_jwtSecretWarned) {
+      console.error("CRITICAL: JWT_SECRET env var is not set! Authentication tokens will be insecure. Set JWT_SECRET in wrangler.jsonc vars or .env");
+      _jwtSecretWarned = true;
+    }
+    return "insecure-default-change-me";
+  }
+  return secret;
+}
+
 export async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);

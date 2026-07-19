@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getJwtSecret } from "@/lib/auth";
 
 function verifyToken(token: string, secret: string): { sub: string } | null {
   try {
@@ -18,7 +19,7 @@ export function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/company") && pathname !== "/company/login") {
     const token = request.cookies.get("company_token")?.value;
-    if (!token || !verifyToken(token, process.env.JWT_SECRET || "default-secret")) {
+    if (!token || !verifyToken(token, getJwtSecret())) {
       const loginUrl = new URL("/company/login", request.url);
       return NextResponse.redirect(loginUrl);
     }
