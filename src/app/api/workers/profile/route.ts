@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
               w.gender, w.country, w.city, w.goal, w.preferred_learning_time,
                w.referral_source, w.communication_preference, w.budget_range,
                 w.religion,
-               w.demo_bonus, w.demo_bonus_original,
+               w.resource_income, w.resource_income_original,
                w.interests_updated_at, w.created_at, w.updated_at,
               cl.level_name, cl.level_name_bn
        FROM workers w
@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
       communicationPreference: worker.communication_preference || "whatsapp",
       budgetRange: worker.budget_range || null,
       religion: worker.religion || null,
-      demoBonus: worker.demo_bonus || 0,
-      demoBonusOriginal: worker.demo_bonus_original || 0,
+      resourceIncome: worker.resource_income || 0,
+      resourceIncomeOriginal: worker.resource_income_original || 0,
       profileCompleted: !!(worker.name && !worker.name.startsWith("User") &&
         worker.age_group && worker.occupation && worker.education_level &&
         worker.gender && worker.country && worker.city && worker.goal &&

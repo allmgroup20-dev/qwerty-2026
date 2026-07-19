@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
               referral_source as referralSource,
               communication_preference as communicationPreference,
               budget_range as budgetRange, religion,
-              demo_bonus as demoBonus, demo_bonus_original as demoBonusOriginal
+              resource_income as resourceIncome, resource_income_original as resourceIncomeOriginal
        FROM workers WHERE worker_id = ?`, [workerId]
     );
     if (profile) {

@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     const env = await getDB();
     await execute(env,
-      `UPDATE workers SET demo_bonus = demo_bonus + ?, demo_bonus_original = demo_bonus_original + ? WHERE worker_id = ?`,
+      `UPDATE workers SET resource_income = resource_income + ?, resource_income_original = resource_income_original + ? WHERE worker_id = ?`,
       [amount, amount, workerId]
     );
 

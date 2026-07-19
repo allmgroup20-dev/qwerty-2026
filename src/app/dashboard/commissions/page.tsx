@@ -23,7 +23,7 @@ export default function CommissionsPage() {
   const commissions = data?.commissions ?? [];
   const [showAll, setShowAll] = useState(false);
 
-  const { data: profile } = useSWRFetch<{ demoBonus?: number; demoBonusOriginal?: number }>(
+  const { data: profile } = useSWRFetch<{ resourceIncome?: number; resourceIncomeOriginal?: number }>(
     workerId ? `/api/workers/profile?workerId=${workerId}` : null,
     { ttlMs: 300_000 }
   );
@@ -38,25 +38,25 @@ export default function CommissionsPage() {
           {lang === "bn" ? "আপনার সব উপার্জনের বিস্তারিত" : "Details of all your earnings"}
         </p>
 
-        {profile?.demoBonus && profile.demoBonus > 0 && (
-          <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200">
+        {profile?.resourceIncome && profile.resourceIncome > 0 && (
+          <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">🎁</span>
+              <span className="text-2xl">💰</span>
               <div className="flex-1">
-                <p className="text-sm font-bold text-amber-800">
-                  {lang === "bn" ? "বোনাস ব্যালেন্স" : "Bonus Balance"}
+                <p className="text-sm font-bold text-blue-800">
+                  {lang === "bn" ? "রিসোর্স আয়" : "Resource Income"}
                 </p>
-                <p className="text-xs text-amber-600 mt-0.5">
+                <p className="text-xs text-blue-600 mt-0.5">
                   {lang === "bn"
-                    ? "এটি একটি প্রোমোশনাল বোনাস। সরাসরি উত্তোলন করা যাবে না। রিয়েল কমিশন উত্তোলনের সময় স্বয়ংক্রিয়ভাবে সমন্বয় হবে।"
-                    : "Promotional bonus. Cannot be withdrawn directly. Auto-adjusted on real commission withdrawal."}
+                    ? "রিসোর্স আয় — প্রতি ৳৯৯ তে একটি প্রিমিয়াম রিসোর্স আনলক করুন। উত্তোলন করা যাবে না।"
+                    : "Resource income — unlock premium resources at ৳99 each. Cannot be withdrawn."}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-amber-800">৳{profile.demoBonus.toLocaleString()}</p>
-                {profile.demoBonusOriginal && profile.demoBonusOriginal > 0 && (
-                  <p className="text-[10px] text-amber-500">
-                    {lang === "bn" ? "মোট" : "Total"}: ৳{profile.demoBonusOriginal.toLocaleString()} | {Math.round((profile.demoBonus / profile.demoBonusOriginal) * 100)}%
+                <p className="text-lg font-bold text-blue-800">৳{profile.resourceIncome.toLocaleString()}</p>
+                {profile.resourceIncomeOriginal && profile.resourceIncomeOriginal > 0 && (
+                  <p className="text-[10px] text-blue-500">
+                    {lang === "bn" ? "মোট আয়" : "Total"}: ৳{profile.resourceIncomeOriginal.toLocaleString()}
                   </p>
                 )}
               </div>

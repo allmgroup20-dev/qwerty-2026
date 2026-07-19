@@ -68,6 +68,8 @@ export default function CourseDetailPage() {
   const [progress, setProgress] = useState<{ completedCount: number; totalFiles: number; percent: number } | null>(null);
   const [completedFiles, setCompletedFiles] = useState<Set<number>>(new Set());
   const [relatedCourses, setRelatedCourses] = useState<Course[]>([]);
+  const [resourceIncome, setResourceIncome] = useState(0);
+  const [riUnlocking, setRiUnlocking] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -96,11 +98,12 @@ export default function CourseDetailPage() {
         setWorkerId(wid);
 
         if (wid) {
-          const [unlocksRes, limitsRes, bookmarkRes, progressRes] = await Promise.all([
+          const [unlocksRes, limitsRes, bookmarkRes, progressRes, incomeRes] = await Promise.all([
             fetch(`/api/unlocks?workerId=${encodeURIComponent(wid)}`),
             fetch(`/api/unlocks/limits?workerId=${encodeURIComponent(wid)}`),
             fetch(`/api/courses/${id}/bookmarks?workerId=${encodeURIComponent(wid)}`),
             fetch(`/api/courses/${id}/progress?workerId=${encodeURIComponent(wid)}`),
+            fetch(`/api/workers/profile?workerId=${encodeURIComponent(wid)}`).catch(() => new Response("{}")),
           ]);
           const [unlocksData, limitsData, bookmarkData, progressData] = await Promise.all([
             unlocksRes.json() as Promise<{ unlocks?: { courseId: number }[] }>,
@@ -108,6 +111,8 @@ export default function CourseDetailPage() {
             bookmarkRes.json() as Promise<{ bookmarked: boolean }>,
             progressRes.json().catch(() => ({})),
           ]);
+          const incomeData = await incomeRes.json().catch(() => ({})) as any;
+          setResourceIncome(incomeData.resourceIncome || 0);
           const ids = new Set((unlocksData.unlocks || []).map(u => u.courseId));
           setIsUnlocked(ids.has(parseInt(id)));
           setUnlockCount(ids.size);
@@ -144,6 +149,18 @@ export default function CourseDetailPage() {
       if (!res.ok) { alert(data.error || "Failed"); return; }
       setIsUnlocked(true); setUnlockCount(prev => prev + 1);
     } catch { alert("Failed to unlock"); } finally { setUnlocking(false); }
+  };
+
+  const handleResourceIncomeUnlock = async () => {
+    if (!workerId || !course || resourceIncome < 99) return;
+    setRiUnlocking(true);
+    try {
+      const res = await fetch("/api/unlocks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workerId, courseId: course.id, unlockedBy: "user", useResourceIncome: true }) });
+      const data = await res.json() as { error?: string };
+      if (!res.ok) { alert(data.error || "Failed"); return; }
+      setResourceIncome(prev => prev - 99);
+      setIsUnlocked(true);
+    } catch { alert("Failed to unlock"); } finally { setRiUnlocking(false); }
   };
 
   const handleBookmark = async () => {
@@ -290,16 +307,30 @@ export default function CourseDetailPage() {
 
         <div className="flex flex-wrap gap-3 mt-6">
           {isLoggedIn && !isPremium && !isUnlocked && (
-            <Button onClick={handleUnlock} loading={unlocking}
-              disabled={unlockLimit !== null && unlockCount >= unlockLimit}>
-              {unlockLimit !== null && unlockCount >= unlockLimit ? "👑 প্রিমিয়াম হোন" : "🔓 আনলক করুন"}
-            </Button>
+            <>
+              <Button onClick={handleUnlock} loading={unlocking}
+                disabled={unlockLimit !== null && unlockCount >= unlockLimit}>
+                {unlockLimit !== null && unlockCount >= unlockLimit ? "👑 ফ্রি কোটা শেষ" : "🔓 ফ্রি আনলক"}
+              </Button>
+              {resourceIncome >= 99 && (
+                <Button onClick={handleResourceIncomeUnlock} loading={riUnlocking}
+                  variant="outline" className="!border-blue-300 !text-blue-700 hover:!bg-blue-50">
+                  💰 রিসোর্স আয় দিয়ে আনলক (৳৯৯)
+                </Button>
+              )}
+            </>
           )}
           {!isLoggedIn && (
             <a href="/login" className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold text-sm hover:bg-amber-600 transition-all">👑 লগইন করে আনলক করুন</a>
           )}
           {isLoggedIn && <Button variant="outline" onClick={() => setComplaintOpen(true)}>⚠️ রিপোর্ট করুন</Button>}
         </div>
+
+        {resourceIncome > 0 && resourceIncome < 99 && isLoggedIn && !isPremium && !isUnlocked && (
+          <div className="mt-3 p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-700">
+            আপনার রিসোর্স আয় ৳৯৯ এর কম। আরও রিসোর্স আয় উপার্জন করতে রেজিস্ট্রেশন ও অন্যান্য কার্যক্রম সম্পন্ন করুন।
+          </div>
+        )}
 
         {unlockLimit !== null && isLoggedIn && !isPremium && (
           <div className="mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">আপনার আনলক কোটা: {unlockCount}/{unlockLimit}</div>

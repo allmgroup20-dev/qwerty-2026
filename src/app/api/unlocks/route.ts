@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
-      workerId: string; courseId: number; unlockedBy?: string;
+      workerId: string; courseId: number; unlockedBy?: string; useResourceIncome?: boolean;
     };
     if (!body.workerId || !body.courseId) {
       return NextResponse.json({ error: "workerId and courseId required" }, { status: 400 });
@@ -31,16 +31,31 @@ export async function POST(request: NextRequest) {
 
     const db = await getDB();
 
-    // Check unlock limit
-    const limit = await queryFirst<{ maxUnlocks: number }>(
-      db, "SELECT max_unlocks as maxUnlocks FROM unlock_limits WHERE worker_id = ?", [body.workerId]
-    );
-    if (limit && limit.maxUnlocks > 0) {
-      const count = await queryFirst<{ cnt: number }>(
-        db, "SELECT COUNT(*) as cnt FROM user_unlocks WHERE worker_id = ?", [body.workerId]
+    if (body.useResourceIncome) {
+      // Unlock using resource income (99 BDT per resource)
+      const unlockPrice = 99;
+      const worker = await queryFirst<{ resource_income: number }>(
+        db, "SELECT resource_income FROM workers WHERE worker_id = ?", [body.workerId]
       );
-      if (count && count.cnt >= limit.maxUnlocks) {
-        return NextResponse.json({ error: "Unlock limit reached" }, { status: 403 });
+      if (!worker || worker.resource_income < unlockPrice) {
+        return NextResponse.json({ error: "Insufficient resource income" }, { status: 400 });
+      }
+      await execute(db,
+        "UPDATE workers SET resource_income = resource_income - ? WHERE worker_id = ?",
+        [unlockPrice, body.workerId]
+      );
+    } else {
+      // Free unlock — check unlock limit
+      const limit = await queryFirst<{ maxUnlocks: number }>(
+        db, "SELECT max_unlocks as maxUnlocks FROM unlock_limits WHERE worker_id = ?", [body.workerId]
+      );
+      if (limit && limit.maxUnlocks > 0) {
+        const count = await queryFirst<{ cnt: number }>(
+          db, "SELECT COUNT(*) as cnt FROM user_unlocks WHERE worker_id = ?", [body.workerId]
+        );
+        if (count && count.cnt >= limit.maxUnlocks) {
+          return NextResponse.json({ error: "Unlock limit reached. Use resource income to unlock more." }, { status: 403 });
+        }
       }
     }
 

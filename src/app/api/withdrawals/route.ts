@@ -55,25 +55,7 @@ export async function POST(request: NextRequest) {
       [withdrawalId, workerId, amount, paymentMethod || "bkash", accountNumber || null, status]
     );
 
-    // Deduct demo_bonus on withdrawal
-    try {
-      const demoEnabled = await query<{ setting_value: string }>(
-        env, "SELECT setting_value FROM company_settings WHERE setting_key = 'demo_bonus_enabled'"
-      );
-      if (demoEnabled.length > 0 && demoEnabled[0].setting_value === "1") {
-        const deductionPct = await query<{ setting_value: string }>(
-          env, "SELECT setting_value FROM company_settings WHERE setting_key = 'demo_bonus_deduction_percent'"
-        );
-        const pct = parseFloat(deductionPct[0]?.setting_value || "10");
-        const deduction = (amount * pct) / 100;
-        if (deduction > 0) {
-          await execute(env,
-            "UPDATE workers SET demo_bonus = MAX(0, demo_bonus - ?) WHERE worker_id = ?",
-            [deduction, workerId]
-          );
-        }
-      }
-    } catch {}
+    // Resource income is NOT deducted on withdrawal — it can only be used to unlock resources
 
     try {
       const apiKey = process.env.WHATSAPP_API_KEY || "";

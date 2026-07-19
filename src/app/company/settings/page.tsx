@@ -18,13 +18,13 @@ export default function CompanySettingsPage() {
     companyPhone: "",
     companyAddress: "",
     registrationBonus: "0",
+    resourceIncomeEnabled: "1",
+    resourceIncomeDefaultAmount: "50",
+    resourceUnlockPrice: "99",
     primaryColor: "#1E3A5A",
     secondaryColor: "#FFD700",
     actionColor: "#28A745",
     timezone: "Asia/Dhaka",
-    demoBonusEnabled: "1",
-    demoBonusDeductionPercent: "10",
-    demoBonusDefaultAmount: "50",
   });
 
   useEffect(() => {
@@ -39,12 +39,12 @@ export default function CompanySettingsPage() {
             companyPhone: s.company_phone || prev.companyPhone,
             companyAddress: s.company_address || prev.companyAddress,
             registrationBonus: s.registration_bonus || prev.registrationBonus,
+            resourceIncomeEnabled: s.resource_income_enabled || prev.resourceIncomeEnabled,
+            resourceIncomeDefaultAmount: s.resource_income_default_amount || prev.resourceIncomeDefaultAmount,
+            resourceUnlockPrice: s.resource_unlock_price || prev.resourceUnlockPrice,
             primaryColor: s.primary_color || prev.primaryColor,
             secondaryColor: s.secondary_color || prev.secondaryColor,
             actionColor: s.action_color || prev.actionColor,
-            demoBonusEnabled: s.demo_bonus_enabled || prev.demoBonusEnabled,
-            demoBonusDeductionPercent: s.demo_bonus_deduction_percent || prev.demoBonusDeductionPercent,
-            demoBonusDefaultAmount: s.demo_bonus_default_amount || prev.demoBonusDefaultAmount,
           }));
         }
       }).catch(() => {}).finally(() => setLoading(false));
@@ -58,12 +58,12 @@ export default function CompanySettingsPage() {
       { key: "company_phone", value: form.companyPhone },
       { key: "company_address", value: form.companyAddress },
       { key: "registration_bonus", value: form.registrationBonus },
+      { key: "resource_income_enabled", value: form.resourceIncomeEnabled },
+      { key: "resource_income_default_amount", value: form.resourceIncomeDefaultAmount },
+      { key: "resource_unlock_price", value: form.resourceUnlockPrice },
       { key: "primary_color", value: form.primaryColor },
       { key: "secondary_color", value: form.secondaryColor },
       { key: "action_color", value: form.actionColor },
-      { key: "demo_bonus_enabled", value: form.demoBonusEnabled },
-      { key: "demo_bonus_deduction_percent", value: form.demoBonusDeductionPercent },
-      { key: "demo_bonus_default_amount", value: form.demoBonusDefaultAmount },
     ];
     try {
       await fetch("/api/company/settings", {
@@ -122,10 +122,11 @@ export default function CompanySettingsPage() {
           </Card>
 
           <Card>
-            <h3 className="font-bold text-primary mb-4">{lang === "bn" ? "রেজিস্ট্রেশন বোনাস" : "Registration Bonus"}</h3>
+            <h3 className="font-bold text-primary mb-4">{lang === "bn" ? "রেজিস্ট্রেশন রিসোর্স আয়" : "Registration Resource Income"}</h3>
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "বোনাস" : "Bonus"} (৳)</label>
+              <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "পরিমাণ" : "Amount"} (৳)</label>
               <input type="number" value={form.registrationBonus} onChange={(e) => setForm({ ...form, registrationBonus: e.target.value })} className="input-field" />
+              <p className="text-xs text-text-secondary/60 mt-1">{lang === "bn" ? "নতুন রেজিস্ট্রেশনে এই পরিমাণ রিসোর্স আয় হিসেবে যোগ হবে" : "This amount is added as resource income on new registration"}</p>
             </div>
           </Card>
 
@@ -148,25 +149,25 @@ export default function CompanySettingsPage() {
           </Card>
 
           <Card>
-            <h3 className="font-bold text-primary mb-4">🎁 {lang === "bn" ? "ডেমো বোনাস" : "Demo Bonus"}</h3>
+            <h3 className="font-bold text-primary mb-4">💰 {lang === "bn" ? "রিসোর্স আয়" : "Resource Income"}</h3>
             <div className="grid sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "সক্রিয়" : "Enabled"}</label>
-                <select value={form.demoBonusEnabled} onChange={(e) => setForm({ ...form, demoBonusEnabled: e.target.value })} className="input-field">
+                <select value={form.resourceIncomeEnabled} onChange={(e) => setForm({ ...form, resourceIncomeEnabled: e.target.value })} className="input-field">
                   <option value="1">{lang === "bn" ? "সক্রিয়" : "Enabled"}</option>
                   <option value="0">{lang === "bn" ? "নিষ্ক্রিয়" : "Disabled"}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "ডিডাকশন %" : "Deduction %"}</label>
-                <input type="number" min="0" max="100" value={form.demoBonusDeductionPercent} onChange={(e) => setForm({ ...form, demoBonusDeductionPercent: e.target.value })} className="input-field" />
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "ডিফল্ট অ্যামাউন্ট" : "Default Amount"}</label>
+                <input type="number" min="0" value={form.resourceIncomeDefaultAmount} onChange={(e) => setForm({ ...form, resourceIncomeDefaultAmount: e.target.value })} className="input-field" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "ডিফল্ট অ্যামাউন্ট" : "Default Amount"}</label>
-                <input type="number" min="0" value={form.demoBonusDefaultAmount} onChange={(e) => setForm({ ...form, demoBonusDefaultAmount: e.target.value })} className="input-field" />
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "আনলক প্রাইস" : "Unlock Price"}</label>
+                <input type="number" min="1" value={form.resourceUnlockPrice} onChange={(e) => setForm({ ...form, resourceUnlockPrice: e.target.value })} className="input-field" />
               </div>
             </div>
-            <p className="text-xs text-text-secondary/60 mt-2">{lang === "bn" ? "প্রতি রেজিস্ট্রেশনে এই অ্যামাউন্ট ডেমো বোনাস হিসেবে যোগ হবে। ইউজার উত্তোলনের সময় ডিডাকশন % অনুযায়ী বোনাস থেকে কাটা হবে।" : "This amount is awarded as demo bonus on each registration. On withdrawal, the deduction % is deducted from the demo bonus."}</p>
+            <p className="text-xs text-text-secondary/60 mt-2">{lang === "bn" ? "রেজিস্ট্রেশন ও অন্যান্য বোনাস এখন 'রিসোর্স আয়' হিসেবে যোগ হবে। প্রতি সেট করা মূল্যে ইউজার একটি প্রিমিয়াম রিসোর্স আনলক করতে পারবে। এই আয় উত্তোলন করা যাবে না।" : "Registration and other bonuses are now awarded as 'Resource Income'. Users can unlock one premium resource at the set price. This income cannot be withdrawn."}</p>
           </Card>
 
           <Button onClick={handleSave} disabled={saving} className="w-full !py-4">

@@ -71,16 +71,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Auto-award demo bonus on registration
+    // Auto-award resource income on registration
     try {
-      const bonusSetting = await query<{ setting_value: string }>(
-        env, "SELECT setting_value FROM company_settings WHERE setting_key = 'demo_bonus_default_amount'"
+      const incomeSetting = await query<{ setting_value: string }>(
+        env, "SELECT setting_value FROM company_settings WHERE setting_key = 'resource_income_default_amount'"
       );
-      if (bonusSetting.length > 0) {
-        const amount = parseFloat(bonusSetting[0].setting_value) || 0;
+      if (incomeSetting.length > 0) {
+        const amount = parseFloat(incomeSetting[0].setting_value) || 0;
         if (amount > 0) {
           await execute(env,
-            "UPDATE workers SET demo_bonus = demo_bonus + ?, demo_bonus_original = demo_bonus_original + ? WHERE worker_id = ?",
+            "UPDATE workers SET resource_income = resource_income + ?, resource_income_original = resource_income_original + ? WHERE worker_id = ?",
             [amount, amount, workerId]
           );
         }
