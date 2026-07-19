@@ -74,7 +74,6 @@ export interface CourseRecommendation {
   title: string;
   description: string;
   url: string;
-  icon: string;
   category: string;
   score: number;
 }
@@ -93,7 +92,7 @@ export async function getRecommendedCourses(interestScores: Record<string, numbe
   const db = await getDB();
   const allCourses = await query<any>(db,
     `SELECT c.id, c.title as title, c.title_bn as titleBn, c.description, c.description_bn as descriptionBn,
-            c.icon, c.price, c.is_premium as isPremium,
+            c.price, c.is_premium as isPremium,
             COALESCE((SELECT json_group_array(cat.name) FROM course_category_map m JOIN course_categories cat ON cat.id = m.category_id WHERE m.course_id = c.id), '[]') as categoryNames
      FROM courses c WHERE c.is_visible = 1 ORDER BY c.is_new DESC, c.created_at DESC`
   );
@@ -103,7 +102,6 @@ export async function getRecommendedCourses(interestScores: Record<string, numbe
     title: r.titleBn || r.title,
     desc: r.descriptionBn || r.description || "",
     url: `/courses/${r.id}`,
-    icon: r.icon || "📌",
     cat: JSON.parse(r.categoryNames || "[]")[0] || "",
   }));
 
@@ -136,7 +134,6 @@ export async function getRecommendedCourses(interestScores: Record<string, numbe
       title: s.item.title,
       description: s.item.desc,
       url: s.item.url,
-      icon: s.item.icon,
       category: s.item.cat,
       score: s.score,
     }));
@@ -194,10 +191,10 @@ export async function getWorkerInterestScores(workerId: string): Promise<Record<
   }
 }
 
-export async function getPopularCourses(limit = 6): Promise<{ title: string; url: string; icon: string; category: string }[]> {
+export async function getPopularCourses(limit = 6): Promise<{ title: string; url: string; category: string }[]> {
   const db = await getDB();
   const rows = await query<any>(db,
-    `SELECT c.id, c.title as title, c.title_bn as titleBn, c.icon,
+    `SELECT c.id, c.title as title, c.title_bn as titleBn,
             COALESCE((SELECT cat.name FROM course_category_map m JOIN course_categories cat ON cat.id = m.category_id WHERE m.course_id = c.id LIMIT 1), '') as cat
      FROM courses c WHERE c.is_visible = 1 ORDER BY c.is_new DESC, c.created_at DESC LIMIT ?`,
     [limit * 3]
@@ -208,11 +205,11 @@ export async function getPopularCourses(limit = 6): Promise<{ title: string; url
     if (!grouped[cat]) grouped[cat] = [];
     if (grouped[cat].length < 2) grouped[cat].push(r);
   }
-  const result: { title: string; url: string; icon: string; category: string }[] = [];
+  const result: { title: string; url: string; category: string }[] = [];
   for (const cat of Object.keys(grouped)) {
     for (const item of grouped[cat]) {
       if (result.length < limit) {
-        result.push({ title: item.titleBn || item.title, url: `/courses/${item.id}`, icon: item.icon || "📌", category: cat });
+        result.push({ title: item.titleBn || item.title, url: `/courses/${item.id}`, category: cat });
       }
     }
   }

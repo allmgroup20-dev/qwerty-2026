@@ -34,7 +34,6 @@ interface Course {
   categoryNamesBn: string[];
   isNew: number;
   isVisible: number;
-  icon: string;
   price: number;
   isPremium: number;
   createdAt: string;
@@ -55,7 +54,7 @@ interface CourseFile {
 
 const emptyForm = () => ({
   title: "", titleBn: "", description: "", descriptionBn: "",
-  categoryIds: [] as number[], isNew: 1, isVisible: 1, icon: "📌", price: "", isPremium: 0,
+  categoryIds: [] as number[], isNew: 1, isVisible: 1, price: "", isPremium: 0,
   trainerId: 0, institutionId: 0,
 });
 
@@ -124,7 +123,7 @@ export default function CompanyCoursesPage() {
     setForm({
       title: c.title, titleBn: c.titleBn || "", description: c.description || "", descriptionBn: c.descriptionBn || "",
       categoryIds: c.categoryIds || [],
-      isNew: c.isNew, isVisible: c.isVisible, icon: c.icon || "📌",
+      isNew: c.isNew, isVisible: c.isVisible,
       price: String(c.price || 0), isPremium: c.isPremium,
       trainerId: c.trainerId || 0, institutionId: c.institutionId || 0,
     });
@@ -144,7 +143,7 @@ export default function CompanyCoursesPage() {
         title: form.title, titleBn: form.titleBn || null, description: form.description || null,
         descriptionBn: form.descriptionBn || null,
         categoryIds: form.categoryIds,
-        isNew: form.isNew, isVisible: form.isVisible, icon: form.icon || "📌",
+        isNew: form.isNew, isVisible: form.isVisible,
         price: parseFloat(form.price) || 0, isPremium: form.isPremium,
         trainerId: form.trainerId || null, institutionId: form.institutionId || null,
       };
@@ -228,8 +227,8 @@ export default function CompanyCoursesPage() {
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
               <input type="text" placeholder={lang === "bn" ? "শিরোনাম (ইংরেজি)" : "Title (EN)"} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" required />
               <input type="text" placeholder={lang === "bn" ? "শিরোনাম (বাংলা)" : "Title (BN)"} value={form.titleBn} onChange={(e) => setForm({ ...form, titleBn: e.target.value })} className="input-field" />
-              <input type="text" placeholder={lang === "bn" ? "আইকন (ইমোজি)" : "Icon (Emoji)"} value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} className="input-field" />
               <input type="number" placeholder={lang === "bn" ? "মূল্য (যদি প্রযোজ্য হয়)" : "Price (if applicable)"} value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="input-field" />
+              <div></div>
             </div>
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
               <div>
@@ -343,15 +342,12 @@ export default function CompanyCoursesPage() {
                   <tr key={c.id} className="border-b border-border last:border-0 hover:bg-gray-50/50">
                     <td className="p-4 text-sm font-medium text-primary">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">{c.icon || "📌"}</span>
-                        <div>
-                          <span>{lang === "bn" && c.titleBn ? c.titleBn : c.title}</span>
-                          <span className={`ml-2 inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                            c.isPremium ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-600"
-                          }`}>
-                            {c.isPremium ? "Premium" : "Free"}
-                          </span>
-                        </div>
+                        <span>{lang === "bn" && c.titleBn ? c.titleBn : c.title}</span>
+                        <span className={`ml-2 inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                          c.isPremium ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-600"
+                        }`}>
+                          {c.isPremium ? "Premium" : "Free"}
+                        </span>
                       </div>
                     </td>
                     <td className="p-4 text-sm text-text-secondary">{catNames(c)}</td>

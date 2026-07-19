@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     let sql = `SELECT c.id, c.title, c.title_bn as titleBn, c.description, c.description_bn as descriptionBn,
               c.category_id as categoryId, c.is_new as isNew, c.is_visible as isVisible,
-              c.icon, c.price, c.is_premium as isPremium, c.created_at as createdAt, c.updated_at as updatedAt,
+              c.price, c.is_premium as isPremium, c.created_at as createdAt, c.updated_at as updatedAt,
               c.trainer_id as trainerId, c.institution_id as institutionId,
               t.name as trainerName, t.name_bn as trainerNameBn, t.image_url as trainerImageUrl,
               i.name as institutionName, i.name_bn as institutionNameBn, i.logo_url as institutionLogoUrl,
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
       title: string; titleBn?: string; description?: string; descriptionBn?: string;
-      categoryIds?: number[]; isNew?: number; isVisible?: number; icon?: string;
+      categoryIds?: number[]; isNew?: number; isVisible?: number;
       price?: number; isPremium?: number;
       trainerId?: number | null; institutionId?: number | null;
     };
@@ -81,12 +81,12 @@ export async function POST(request: NextRequest) {
     await invalidateCache("courses");
     const result = await execute(db,
       `INSERT INTO courses (title, title_bn, description, description_bn,
-        is_new, is_visible, icon, price, is_premium, trainer_id, institution_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        is_new, is_visible, price, is_premium, trainer_id, institution_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         body.title, body.titleBn || null, body.description || null, body.descriptionBn || null,
         body.isNew ?? 1, body.isVisible ?? 1,
-        body.icon || "📌", body.price || 0, body.isPremium ?? 1,
+        body.price || 0, body.isPremium ?? 1,
         body.trainerId ?? null, body.institutionId ?? null,
       ]
     );

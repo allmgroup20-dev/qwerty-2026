@@ -14,7 +14,7 @@ interface Course {
   id: number; title: string; titleBn: string | null;
   description: string | null; descriptionBn: string | null;
   categoryIds: number[]; isNew: number; isVisible: number;
-  icon: string; price: number; isPremium: number;
+  price: number; isPremium: number;
   categoryNames: string[]; categoryNamesBn: string[];
   fileUrl: string | null; fileCount: number;
   avgRating: number; ratingCount: number;
@@ -25,42 +25,10 @@ interface Course {
   institutionLogoUrl?: string | null;
 }
 
-function getCourseEmoji(icon: string, catName?: string): string {
-  if (icon && icon !== "📌") return icon;
-  const m: Record<string, string> = {
-    "Platform": "📱", "10MS": "🎓", "Ghoori": "🏫", "SkillUper": "📈",
-    "E-Shikhon": "🎬", "MSB": "🏛️", "Creative IT": "💻", "Hacking": "🛡️",
-    "File Collection": "📁", "ChatGPT": "🤖", "Graphics Design": "🎨",
-    "Digital Marketing": "📊", "SEO": "🔍", "YouTube": "🎥", "Data Entry": "⌨️",
-    "Video Editing": "✂️", "Software": "📦", "WordPress": "🌐",
-    "Ethical Hacking": "🔒", "Cyber Security": "🛡️", "MS Office": "📋",
-    "Quran": "🕋", "English": "🇬🇧", "Web Development": "🌐",
-  };
-  if (catName && m[catName]) return m[catName];
-  return "📌";
-}
-
-function getCourseImage(course: Course): { type: "image" | "emoji"; src: string; alt: string; bg: string } {
-  if (course.trainerImageUrl) return { type: "image", src: course.trainerImageUrl, alt: course.trainerName || "", bg: "from-purple-500/10 to-purple-600/5" };
-  if (course.institutionLogoUrl) return { type: "image", src: course.institutionLogoUrl, alt: course.institutionName || "", bg: "from-indigo-500/10 to-indigo-600/5" };
-  const emoji = getCourseEmoji(course.icon, (course.categoryNames || [])[0]);
-  const bgMap: Record<string, string> = {
-    "🎓": "from-purple-500/10 to-purple-600/5 text-purple-600",
-    "📱": "from-orange-500/10 to-orange-600/5 text-orange-600",
-    "🎨": "from-pink-500/10 to-pink-600/5 text-pink-600",
-    "🎬": "from-rose-500/10 to-rose-600/5 text-rose-600",
-    "🌐": "from-teal-500/10 to-teal-600/5 text-teal-600",
-    "📊": "from-emerald-500/10 to-emerald-600/5 text-emerald-600",
-    "👑": "from-amber-500/10 to-amber-600/5 text-amber-600",
-    "⭐": "from-yellow-500/10 to-yellow-600/5 text-yellow-600",
-    "📖": "from-amber-500/10 to-amber-600/5 text-amber-600",
-    "💼": "from-blue-500/10 to-blue-600/5 text-blue-600",
-    "🛡️": "from-red-500/10 to-red-600/5 text-red-600",
-    "📁": "from-slate-500/10 to-slate-600/5 text-slate-600",
-    "🤖": "from-purple-500/10 to-purple-600/5 text-purple-600",
-    "🏫": "from-indigo-500/10 to-indigo-600/5 text-indigo-600",
-  };
-  return { type: "emoji", src: emoji, alt: "", bg: bgMap[emoji] || "from-blue-500/10 to-blue-600/5 text-blue-600" };
+function getCourseImage(course: Course): { src: string; alt: string } | null {
+  if (course.trainerImageUrl) return { src: course.trainerImageUrl, alt: course.trainerName || "" };
+  if (course.institutionLogoUrl) return { src: course.institutionLogoUrl, alt: course.institutionName || "" };
+  return null;
 }
 
 export default function CoursesPage() {
@@ -173,7 +141,7 @@ export default function CoursesPage() {
   }, []);
 
   const catNameMap = useMemo(() => {
-    const map: Record<number, { name: string; nameBn: string | null }> = {};
+    const map: Record<number, CourseCategory> = {};
     for (const cat of categories) map[cat.id] = cat;
     return map;
   }, [categories]);
@@ -213,7 +181,7 @@ export default function CoursesPage() {
               id: catId,
               name: cat.name,
               nameBn: cat.nameBn,
-              icon: getCourseEmoji(c.icon, cat.name),
+              icon: cat.icon || "📌",
             });
           }
         }
@@ -390,7 +358,6 @@ export default function CoursesPage() {
 
         {filtered.length === 0 ? (
           <div className="text-center py-20">
-            <div className="text-5xl mb-4 opacity-30">🔍</div>
             <p className="text-text-secondary font-bold text-lg">কোনো রিসোর্স পাওয়া যায়নি</p>
             <p className="text-text-secondary/60 text-sm mt-2">অন্য কীওয়ার্ড দিয়ে সার্চ করুন</p>
           </div>
@@ -415,13 +382,11 @@ export default function CoursesPage() {
                     }`}
                   >
                     <div className="flex items-start gap-3.5">
-                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${img.bg} flex items-center justify-center text-lg shrink-0 transition-transform overflow-hidden ${access ? "group-hover:scale-110 group-hover:rotate-3" : ""}`}>
-                        {img.type === "image" ? (
+                      {img && (
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 flex items-center justify-center text-lg shrink-0 transition-transform overflow-hidden group-hover:scale-110 group-hover:rotate-3">
                           <img src={img.src} alt={img.alt} className="w-full h-full object-cover" />
-                        ) : (
-                          <span>{img.src}</span>
-                        )}
-                      </div>
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary/60">{catDisplay}</span>

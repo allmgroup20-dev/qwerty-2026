@@ -12,7 +12,7 @@ interface CourseFile {
 interface Course {
   id: number; title: string; titleBn: string | null;
   description: string | null; descriptionBn: string | null;
-  icon: string; price: number; isPremium: number; isNew: number; isVisible: number;
+  price: number; isPremium: number; isNew: number; isVisible: number;
   categoryIds: number[]; categoryNames: string[]; categoryNamesBn: string[];
   avgRating: number; ratingCount: number;
   trainerId?: number | null; institutionId?: number | null;
@@ -198,15 +198,11 @@ export default function CourseDetailPage() {
       <div className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 py-10 md:py-14 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-start gap-4 mb-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl shrink-0 overflow-hidden">
-              {course.trainerImageUrl ? (
-                <img src={course.trainerImageUrl} alt={course.trainerName || ""} className="w-full h-full object-cover" />
-              ) : course.institutionLogoUrl ? (
-                <img src={course.institutionLogoUrl} alt={course.institutionName || ""} className="w-full h-full object-cover" />
-              ) : (
-                <span>{course.icon || "📌"}</span>
-              )}
-            </div>
+            {course.trainerImageUrl || course.institutionLogoUrl ? (
+              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 overflow-hidden">
+                <img src={course.trainerImageUrl || course.institutionLogoUrl || ""} alt={course.trainerName || course.institutionName || ""} className="w-full h-full object-cover" />
+              </div>
+            ) : null}
             <div className="flex-1">
               <h1 className="text-xl md:text-3xl font-black text-white leading-tight">{course.titleBn || course.title}</h1>
               {catDisplay && <p className="text-white/70 text-sm font-semibold mt-1">{catDisplay}</p>}
@@ -369,15 +365,11 @@ export default function CourseDetailPage() {
               {relatedCourses.map(c => (
                 <a key={c.id} href={`/courses/${c.id}`}
                   className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all">
-                  <span className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50 text-base shrink-0">
-                    {c.trainerImageUrl ? (
-                      <img src={c.trainerImageUrl} alt="" className="w-full h-full object-cover" />
-                    ) : c.institutionLogoUrl ? (
-                      <img src={c.institutionLogoUrl} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <span>{c.icon || "📌"}</span>
-                    )}
-                  </span>
+                  {c.trainerImageUrl || c.institutionLogoUrl ? (
+                    <span className="w-9 h-9 rounded-lg overflow-hidden shrink-0">
+                      <img src={c.trainerImageUrl || c.institutionLogoUrl || ""} alt="" className="w-full h-full object-cover" />
+                    </span>
+                  ) : null}
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-text truncate">{c.titleBn || c.title}</p>
                     {c.avgRating > 0 && <p className="text-xs text-amber-600">⭐ {c.avgRating}</p>}
