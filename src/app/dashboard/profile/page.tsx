@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
+import LinkedPlatformsSection from "@/components/LinkedPlatformsSection";
 import { Button } from "@/components/ui/Button";
 import { useSWRFetch } from "@/lib/use-swr-fetch";
 
@@ -386,6 +387,8 @@ export default function ProfilePage() {
               </>
             )}
           </Card>
+
+          <LinkedPlatformsSection />
         </div>
 
         {/* Fingerprint Warning Modal */}

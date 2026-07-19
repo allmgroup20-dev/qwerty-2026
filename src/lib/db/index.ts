@@ -455,6 +455,16 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       completed_at TEXT
     )`).run();
     await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_resource_purchases_worker ON resource_purchases(worker_id)`).run().catch(() => {});
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_platform_links (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      platform TEXT NOT NULL,
+      platform_id TEXT NOT NULL,
+      verified INTEGER DEFAULT 0,
+      linked_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_platform_links_worker ON user_platform_links(worker_id)`).run().catch(() => {});
+    await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_platform_links_unique ON user_platform_links(platform, platform_id)`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS bargain_sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       worker_id TEXT NOT NULL,
