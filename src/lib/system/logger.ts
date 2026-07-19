@@ -2,6 +2,7 @@ import { ensureDB } from "@/lib/db";
 
 const queue: Record<string, unknown>[] = [];
 let flushing = false;
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
 async function flush() {
   if (flushing) return;
@@ -52,9 +53,11 @@ export async function logSystemEvent(
     ...(data?.extra ? { extra: data.extra } : {}),
   });
   if (queue.length >= 10) {
+    if (flushTimer) clearTimeout(flushTimer);
     flush().catch(() => {});
   } else if (!flushing) {
-    setTimeout(() => flush().catch(() => {}), 5000);
+    if (flushTimer) clearTimeout(flushTimer);
+    flushTimer = setTimeout(() => { flushTimer = null; flush().catch(() => {}); }, 5000);
   }
 }
 

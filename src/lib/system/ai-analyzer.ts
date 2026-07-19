@@ -1,48 +1,17 @@
 import { ensureDB } from "@/lib/db";
-
-const ANALYSIS_MODELS = [
-  "deepseek-v4-flash-free",
-  "nemotron-3-ultra-free",
-];
-
-async function callOpenCode(
-  messages: { role: string; content: string }[],
-  model?: string
-): Promise<string | null> {
-  const m = model || ANALYSIS_MODELS[0];
-  try {
-    const res = await fetch("https://opencode.ai/zen/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: m,
-        messages,
-        max_tokens: 1000,
-        temperature: 0.3,
-      }),
-      signal: AbortSignal.timeout(20000),
-    });
-    if (!res.ok) return null;
-    const data = await res.json() as {
-      choices?: { message: { content: string | null } }[];
-    };
-    return data?.choices?.[0]?.message?.content || null;
-  } catch {
-    return null;
-  }
-}
+import { callAI } from "@/lib/ai/router";
 
 export async function analyzeRecentErrors(): Promise<{
   ok: boolean;
   reportId?: number;
+  note?: string;
   error?: string;
 }> {
   try {
     const db = await ensureDB();
 
-    // Get recent errors (last 24h, max 50)
     const errors = await db.prepare(`
-      SELECT log_type, source, message, stack_trace, status_code, route, method, duration_ms, created_at
+      SELECT id, log_type, source, message, stack_trace, status_code, route, method, duration_ms, created_at
       FROM system_logs
       WHERE log_type IN ('error', 'warning')
         AND created_at >= datetime('now', '-1 day')
@@ -52,10 +21,9 @@ export async function analyzeRecentErrors(): Promise<{
     `).bind().all() as { results: Record<string, unknown>[] };
 
     if (!errors.results || errors.results.length === 0) {
-      return { ok: true, reportId: undefined };
+      return { ok: true, note: "No errors to analyze" };
     }
 
-    // Get perf summary for affected routes
     const routeNames = [...new Set(errors.results.map((e) => e.route).filter(Boolean))];
     const perfData: Record<string, unknown>[] = [];
     for (const r of routeNames.slice(0, 10)) {
@@ -66,11 +34,9 @@ export async function analyzeRecentErrors(): Promise<{
       if (snap.results?.[0]) perfData.push(snap.results[0]);
     }
 
-    // Count by severity
     const errorCount = errors.results.filter((e) => e.log_type === "error").length;
     const warningCount = errors.results.filter((e) => e.log_type === "warning").length;
 
-    // Build analysis prompt
     const errorSummary = errors.results.map((e) =>
       `[${e.log_type}] ${e.source}: ${e.message}${e.route ? ` (route: ${e.method} ${e.route})` : ""}${e.status_code ? ` status=${e.status_code}` : ""}${e.duration_ms ? ` ${e.duration_ms}ms` : ""}`
     ).join("\n");
@@ -97,47 +63,79 @@ Respond in this exact JSON format (no markdown, no code fences, pure JSON):
   "estimatedImpact": "brief impact description"
 }`;
 
-    let result: string | null = null;
-    for (const model of ANALYSIS_MODELS) {
-      result = await callOpenCode([
-        { role: "user", content: prompt },
-      ], model);
-      if (result) break;
+    let analysisText: string | null = null;
+    let modelUsed = "";
+
+    // Try opencode.ai directly (free tier, no key needed)
+    try {
+      const res = await fetch("https://opencode.ai/zen/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "deepseek-v4-flash-free",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 1000,
+          temperature: 0.3,
+        }),
+        signal: AbortSignal.timeout(25000),
+      });
+      if (res.ok) {
+        const data = await res.json() as { choices?: { message: { content: string | null } }[] };
+        analysisText = data?.choices?.[0]?.message?.content || null;
+        modelUsed = "opencode:deepseek-v4-flash-free";
+      }
+    } catch {}
+
+    // Fallback: use existing AI router (requires configured API keys)
+    if (!analysisText) {
+      try {
+        const result = await callAI(
+          { messages: [{ role: "user", content: prompt }], temperature: 0.3 },
+          1000,
+          undefined,
+          "opencode"
+        );
+        analysisText = result.text;
+        modelUsed = result.model;
+      } catch (err) {
+        const msg = String(err);
+        if (!analysisText) {
+          if (msg.includes("No API keys")) {
+            return { ok: false, error: "No AI API keys configured. Add an API key in AI Settings, or opencode.ai direct access failed." };
+          }
+          return { ok: false, error: "AI analysis failed: " + msg };
+        }
+      }
     }
 
-    if (!result) {
-      return { ok: false, error: "AI analysis failed - all models unavailable" };
+    if (!analysisText) {
+      return { ok: false, error: "AI analysis failed — all models unavailable" };
     }
 
-    // Parse JSON from response
     let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(result.trim());
+      parsed = JSON.parse(analysisText.trim());
     } catch {
-      // Try extracting JSON from response
-      const jsonMatch = result.match(/\{[\s\S]*\}/);
-      parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: result };
+      const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+      parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: analysisText };
     }
 
-    // Save report
-    const reportDb = await ensureDB();
-    const reportResult = await reportDb.prepare(
+    const reportResult = await db.prepare(
       `INSERT INTO ai_analysis_reports (report_type, title, summary, details, affected_routes, severity, suggested_fixes)
        VALUES (?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       "error_analysis",
       `Error Analysis — ${errorCount} errors, ${warningCount} warnings`,
-      parsed.rootCause || parsed.summary || result.slice(0, 200),
-      JSON.stringify({ rawAnalysis: result, errorCount, warningCount, perfData, analyzedAt: new Date().toISOString() }),
+      parsed.rootCause || parsed.summary || analysisText.slice(0, 200),
+      JSON.stringify({ rawAnalysis: analysisText, model: modelUsed, errorCount, warningCount, perfData, analyzedAt: new Date().toISOString() }),
       JSON.stringify(parsed.affectedRoutes || routeNames),
       parsed.severity || "medium",
       JSON.stringify(parsed.suggestedFixes || [])
     ).run() as { meta: { last_row_id: number } };
 
-    // Mark analyzed errors
     const ids = errors.results.map((e) => e.id).filter(Boolean);
     for (const id of ids) {
-      await reportDb.prepare("UPDATE system_logs SET is_ai_analyzed = 1 WHERE id = ?").bind(id).run().catch(() => {});
+      await db.prepare("UPDATE system_logs SET is_ai_analyzed = 1 WHERE id = ?").bind(id).run().catch(() => {});
     }
 
     return { ok: true, reportId: reportResult.meta.last_row_id };

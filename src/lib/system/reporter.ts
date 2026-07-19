@@ -16,7 +16,7 @@ export function reportClientError(
     method: "client",
   };
   try {
-    navigator.sendBeacon("/api/system/logs", JSON.stringify(payload));
+    navigator.sendBeacon("/api/system/logs", new Blob([JSON.stringify(payload)], { type: "application/json" }));
   } catch {
     fetch("/api/system/logs", {
       method: "POST",
