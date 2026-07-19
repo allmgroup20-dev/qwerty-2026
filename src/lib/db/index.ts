@@ -4,7 +4,6 @@ const DONE_FLAG = "__dbSchemaSetupDone";
 const DONE_LOCK = "__dbSchemaSetupLock";
 
 let dbCache: { DB: D1Database } | null = null;
-let dbError: Error | null = null;
 
 async function ensureSchema(env: { DB: D1Database }): Promise<void> {
   const g = globalThis as any;
@@ -60,32 +59,37 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       is_active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
-    // Migrate: add social login columns (idempotent)
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN google_id TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN facebook_id TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN preferred_language TEXT DEFAULT 'bn'`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN age_group TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN occupation TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN education_level TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN interests_updated_at TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN gender TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN country TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN city TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN goal TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN preferred_learning_time TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN referral_source TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN communication_preference TEXT DEFAULT 'whatsapp'`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN budget_range TEXT`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE workers ADD COLUMN religion TEXT`).run().catch(() => {});
+    // Batch all idempotent ALTER TABLE statements (much faster than 22 sequential round-trips)
+    const alterStmts = [
+      `ALTER TABLE workers ADD COLUMN google_id TEXT`,
+      `ALTER TABLE workers ADD COLUMN facebook_id TEXT`,
+      `ALTER TABLE workers ADD COLUMN preferred_language TEXT DEFAULT 'bn'`,
+      `ALTER TABLE workers ADD COLUMN age_group TEXT`,
+      `ALTER TABLE workers ADD COLUMN occupation TEXT`,
+      `ALTER TABLE workers ADD COLUMN education_level TEXT`,
+      `ALTER TABLE workers ADD COLUMN interests_updated_at TEXT`,
+      `ALTER TABLE workers ADD COLUMN gender TEXT`,
+      `ALTER TABLE workers ADD COLUMN country TEXT`,
+      `ALTER TABLE workers ADD COLUMN city TEXT`,
+      `ALTER TABLE workers ADD COLUMN goal TEXT`,
+      `ALTER TABLE workers ADD COLUMN preferred_learning_time TEXT`,
+      `ALTER TABLE workers ADD COLUMN referral_source TEXT`,
+      `ALTER TABLE workers ADD COLUMN communication_preference TEXT DEFAULT 'whatsapp'`,
+      `ALTER TABLE workers ADD COLUMN budget_range TEXT`,
+      `ALTER TABLE workers ADD COLUMN religion TEXT`,
+      `ALTER TABLE workers ADD COLUMN resource_income REAL DEFAULT 0`,
+      `ALTER TABLE workers ADD COLUMN resource_income_original REAL DEFAULT 0`,
+      `ALTER TABLE commission_levels ADD COLUMN commission_type TEXT DEFAULT 'both'`,
+      `ALTER TABLE commission_levels ADD COLUMN min_referral_base INTEGER DEFAULT 3`,
+      `ALTER TABLE commission_levels ADD COLUMN level_name_bn TEXT`,
+    ].map(sql => env.DB.prepare(sql));
+    env.DB.batch(alterStmts).catch(() => {});
 
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_tracking_prefs (
       worker_id TEXT PRIMARY KEY,
       tracking_enabled INTEGER DEFAULT 1,
       updated_at TEXT DEFAULT (datetime('now'))
     )`).run();
-    await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN commission_type TEXT DEFAULT 'both'`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN min_referral_base INTEGER DEFAULT 3`).run().catch(() => {});
-    await env.DB.prepare(`ALTER TABLE commission_levels ADD COLUMN level_name_bn TEXT`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -1132,50 +1136,51 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     g[DONE_FLAG] = true;
     g[DONE_LOCK] = false;
 
-    // Run indexes and data migrations asynchronously (don't block first request)
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_worker ON orders(worker_id)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_commissions_worker ON commissions(worker_id)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_commissions_order ON commissions(order_id)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_events_worker ON user_events(worker_id, created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_notifications_worker ON notifications(worker_id)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_behavior_scores_segment ON user_behavior_scores(segment)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_events_type ON user_events(event_type)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_events_created ON user_events(created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_workers_membership ON workers(membership_status)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_workers_created ON workers(created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_payment ON orders(payment_status)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_commissions_status ON commissions(status)`).run().catch(() => {});
-
-    // ─── Missing indexes (performance optimization) ───
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_sessions_worker ON user_sessions(worker_id, created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_searches_worker ON user_searches(worker_id, created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_communication_worker ON communication_history(worker_id, created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_withdrawals_worker ON withdrawals(worker_id, created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(is_read, worker_id)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_queue_status ON wa_message_queue(status, priority, created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_wa_logs_phone ON wa_logs(phone, created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_ai_conv_phone ON ai_conversations(phone)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_ai_leads_status ON ai_leads(status, priority_score)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_phonebooks_worker ON user_phonebooks(worker_id)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_mlm_tree_level ON mlm_tree(level_number)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_complaints_worker ON complaints(worker_id)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_attribution_channel ON attribution_log(channel)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_devices_worker ON user_devices(worker_id, last_seen_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_saved_accounts_worker ON saved_accounts(worker_id)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_brain_usage_created ON brain_usage(created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_agent_feedback_created ON agent_feedback(created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_commissions_to_worker ON commissions(to_worker_id)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_workers_google_id ON workers(google_id)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_workers_facebook_id ON workers(facebook_id)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_biometric_worker ON biometric_credentials(worker_id, user_type)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_worker_payment ON orders(worker_id, payment_status)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_events_worker_type ON user_events(worker_id, event_type)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_sessions_created ON user_sessions(created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_communication_created ON communication_history(created_at)`).run().catch(() => {});
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at)`).run().catch(() => {});
+    // Batch all index creation asynchronously (single round-trip instead of 50+)
+    const indexStmts = [
+      `CREATE INDEX IF NOT EXISTS idx_orders_worker ON orders(worker_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_commissions_worker ON commissions(worker_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_commissions_order ON commissions(order_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_events_worker ON user_events(worker_id, created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_notifications_worker ON notifications(worker_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)`,
+      `CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active)`,
+      `CREATE INDEX IF NOT EXISTS idx_behavior_scores_segment ON user_behavior_scores(segment)`,
+      `CREATE INDEX IF NOT EXISTS idx_events_type ON user_events(event_type)`,
+      `CREATE INDEX IF NOT EXISTS idx_events_created ON user_events(created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_workers_membership ON workers(membership_status)`,
+      `CREATE INDEX IF NOT EXISTS idx_workers_created ON workers(created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_orders_payment ON orders(payment_status)`,
+      `CREATE INDEX IF NOT EXISTS idx_commissions_status ON commissions(status)`,
+      `CREATE INDEX IF NOT EXISTS idx_sessions_worker ON user_sessions(worker_id, created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_searches_worker ON user_searches(worker_id, created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_communication_worker ON communication_history(worker_id, created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_withdrawals_worker ON withdrawals(worker_id, created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(is_read, worker_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_queue_status ON wa_message_queue(status, priority, created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_wa_logs_phone ON wa_logs(phone, created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_ai_conv_phone ON ai_conversations(phone)`,
+      `CREATE INDEX IF NOT EXISTS idx_ai_leads_status ON ai_leads(status, priority_score)`,
+      `CREATE INDEX IF NOT EXISTS idx_phonebooks_worker ON user_phonebooks(worker_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_mlm_tree_level ON mlm_tree(level_number)`,
+      `CREATE INDEX IF NOT EXISTS idx_complaints_worker ON complaints(worker_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_attribution_channel ON attribution_log(channel)`,
+      `CREATE INDEX IF NOT EXISTS idx_devices_worker ON user_devices(worker_id, last_seen_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_saved_accounts_worker ON saved_accounts(worker_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_brain_usage_created ON brain_usage(created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_agent_feedback_created ON agent_feedback(created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_commissions_to_worker ON commissions(to_worker_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_workers_google_id ON workers(google_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_workers_facebook_id ON workers(facebook_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_biometric_worker ON biometric_credentials(worker_id, user_type)`,
+      `CREATE INDEX IF NOT EXISTS idx_orders_worker_payment ON orders(worker_id, payment_status)`,
+      `CREATE INDEX IF NOT EXISTS idx_events_worker_type ON user_events(worker_id, event_type)`,
+      `CREATE INDEX IF NOT EXISTS idx_sessions_created ON user_sessions(created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_communication_created ON communication_history(created_at)`,
+      `CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at)`,
+    ].map(sql => env.DB.prepare(sql));
+    env.DB.batch(indexStmts).catch(() => {});
 
     // System monitoring indexes
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_system_logs_type ON system_logs(log_type, created_at)`).run().catch(() => {});
@@ -1219,7 +1224,6 @@ async function getLocalDB() {
 
 export async function getDB(): Promise<{ DB: D1Database }> {
   if (dbCache) return dbCache;
-  if (dbError) throw dbError;
 
   try {
     const ctx = await getCloudflareContext({ async: true });
@@ -1245,8 +1249,7 @@ export async function getDB(): Promise<{ DB: D1Database }> {
         console.warn("Local D1 fallback failed:", (localErr as Error)?.message);
       }
     }
-    dbError = e instanceof Error ? e : new Error("Database connection failed");
-    throw dbError;
+    throw e instanceof Error ? e : new Error("Database connection failed");
   }
 }
 
