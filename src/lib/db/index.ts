@@ -271,6 +271,7 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       updated_at TEXT DEFAULT (datetime('now'))
     )`).run();
     try { await env.DB.prepare("ALTER TABLE ai_conversations ADD COLUMN summary TEXT DEFAULT ''").run(); } catch {}
+    try { await env.DB.prepare("ALTER TABLE ai_conversations ADD COLUMN key_points TEXT DEFAULT '{}'").run(); } catch {}
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_phone_profiles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       phone TEXT UNIQUE NOT NULL,
@@ -682,36 +683,6 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       created_by TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS wa_accounts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      account_id TEXT UNIQUE NOT NULL,
-      phone TEXT,
-      provider TEXT DEFAULT 'meta',
-      status TEXT DEFAULT 'disconnected',
-      daily_limit INTEGER DEFAULT 100,
-      daily_sent INTEGER DEFAULT 0,
-      total_sent INTEGER DEFAULT 0,
-      config TEXT,
-      session_data TEXT,
-      last_used_at TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
-    )`).run();
-    try { await env.DB.prepare("ALTER TABLE wa_accounts ADD COLUMN session_data TEXT").run(); } catch {}
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS wa_warmup (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      account_id TEXT UNIQUE NOT NULL,
-      day_count INTEGER DEFAULT 0,
-      current_limit INTEGER DEFAULT 20,
-      started_at TEXT,
-      last_increment_at TEXT
-    )`).run();
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS wa_scanned_numbers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      phone TEXT UNIQUE NOT NULL,
-      status TEXT DEFAULT 'generated',
-      source TEXT DEFAULT 'generator',
-      created_at TEXT DEFAULT (datetime('now'))
-    )`).run();
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS wa_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       phone TEXT,
@@ -721,40 +692,6 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       message_type TEXT DEFAULT 'text',
       campaign_id TEXT,
       error TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
-    )`).run();
-
-    // Telegram module tables
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS tg_bots (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      token TEXT NOT NULL,
-      username TEXT,
-      is_active INTEGER DEFAULT 1,
-      created_at TEXT DEFAULT (datetime('now'))
-    )`).run();
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS tg_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      chat_id TEXT NOT NULL,
-      message TEXT,
-      direction TEXT DEFAULT 'inbound',
-      status TEXT DEFAULT 'received',
-      created_at TEXT DEFAULT (datetime('now'))
-    )`).run();
-
-    // Facebook Messenger module tables
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS fb_pages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      token TEXT NOT NULL,
-      page_id TEXT,
-      is_active INTEGER DEFAULT 1,
-      created_at TEXT DEFAULT (datetime('now'))
-    )`).run();
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS fb_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      sender_id TEXT NOT NULL,
-      message TEXT,
-      direction TEXT DEFAULT 'inbound',
-      status TEXT DEFAULT 'received',
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
 

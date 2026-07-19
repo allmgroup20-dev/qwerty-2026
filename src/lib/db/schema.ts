@@ -236,72 +236,6 @@ export const waMessageQueue = sqliteTable("wa_message_queue", {
   createdAt: text("created_at"),
 });
 
-export const waCampaigns = sqliteTable("wa_campaigns", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  name: text("name").notNull(),
-  message: text("message").notNull(),
-  status: text("status").default("draft"),
-  targetFilter: text("target_filter"),
-  totalTargets: integer("total_targets").default(0),
-  sentCount: integer("sent_count").default(0),
-  repliedCount: integer("replied_count").default(0),
-  startedAt: text("started_at"),
-  completedAt: text("completed_at"),
-  createdBy: text("created_by"),
-  createdAt: text("created_at"),
-});
-
-export const waTemplates = sqliteTable("wa_templates", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  name: text("name").unique().notNull(),
-  content: text("content").notNull(),
-  category: text("category").default("general"),
-  variables: text("variables"),
-  usageCount: integer("usage_count").default(0),
-  createdAt: text("created_at"),
-  updatedAt: text("updated_at"),
-});
-
-export const waBlocklist = sqliteTable("wa_blocklist", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  phone: text("phone").unique().notNull(),
-  reason: text("reason"),
-  createdBy: text("created_by"),
-  createdAt: text("created_at"),
-});
-
-export const waAccounts = sqliteTable("wa_accounts", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  accountId: text("account_id").unique().notNull(),
-  phone: text("phone"),
-  provider: text("provider").default("meta"),
-  status: text("status").default("disconnected"),
-  dailyLimit: integer("daily_limit").default(100),
-  dailySent: integer("daily_sent").default(0),
-  totalSent: integer("total_sent").default(0),
-  config: text("config"),
-  sessionData: text("session_data"),
-  lastUsedAt: text("last_used_at"),
-  createdAt: text("created_at"),
-});
-
-export const waWarmup = sqliteTable("wa_warmup", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  accountId: text("account_id").unique().notNull(),
-  dayCount: integer("day_count").default(0),
-  currentLimit: integer("current_limit").default(20),
-  startedAt: text("started_at"),
-  lastIncrementAt: text("last_increment_at"),
-});
-
-export const waScannedNumbers = sqliteTable("wa_scanned_numbers", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  phone: text("phone").unique().notNull(),
-  status: text("status").default("generated"),
-  source: text("source").default("generator"),
-  createdAt: text("created_at"),
-});
-
 export const waLogs = sqliteTable("wa_logs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   phone: text("phone"),
@@ -345,6 +279,8 @@ export const aiConversations = sqliteTable("ai_conversations", {
   phone: text("phone").notNull(),
   role: text("role").default("customer"),
   messages: text("messages"),
+  summary: text("summary").default(""),
+  keyPoints: text("key_points"),
   personaName: text("persona_name"),
   personaGender: text("persona_gender"),
   language: text("language").default("bn"),

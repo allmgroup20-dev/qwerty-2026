@@ -11,7 +11,7 @@ const menuItems = [
   { key: "nav_home", en: "Home", bn: "হোম", href: "/" },
   { key: "nav_courses", en: "Courses", bn: "কোর্স সমূহ", href: "/courses" },
   { key: "nav_live", en: "Live Updates", bn: "লাইভ", href: "/live-updates" },
-  { key: "nav_trainers", en: "Trainers", bn: "প্রশিক্ষক", href: "/trainers" },
+  { key: "nav_trainers", en: "Trainers", bn: "প্রশিক্ষক", href: "/courses" },
   { key: "nav_reviews", en: "Reviews", bn: "মতামত", href: "/reviews" },
 ];
 

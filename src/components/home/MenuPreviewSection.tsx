@@ -42,12 +42,12 @@ const previews: MenuPreview[] = [
     gradient: "from-emerald-500 to-green-500",
   },
   {
-    href: "/trainers",
+    href: "/courses",
     icon: "👨‍🏫",
-    titleBn: "প্রশিক্ষক",
-    titleEn: "Trainers",
-    descBn: "দেশের সেরা ১২ জন প্রশিক্ষক। আয়মান সাদিক, ঝংকার মাহবুব, মুনজারিন শহীদ সহ শীর্ষ বিশেষজ্ঞদের কোর্স।",
-    descEn: "Bangladesh's top 12 trainers. Courses from Ayman Sadiq, Jhankar Mahbub, Munzarin Shahid and more experts.",
+    titleBn: "প্রশিক্ষক ও প্রতিষ্ঠান",
+    titleEn: "Trainers & Institutions",
+    descBn: "দেশের সেরা প্রশিক্ষক ও প্রতিষ্ঠানসমূহের সাথে পরিচিত হোন। সব কোর্স ও রিসোর্স এক জায়গায়।",
+    descEn: "Meet Bangladesh's top trainers and institutions. All courses & resources in one place.",
     gradient: "from-purple-500 to-violet-500",
   },
   {

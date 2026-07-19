@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useLanguageStore } from "@/lib/store";
 
 const CheckoutModal = dynamic(() => import("@/components/courses/CheckoutModal"), { ssr: false });
 import { useDebounce } from "@/lib/use-debounce";
@@ -39,6 +40,7 @@ function getCourseImage(img: string | null | undefined, logo: string | null | un
 }
 
 export default function CoursesPage() {
+  const { lang } = useLanguageStore();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [viewMode, setViewMode] = useState<"all" | "institution">("all");
@@ -301,7 +303,60 @@ export default function CoursesPage() {
         </div>
       </div>
 
-      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-border shadow-sm">
+      {/* ── প্রতিষ্ঠান ও প্রশিক্ষক সেকশন ── */}
+      {institutions.length + sortedTrainers.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 md:pt-8 pb-3">
+          {institutions.length > 0 && (
+            <div className="mb-5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">🏛️</span>
+                <h2 className="text-sm font-black text-text">{lang === "bn" ? "প্রতিষ্ঠানসমূহ" : "Institutions"}</h2>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {sortedInst.map(inst => (
+                  <div key={inst.id} className="bg-white rounded-2xl border border-border p-4 flex flex-col items-center text-center hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
+                    onClick={() => { setViewMode("institution"); setExpandedInstId(inst.id); window.scrollTo({ top: document.getElementById("course-list")?.offsetTop, behavior: "smooth" }); }}>
+                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-primary/5 to-info/5 flex items-center justify-center mb-2.5 border border-border/50">
+                      {inst.logo_url ? (
+                        <img src={inst.logo_url} alt="" className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <span className="text-xl font-black text-primary">{(inst.name_bn || inst.name).charAt(0)}</span>
+                      )}
+                    </div>
+                    <p className="text-xs font-bold text-text leading-snug line-clamp-2">{lang === "bn" ? inst.name_bn || inst.name : inst.name}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {sortedTrainers.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">👨‍🏫</span>
+                <h2 className="text-sm font-black text-text">{lang === "bn" ? "প্রশিক্ষকবৃন্দ" : "Trainers"}</h2>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {sortedTrainers.map(t => (
+                  <div key={t.id} className="bg-white rounded-2xl border border-border p-4 flex flex-col items-center text-center hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
+                    onClick={() => { setViewMode("institution"); setExpandedTrainerId(t.id); window.scrollTo({ top: document.getElementById("course-list")?.offsetTop, behavior: "smooth" }); }}>
+                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-info/5 to-orange/5 flex items-center justify-center mb-2.5 border border-border/50">
+                      {t.image_url ? (
+                        <img src={t.image_url} alt={t.name_bn || t.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xl font-black text-info">{(t.name_bn || t.name).charAt(0)}</span>
+                      )}
+                    </div>
+                    <p className="text-xs font-bold text-text leading-snug line-clamp-2">{t.name_bn || t.name}</p>
+                    <p className="text-[10px] text-text-secondary/60 mt-0.5 line-clamp-1">{t.specialty_bn || t.specialty_en || ""}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-border shadow-sm" id="course-list">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
             <button onClick={() => { setViewMode("all"); setExpandedInstId(null); setExpandedTrainerId(null); }}
@@ -319,26 +374,6 @@ export default function CoursesPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8">
-        {sortedTrainers.length > 0 && (
-          <div className="mb-6">
-            <p className="text-xs font-bold text-text-secondary mb-2">👨‍🏫 প্রশিক্ষকবৃন্দ</p>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-              {sortedTrainers.map(t => (
-                <div key={t.id} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-border shrink-0">
-                  {t.image_url ? (
-                    <img src={t.image_url} alt={t.name_bn || t.name} className="w-8 h-8 rounded-lg object-cover" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-sm font-bold text-primary">{(t.name_bn || t.name).charAt(0)}</div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-text truncate max-w-[120px]">{t.name_bn || t.name}</p>
-                    <p className="text-[10px] text-text-secondary/60 truncate max-w-[120px]">{t.specialty_bn || t.specialty_en || ""}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {viewMode === "all" ? (
           <>

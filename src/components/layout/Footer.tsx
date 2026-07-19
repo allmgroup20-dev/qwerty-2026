@@ -39,7 +39,7 @@ export default function Footer() {
                 { en: "Home", bn: "হোম", href: "/" },
                 { en: "Courses", bn: "কোর্স সমূহ", href: "/courses" },
                 { en: "Live Updates", bn: "লাইভ", href: "/live-updates" },
-                { en: "Trainers", bn: "প্রশিক্ষক", href: "/trainers" },
+                { en: "Trainers & Institutions", bn: "প্রশিক্ষক ও প্রতিষ্ঠান", href: "/courses" },
                 { en: "Reviews", bn: "মতামত", href: "/reviews" },
               ].map((item) => (
                 <Link key={item.href} href={item.href} className="text-white/60 hover:text-secondary text-sm transition-colors">

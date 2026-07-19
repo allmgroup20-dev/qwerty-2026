@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendMessengerMessage } from "@/lib/messenger/sender";
-import { execute } from "@/lib/db/queries";
 import { ensureDB } from "@/lib/db";
 import {
   processMessage,
@@ -50,13 +49,6 @@ export async function POST(request: NextRequest) {
     }
     const { senderId, text, name } = parsed;
     const phone = mapSenderId(senderId);
-
-    const db = await ensureDB();
-    await execute(
-      { DB: db },
-      "INSERT INTO fb_logs (sender_id, message, direction, status, created_at) VALUES (?, ?, 'inbound', 'received', datetime('now'))",
-      [senderId, text]
-    );
 
     const isWorker = await isWorkerPhone(phone);
     const role = isWorker ? "worker" : "customer";
@@ -114,16 +106,15 @@ export async function POST(request: NextRequest) {
       reply = brainResult.text;
 
       if (isWorker && brainResult.agentsUsed.length > 0) {
+        const db = await ensureDB();
         const agentName = brainResult.agentsUsed[0];
         await linkWorkerToAgent(db, phone, agentName, agentName);
         await saveAgentKnowledge(db, phone, agentName, agentName, reply.slice(0, 1000));
       }
     }
 
-    // Enforce conversation rules — keep replies short (15-40 words, max 2 sentences)
     reply = enforceWordLimit(reply);
 
-    // Auto-save to skills
     try {
       const keywords = extractKeywords(text);
       if (keywords.length >= 2 && reply.length > 10) {
@@ -133,7 +124,6 @@ export async function POST(request: NextRequest) {
       console.error("[Skills] Failed to auto-save:", (e as Error)?.message);
     }
 
-    // Record platform preference — user replied on Messenger
     await recordPlatformActivity(phone, "messenger");
 
     await saveMessage(phone, "user", text, { language: lang, painPoints, interests, source: "messenger" });
@@ -141,11 +131,6 @@ export async function POST(request: NextRequest) {
     await updateLeadStatus(phone, "replied");
 
     const sendResult = await sendMessengerMessage(senderId, reply);
-    await execute(
-      { DB: db },
-      "UPDATE fb_logs SET status = ? WHERE sender_id = ? AND direction = 'inbound' AND status = 'received'",
-      [sendResult.success ? "replied" : "failed", senderId]
-    );
 
     return NextResponse.json({ ok: true, replied: sendResult.success });
   } catch (error) {

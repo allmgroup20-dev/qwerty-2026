@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
     }
 
     const totalEarned = commissions?.totalEarned || 0;
-    const balance = Math.max(0, (commissions?.paidAmount || 0) - (withdrawalSum?.withdrawn || 0));
+    const resourceIncome = profile?.resourceIncome || 0;
+    const balance = Math.max(0, (commissions?.paidAmount || 0) - (withdrawalSum?.withdrawn || 0) + resourceIncome);
     const totalTeamMembers = teamCount?.cnt || 0;
 
     if (profile) {

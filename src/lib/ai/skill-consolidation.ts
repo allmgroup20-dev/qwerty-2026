@@ -4,14 +4,14 @@ import { extractKeywords } from "./analyzer";
 
 export async function consolidateSkills(): Promise<{ faqs: number; shortcuts: number }> {
   const db = await ensureDB();
-  const convs = await query<{ phone: string; messages: string }>(
+  const convs = await query<{ phone: string; messages: string; key_points: string }>(
     { DB: db },
-    "SELECT phone, messages FROM ai_conversations WHERE source = 'whatsapp' ORDER BY created_at DESC LIMIT 500"
+    "SELECT phone, messages, key_points FROM ai_conversations WHERE source = 'whatsapp' ORDER BY created_at DESC LIMIT 500"
   );
   const questionCounts = new Map<string, { count: number; answer: string; keywords: string[] }>();
   for (const conv of convs) {
     try {
-      const msgs = JSON.parse(conv.messages);
+      const msgs = JSON.parse(conv.messages || "[]");
       for (let i = 0; i < msgs.length - 1; i++) {
         if (msgs[i].role === "user" && msgs[i + 1]?.role === "assistant") {
           const q = msgs[i].content?.substring(0, 200);

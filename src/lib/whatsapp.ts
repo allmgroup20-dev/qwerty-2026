@@ -1,7 +1,7 @@
 import { sendMessage, enqueueMessage, processQueue, getQueueStats, getPendingWebMessages, markWebSent } from "./whatsapp/index";
 
 export { sendMessage, enqueueMessage, processQueue, getQueueStats, getPendingWebMessages, markWebSent } from "./whatsapp/index";
-export type { WhatsAppAccount, SendResult, MessagePriority } from "./whatsapp/types";
+export type { SendResult, MessagePriority } from "./whatsapp/types";
 
 export async function sendWhatsAppMessage(
   message: { to: string; text: string },
