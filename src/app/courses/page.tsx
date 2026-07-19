@@ -316,47 +316,53 @@ export default function CoursesPage() {
 
       {/* ── প্রতিষ্ঠান ও প্রশিক্ষক সেকশন (বাম→ডান স্ক্রল) ── */}
       {institutions.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 md:pt-8 pb-2">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">🏛️</span>
-            <h2 className="text-sm font-black text-text">{lang === "bn" ? "প্রতিষ্ঠানসমূহ" : "Institutions"}</h2>
+        <div className="pt-6 md:pt-8 pb-2 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">🏛️</span>
+              <h2 className="text-sm font-black text-text">{lang === "bn" ? "প্রতিষ্ঠানসমূহ" : "Institutions"}</h2>
+            </div>
           </div>
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-3 -mx-4 sm:-mx-6 px-4 sm:px-6">
+          <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-3 px-4 sm:px-6"
+            style={{ marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)", paddingLeft: "max(1rem, calc(50vw - 36rem))", paddingRight: "max(1rem, calc(50vw - 36rem))" }}>
             {sortedInst.map(inst => (
-              <div key={inst.id} className="flex flex-col items-center text-center shrink-0 w-28 sm:w-32 bg-white rounded-2xl border border-border p-4 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
+              <div key={inst.id} className="flex flex-col items-center text-center shrink-0 w-24 sm:w-28 bg-white rounded-2xl border border-border p-3 sm:p-4 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
                 onClick={() => { setViewMode("institution"); setExpandedInstId(inst.id); window.scrollTo({ top: document.getElementById("course-list")?.offsetTop, behavior: "smooth" }); }}>
-                <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-primary/5 to-info/5 flex items-center justify-center mb-3 border border-border/50">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-gradient-to-br from-primary/5 to-info/5 flex items-center justify-center mb-2 sm:mb-3 border border-border/50">
                   {inst.logo_url ? (
-                    <img src={inst.logo_url} alt="" className="w-full h-full object-contain p-1.5" />
+                    <img src={inst.logo_url} alt="" className="w-full h-full object-contain p-1 sm:p-1.5" />
                   ) : (
-                    <span className="text-2xl font-black text-primary">{(inst.name_bn || inst.name).charAt(0)}</span>
+                    <span className="text-xl sm:text-2xl font-black text-primary">{(inst.name_bn || inst.name).charAt(0)}</span>
                   )}
                 </div>
-                <p className="text-sm font-bold text-text leading-snug line-clamp-2">{lang === "bn" ? inst.name_bn || inst.name : inst.name}</p>
+                <p className="text-[11px] sm:text-sm font-bold text-text leading-snug line-clamp-2">{lang === "bn" ? inst.name_bn || inst.name : inst.name}</p>
               </div>
             ))}
           </div>
         </div>
       )}
       {sortedTrainers.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-2">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">👨‍🏫</span>
-            <h2 className="text-sm font-black text-text">{lang === "bn" ? "প্রশিক্ষকবৃন্দ" : "Trainers"}</h2>
+        <div className="pb-2 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">👨‍🏫</span>
+              <h2 className="text-sm font-black text-text">{lang === "bn" ? "প্রশিক্ষকবৃন্দ" : "Trainers"}</h2>
+            </div>
           </div>
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-3 -mx-4 sm:-mx-6 px-4 sm:px-6">
+          <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-3 px-4 sm:px-6"
+            style={{ marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)", paddingLeft: "max(1rem, calc(50vw - 36rem))", paddingRight: "max(1rem, calc(50vw - 36rem))" }}>
             {sortedTrainers.map(t => (
-              <div key={t.id} className="flex flex-col items-center text-center shrink-0 w-28 sm:w-32 bg-white rounded-2xl border border-border p-4 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
+              <div key={t.id} className="flex flex-col items-center text-center shrink-0 w-24 sm:w-28 bg-white rounded-2xl border border-border p-3 sm:p-4 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer"
                 onClick={() => { setViewMode("institution"); setExpandedTrainerId(t.id); window.scrollTo({ top: document.getElementById("course-list")?.offsetTop, behavior: "smooth" }); }}>
-                <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-info/5 to-orange/5 flex items-center justify-center mb-3 border border-border/50">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-gradient-to-br from-info/5 to-orange/5 flex items-center justify-center mb-2 sm:mb-3 border border-border/50">
                   {t.image_url ? (
                     <img src={t.image_url} alt={t.name_bn || t.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-2xl font-black text-info">{(t.name_bn || t.name).charAt(0)}</span>
+                    <span className="text-xl sm:text-2xl font-black text-info">{(t.name_bn || t.name).charAt(0)}</span>
                   )}
                 </div>
-                <p className="text-sm font-bold text-text leading-snug line-clamp-2">{t.name_bn || t.name}</p>
-                <p className="text-[11px] text-text-secondary/60 mt-1 line-clamp-1">{t.specialty_bn || t.specialty_en || ""}</p>
+                <p className="text-[11px] sm:text-sm font-bold text-text leading-snug line-clamp-2">{t.name_bn || t.name}</p>
+                <p className="text-[10px] sm:text-[11px] text-text-secondary/60 mt-0.5 sm:mt-1 line-clamp-1">{t.specialty_bn || t.specialty_en || ""}</p>
               </div>
             ))}
           </div>
