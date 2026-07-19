@@ -21,6 +21,9 @@ export default function CompanySettingsPage() {
     secondaryColor: "#FFD700",
     actionColor: "#28A745",
     timezone: "Asia/Dhaka",
+    demoBonusEnabled: "1",
+    demoBonusDeductionPercent: "10",
+    demoBonusDefaultAmount: "50",
   });
 
   useEffect(() => {
@@ -38,6 +41,9 @@ export default function CompanySettingsPage() {
             primaryColor: s.primary_color || prev.primaryColor,
             secondaryColor: s.secondary_color || prev.secondaryColor,
             actionColor: s.action_color || prev.actionColor,
+            demoBonusEnabled: s.demo_bonus_enabled || prev.demoBonusEnabled,
+            demoBonusDeductionPercent: s.demo_bonus_deduction_percent || prev.demoBonusDeductionPercent,
+            demoBonusDefaultAmount: s.demo_bonus_default_amount || prev.demoBonusDefaultAmount,
           }));
         }
       }).catch(() => {}).finally(() => setLoading(false));
@@ -54,6 +60,9 @@ export default function CompanySettingsPage() {
       { key: "primary_color", value: form.primaryColor },
       { key: "secondary_color", value: form.secondaryColor },
       { key: "action_color", value: form.actionColor },
+      { key: "demo_bonus_enabled", value: form.demoBonusEnabled },
+      { key: "demo_bonus_deduction_percent", value: form.demoBonusDeductionPercent },
+      { key: "demo_bonus_default_amount", value: form.demoBonusDefaultAmount },
     ];
     try {
       await fetch("/api/company/settings", {
@@ -135,6 +144,28 @@ export default function CompanySettingsPage() {
                 <input type="color" value={form.actionColor} onChange={(e) => setForm({ ...form, actionColor: e.target.value })} className="w-full h-10 rounded-xl cursor-pointer" />
               </div>
             </div>
+          </Card>
+
+          <Card>
+            <h3 className="font-bold text-primary mb-4">🎁 {lang === "bn" ? "ডেমো বোনাস" : "Demo Bonus"}</h3>
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "সক্রিয়" : "Enabled"}</label>
+                <select value={form.demoBonusEnabled} onChange={(e) => setForm({ ...form, demoBonusEnabled: e.target.value })} className="input-field">
+                  <option value="1">{lang === "bn" ? "সক্রিয়" : "Enabled"}</option>
+                  <option value="0">{lang === "bn" ? "নিষ্ক্রিয়" : "Disabled"}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "ডিডাকশন %" : "Deduction %"}</label>
+                <input type="number" min="0" max="100" value={form.demoBonusDeductionPercent} onChange={(e) => setForm({ ...form, demoBonusDeductionPercent: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">{lang === "bn" ? "ডিফল্ট অ্যামাউন্ট" : "Default Amount"}</label>
+                <input type="number" min="0" value={form.demoBonusDefaultAmount} onChange={(e) => setForm({ ...form, demoBonusDefaultAmount: e.target.value })} className="input-field" />
+              </div>
+            </div>
+            <p className="text-xs text-text-secondary/60 mt-2">{lang === "bn" ? "প্রতি রেজিস্ট্রেশনে এই অ্যামাউন্ট ডেমো বোনাস হিসেবে যোগ হবে। ইউজার উত্তোলনের সময় ডিডাকশন % অনুযায়ী বোনাস থেকে কাটা হবে।" : "This amount is awarded as demo bonus on each registration. On withdrawal, the deduction % is deducted from the demo bonus."}</p>
           </Card>
 
           <Button onClick={handleSave} disabled={saving} className="w-full !py-4">
