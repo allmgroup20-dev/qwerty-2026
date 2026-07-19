@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryFirst, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
-import { generateToken, generateWorkerId } from "@/lib/auth";
+import { generateToken, generateWorkerId, hashWorkerPassword } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,10 +50,11 @@ export async function POST(request: NextRequest) {
     const phone = email || `google_${googleId.slice(0, 8)}`;
     const name = displayName || `User${phone.slice(-6)}`;
     const workerId = generateWorkerId(name, phone);
+    const hashedPw = await hashWorkerPassword("google_oauth_" + googleId.slice(0, 8));
     await execute(env,
       `INSERT INTO workers (worker_id, name, phone, password, google_id, join_date, membership_status)
        VALUES (?, ?, ?, ?, ?, datetime('now'), 'active')`,
-      [workerId, name, phone, "google_oauth", googleId]
+      [workerId, name, phone, hashedPw, googleId]
     );
 
     const token = await generateToken(workerId, process.env.JWT_SECRET || "default-secret");
