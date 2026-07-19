@@ -36,7 +36,7 @@ export default function IncomeProgress({ workerId, lang }: { workerId: string; l
 
   if (!data || !data.levels || data.levels.length === 0) return null;
 
-  const format = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const format = (n: number | null | undefined) => (n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
   return (
     <div className="mb-8">
@@ -81,7 +81,7 @@ export default function IncomeProgress({ workerId, lang }: { workerId: string; l
                   {lang === "bn" ? (level.levelNameBn || `লেভেল ${level.levelNumber}`) : level.levelName}
                 </p>
                 <p className="text-xs text-text-secondary">
-                  {`${level.percentage}% + ৳${level.fixedAmount}`}
+                  {`${level.percentage ?? 0}% + ৳${level.fixedAmount ?? 0}`}
                 </p>
               </div>
             </div>

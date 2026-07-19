@@ -242,7 +242,7 @@ export default function WorkerDashboard() {
           <StatCard label={lang === "bn" ? "ব্যালেন্স" : "Balance"} value={formatCurrency(worker.balance)} color="text-action" />
           <StatCard label={lang === "bn" ? "মোট আয়" : "Total Earnings"} value={formatCurrency(worker.totalEarned)} color="text-secondary-dark" />
           <StatCard label={lang === "bn" ? "সহযোগী" : "Associates"} value={(worker.totalTeamMembers ?? 0).toString()} color="text-primary" />
-          <StatCard label={lang === "bn" ? "পদবী" : "Position"} value={lang === "bn" && worker.levelNameBn ? worker.levelNameBn : (worker.levelName || `Level ${worker.level}`)} color="text-accent" />
+          <StatCard label={lang === "bn" ? "পদবী" : "Position"} value={lang === "bn" && worker.levelNameBn ? worker.levelNameBn : (worker.levelName || (worker.level ? `Level ${worker.level}` : ""))} color="text-accent" />
         </div>
 
         {/* Contact Sync Banner (onboarding) */}

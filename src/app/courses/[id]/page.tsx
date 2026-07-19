@@ -192,7 +192,7 @@ export default function CourseDetailPage() {
   if (loading) return <DetailSkeleton />;
   if (error || !course) return <div className="min-h-screen bg-bg flex items-center justify-center"><div className="text-center"><p className="text-5xl mb-4">😕</p><p className="text-text-secondary font-bold text-lg">{error || "Course not found"}</p></div></div>;
 
-  const catDisplay = course.categoryNamesBn?.filter(Boolean).join(", ") || course.categoryNames?.join(", ") || "";
+  const catDisplay = Array.isArray(course.categoryNamesBn) ? course.categoryNamesBn.filter(Boolean).join(", ") : Array.isArray(course.categoryNames) ? course.categoryNames.join(", ") : "";
 
   return (
     <div className="min-h-screen bg-bg">
