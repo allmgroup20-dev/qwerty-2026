@@ -32,6 +32,7 @@ export default function CompanyTrainersPage() {
     coursesEnStr: "", coursesBnStr: "", isActive: 1,
   });
   const [saving, setSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   const load = useCallback(async () => {
     const [tRes, iRes] = await Promise.all([
@@ -99,9 +100,24 @@ export default function CompanyTrainersPage() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <h1 className="text-xl font-bold text-primary">👨‍🏫 {lang === "bn" ? "প্রশিক্ষক ব্যবস্থাপনা" : "Trainer Management"}</h1>
-        <button onClick={openNew} className="px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-white hover:bg-primary/90">+ {lang === "bn" ? "নতুন প্রশিক্ষক" : "New Trainer"}</button>
+        <div className="flex gap-2">
+          <button onClick={async () => {
+            if (!confirm(lang === "bn" ? "সমস্ত বিদ্যমান ডেটা মুছে গিয়ে স্ট্যাটিক ডেটা বসবে। নিশ্চিত?" : "All existing data will be replaced. Confirm?")) return;
+            setSeeding(true);
+            try {
+              const res = await fetch("/api/trainers/seed", { method: "POST" });
+              const d = await res.json() as { success?: boolean; error?: string; trainersSeeded?: number };
+              if (d.success) { alert(lang === "bn" ? `${d.trainersSeeded} জন প্রশিক্ষক ও প্রতিষ্ঠান সিঙ্ক হয়েছে` : `${d.trainersSeeded} trainers & institutions synced`); load(); }
+              else alert(d.error || "Failed");
+            } catch { alert("Failed"); }
+            finally { setSeeding(false); }
+          }} disabled={seeding} className="px-3 py-2 text-xs font-semibold rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200">
+            {seeding ? "..." : "🔄 " + (lang === "bn" ? "স্ট্যাটিক ডেটা সিঙ্ক" : "Sync Static Data")}
+          </button>
+          <button onClick={openNew} className="px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-white hover:bg-primary/90">+ {lang === "bn" ? "নতুন প্রশিক্ষক" : "New Trainer"}</button>
+        </div>
       </div>
 
       {showForm && (
