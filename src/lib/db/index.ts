@@ -517,6 +517,52 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
 
+    // Missing tables (trainers, institutions, mlm_tree)
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS institutions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      name_bn TEXT,
+      logo_url TEXT,
+      description_en TEXT,
+      description_bn TEXT,
+      website_url TEXT,
+      sort_order INTEGER DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS trainers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      name_bn TEXT,
+      specialty_en TEXT,
+      specialty_bn TEXT,
+      credential_en TEXT,
+      credential_bn TEXT,
+      bio_en TEXT,
+      bio_bn TEXT,
+      image_url TEXT,
+      experience_years INTEGER DEFAULT 0,
+      institution_id INTEGER,
+      sort_order INTEGER DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
+      courses_en TEXT,
+      courses_bn TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS mlm_tree (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL UNIQUE,
+      parent_id TEXT,
+      sponsor_id TEXT,
+      level_number INTEGER DEFAULT 1,
+      position INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    env.DB.prepare(`ALTER TABLE courses ADD COLUMN trainer_id INTEGER`).run().catch(() => {});
+    env.DB.prepare(`ALTER TABLE courses ADD COLUMN institution_id INTEGER`).run().catch(() => {});
+
     // AI response cache — same query → same answer (0 tokens on repeat)
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_response_cache (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

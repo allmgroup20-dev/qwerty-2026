@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { execute, queryFirst } from "@/lib/db/queries";
+import { execute, queryFirst, query } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 import { SslcommerzService } from "@/lib/payment/sslcommerz";
 
@@ -54,13 +54,13 @@ export async function GET(request: NextRequest) {
     );
     const existingCount = existingUnlocks?.cnt || 0;
 
-    const courses = await execute(
+    const courseRows = await query<any>(
       db, `SELECT id FROM courses WHERE is_premium = 1 ORDER BY id LIMIT ? OFFSET ?`,
       [resourceCount, existingCount]
     );
 
-    if (courses.results && courses.results.length > 0) {
-      const insertStmts = (courses.results as any[]).map(c =>
+    if (courseRows && courseRows.length > 0) {
+      const insertStmts = courseRows.map(c =>
         db.DB.prepare(
           `INSERT OR IGNORE INTO user_unlocks (course_id, worker_id, unlocked_by, unlocked_at) VALUES (?, ?, 'payment', datetime('now'))`
         ).bind(c.id, workerId)
