@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { useLanguageStore } from "@/lib/store";
 
 export default function TrainersPage() {
@@ -9,6 +8,8 @@ export default function TrainersPage() {
   const [trainers, setTrainers] = useState<any[]>([]);
   const [institutions, setInstitutions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erroredTrainers, setErroredTrainers] = useState<Set<number>>(new Set());
+  const [erroredInsts, setErroredInsts] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     Promise.all([
@@ -53,9 +54,9 @@ export default function TrainersPage() {
             return (
               <div key={trainer.id} className="rounded-2xl p-5 bg-white border border-border hover:shadow-lg hover:-translate-y-0.5 transition-all">
                 <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-br from-info to-orange flex-shrink-0 relative">
-                    {trainer.image_url ? (
-                      <Image src={trainer.image_url} alt={trainer.name_bn || trainer.name} fill className="object-cover" sizes="64px" />
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-br from-info to-orange flex-shrink-0">
+                    {trainer.image_url && !erroredTrainers.has(trainer.id) ? (
+                      <img src={trainer.image_url} alt={trainer.name_bn || trainer.name} className="w-full h-full object-cover" onError={() => setErroredTrainers(p => new Set(p).add(trainer.id))} />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white font-bold text-lg">
                         {(trainer.name_bn || trainer.name).charAt(0)}
@@ -103,9 +104,9 @@ export default function TrainersPage() {
             <div className="flex flex-wrap justify-center gap-3">
               {institutions.map((inst) => (
                 <div key={inst.id} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-bg border border-border min-w-[80px]">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-white relative flex items-center justify-center">
-                    {inst.logo_url ? (
-                      <Image src={inst.logo_url} alt={inst.name_bn || inst.name} width={36} height={36} className="object-contain" />
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-white flex items-center justify-center">
+                    {inst.logo_url && !erroredInsts.has(inst.id) ? (
+                      <img src={inst.logo_url} alt={inst.name_bn || inst.name} className="w-full h-full object-contain" onError={() => setErroredInsts(p => new Set(p).add(inst.id))} />
                     ) : (
                       <span className="text-lg font-bold text-primary">{(inst.name_bn || inst.name).charAt(0)}</span>
                     )}

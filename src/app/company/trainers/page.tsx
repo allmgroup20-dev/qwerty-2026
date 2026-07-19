@@ -35,6 +35,7 @@ export default function CompanyTrainersPage() {
   const [saving, setSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [errored, setErrored] = useState<Set<number>>(new Set());
 
   const load = useCallback(async () => {
     const [tRes, iRes] = await Promise.all([
@@ -216,8 +217,8 @@ export default function CompanyTrainersPage() {
                 className={`border-t border-border transition-colors ${dragOverIdx === i ? "bg-blue-50 border-blue-300" : "hover:bg-gray-50"} cursor-grab active:cursor-grabbing`}>
                 <td className="p-3">
                   <div className="flex items-center gap-2.5">
-                    {t.image_url ? (
-                      <img src={t.image_url} alt={t.name} className="w-9 h-9 rounded-full object-cover border border-border" />
+                    {t.image_url && !errored.has(t.id) ? (
+                      <img src={t.image_url} alt={t.name} className="w-9 h-9 rounded-full object-cover border border-border" onError={() => setErrored(p => new Set(p).add(t.id))} />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold shrink-0">
                         {(lang === "bn" ? t.name_bn || t.name : t.name).charAt(0).toUpperCase()}

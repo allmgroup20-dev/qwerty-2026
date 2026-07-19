@@ -22,6 +22,7 @@ export default function CompanyInstitutionsPage() {
   });
   const [saving, setSaving] = useState(false);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [errored, setErrored] = useState<Set<number>>(new Set());
 
   const load = useCallback(async () => {
     const res = await fetch("/api/institutions?all=1").then(r => r.json() as Promise<{ institutions: Institution[] }>);
@@ -156,8 +157,8 @@ export default function CompanyInstitutionsPage() {
                 onDragEnd={() => setDragOverIdx(null)}
                 className={`border-t border-border transition-colors ${dragOverIdx === i ? "bg-blue-50 border-blue-300" : "hover:bg-gray-50"} cursor-grab active:cursor-grabbing`}>
                 <td className="p-3">
-                  {inst.logo_url ? (
-                    <img src={inst.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                  {inst.logo_url && !errored.has(inst.id) ? (
+                    <img src={inst.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover" onError={() => setErrored(p => new Set(p).add(inst.id))} />
                   ) : (
                     <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-400">{(inst.name_bn || inst.name).charAt(0)}</div>
                   )}

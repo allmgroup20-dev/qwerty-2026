@@ -13,6 +13,35 @@ export default function ImageUpload({ value, onChange, label }: Props) {
   const [preview, setPreview] = useState(value);
   const [loading, setLoading] = useState(false);
 
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let w = img.width, h = img.height;
+          const maxDim = 400;
+          if (w > maxDim || h > maxDim) {
+            const ratio = Math.min(maxDim / w, maxDim / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { resolve(reader.result as string); return; }
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.7));
+        };
+        img.onerror = () => resolve(reader.result as string);
+        img.src = reader.result as string;
+      };
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -21,14 +50,15 @@ export default function ImageUpload({ value, onChange, label }: Props) {
       return;
     }
     setLoading(true);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setPreview(result);
-      onChange(result);
+    try {
+      const dataUrl = await compressImage(file);
+      setPreview(dataUrl);
+      onChange(dataUrl);
+    } catch {
+      alert("Failed to process image");
+    } finally {
       setLoading(false);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const handleRemove = () => {
@@ -43,7 +73,7 @@ export default function ImageUpload({ value, onChange, label }: Props) {
       <div className="flex items-center gap-3">
         <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 border border-border flex-shrink-0 relative">
           {preview ? (
-            <img src={preview} alt="" className="w-full h-full object-cover" />
+            <img src={preview} alt="" className="w-full h-full object-cover" onError={() => setPreview("")} />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
