@@ -1,10 +1,16 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLanguageStore } from "@/lib/store";
 
 export default function Footer() {
   const { lang } = useLanguageStore();
+  const [companyName, setCompanyName] = useState("");
+
+  useEffect(() => {
+    fetch("/api/company/settings").then(r => r.json() as Promise<{ settings?: Record<string, string> }>).then(d => { if (d.settings?.company_name) setCompanyName(d.settings.company_name); }).catch(() => {});
+  }, []);
 
   return (
     <footer className="gradient-primary text-white pb-20 md:pb-0">
@@ -12,13 +18,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center font-bold">
-                JG
-              </div>
+              <img src="/favicon.svg" alt={companyName || "JG Career"} className="w-10 h-10 rounded-xl" />
               <div>
-                <span className="font-bold text-lg">Jobayer</span>
-                <span className="text-secondary font-bold"> Group</span>
-                <span className="block text-xs text-white/60">Career</span>
+                <span className="font-bold text-lg">{companyName || "Jobayer Group Career"}</span>
               </div>
             </div>
             <p className="text-white/70 text-sm leading-relaxed max-w-md">

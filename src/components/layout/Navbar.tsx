@@ -69,12 +69,9 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16 md:h-20">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 gradient-premium rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                JG
-              </div>
+              <img src="/favicon.svg" alt={companyName || "JG Career"} className="w-9 h-9 rounded-xl shadow-lg" />
               <div className="hidden sm:block">
-                <span className={`font-bold text-lg ${showSolid ? "text-primary" : "text-white"}`}>Jobayer</span>
-                <span className="text-secondary font-bold"> Group</span>
+                <span className={`font-bold text-lg ${showSolid ? "text-primary" : "text-white"}`}>{companyName || "Jobayer Group Career"}</span>
               </div>
             </Link>
 

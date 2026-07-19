@@ -111,7 +111,7 @@ export default function SmartInstall() {
     if (isIOS) {
       try {
         await navigator.share({
-          title: "JG Career",
+          title: "Jobayer Group Career",
           text: "Jobayer Group Career - Build Your Career With Us",
           url: window.location.origin,
         });
@@ -122,7 +122,7 @@ export default function SmartInstall() {
     if (browser === "safari" && navigator.share) {
       try {
         await navigator.share({
-          title: "JG Career",
+          title: "Jobayer Group Career",
           text: "Jobayer Group Career - Build Your Career With Us",
           url: window.location.origin,
         });
@@ -165,11 +165,9 @@ export default function SmartInstall() {
         </button>
 
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B35] to-[#FFD700] flex items-center justify-center text-white font-bold text-sm">
-            JGC
-          </div>
+          <img src="/favicon.svg" alt="JG Career" className="w-10 h-10 rounded-xl" />
           <div>
-            <div className="text-sm font-bold text-primary">JG Career</div>
+            <div className="text-sm font-bold text-primary">Jobayer Group Career</div>
             <div className="text-[10px] text-text-secondary">
               {lang === "bn" ? "অ্যাপ হিসেবে ব্যবহার করুন" : "Use as App"}
             </div>

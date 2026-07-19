@@ -76,12 +76,7 @@ export default function CompanyLoginPage() {
     <div className="min-h-screen flex items-center justify-center py-20 px-4 bg-gray-50">
       <div className="w-full max-w-sm animate-fade-up">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
-            <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-          </div>
+          <img src="/favicon.svg" alt="Jobayer Group Career" className="w-14 h-14 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-primary">
             {lang === "bn" ? "কোম্পানি লগইন" : "Company Login"}
           </h1>
