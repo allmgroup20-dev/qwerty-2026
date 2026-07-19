@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
     const workerId = generateWorkerId(name, phone);
     const hashedPw = await hashWorkerPassword("google_oauth_" + googleId.slice(0, 8));
     await execute(env,
-      `INSERT INTO workers (worker_id, name, phone, password, google_id, join_date, membership_status)
-       VALUES (?, ?, ?, ?, ?, datetime('now'), 'active')`,
+       `INSERT INTO workers (worker_id, name, phone, password, google_id, join_date, membership_status)
+       VALUES (?, ?, ?, ?, ?, datetime('now'), 'general')`,
       [workerId, name, phone, hashedPw, googleId]
     );
 

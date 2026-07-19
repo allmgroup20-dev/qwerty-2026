@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashWorkerPassword(password);
 
     await execute(env,
-      `INSERT INTO workers (worker_id, name, phone, email, password, sponsor_id, sponsor_name, level, join_date, membership_status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), 'active')`,
+       `INSERT INTO workers (worker_id, name, phone, email, password, sponsor_id, sponsor_name, level, join_date, membership_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), 'general')`,
       [workerId, displayName, phone, email || null, hashedPassword, sponsorId, sponsorName]
     );
 

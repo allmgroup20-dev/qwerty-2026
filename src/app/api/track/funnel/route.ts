@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
         w.worker_id,
         w.created_at as joined_at
       FROM workers w
-      WHERE w.membership_status = 'active' AND w.created_at IS NOT NULL
+      WHERE w.membership_status IN ('general', 'premium') AND w.created_at IS NOT NULL
       ORDER BY w.created_at LIMIT 200
     `).bind().all() as { results: { cohort_week: string; worker_id: string; joined_at: string }[] };
 

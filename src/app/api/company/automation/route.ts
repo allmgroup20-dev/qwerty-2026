@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
               (SELECT MAX(created_at) FROM orders WHERE worker_id = w.worker_id) as last_purchase
        FROM workers w
        LEFT JOIN user_behavior_scores ube ON ube.worker_id = w.worker_id
-       WHERE w.membership_status = 'active'
+       WHERE w.membership_status IN ('general', 'premium')
        ORDER BY last_activity DESC
        LIMIT 100`
      );

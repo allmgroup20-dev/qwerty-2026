@@ -17,7 +17,7 @@ export const workers = sqliteTable("workers", {
   totalEarned: real("total_earned").default(0),
   totalSpent: real("total_spent").default(0),
   totalTeamMembers: integer("total_team_members").default(0),
-  membershipStatus: text("membership_status").default("active"),
+  membershipStatus: text("membership_status").default("general"),
   isTestAccount: integer("is_test_account").default(0),
   preferredLanguage: text("preferred_language").default("bn"),
   ageGroup: text("age_group"),

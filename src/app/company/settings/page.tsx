@@ -22,6 +22,7 @@ export default function CompanySettingsPage() {
     resourceIncomeDefaultAmount: "50",
     resourceUnlockPrice: "99",
     referralRedirectPath: "/register",
+    generalMemberWithdrawalTax: "5",
     primaryColor: "#1E3A5A",
     secondaryColor: "#FFD700",
     actionColor: "#28A745",

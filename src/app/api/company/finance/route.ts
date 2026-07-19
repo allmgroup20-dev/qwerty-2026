@@ -35,7 +35,7 @@ export async function GET() {
     );
 
     const totalWorkers = await queryFirst<{ c: number }>(
-      db, "SELECT COUNT(*) as c FROM workers WHERE membership_status = 'active'"
+      db, "SELECT COUNT(*) as c FROM workers WHERE membership_status IN ('general', 'premium')"
     );
 
     const result = {

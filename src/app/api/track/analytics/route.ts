@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
                bs.segment, bs.lead_score, bs.lifetime_value
         FROM workers w
         LEFT JOIN user_behavior_scores bs ON w.worker_id = bs.worker_id
-        WHERE w.membership_status = 'active'
+        WHERE w.membership_status IN ('general', 'premium')
         ORDER BY w.created_at DESC
         LIMIT 1000
       `).bind().all() as { results: any[] };
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     const results = await db.batch([
       db.prepare("SELECT segment, COUNT(*) as count FROM user_behavior_scores GROUP BY segment ORDER BY count DESC"),
-      db.prepare("SELECT COUNT(*) as c FROM workers WHERE membership_status = 'active'"),
+      db.prepare("SELECT COUNT(*) as c FROM workers WHERE membership_status IN ('general', 'premium')"),
       db.prepare("SELECT category_scores FROM user_interests WHERE category_scores IS NOT NULL AND category_scores != '{}' LIMIT 500"),
       db.prepare("SELECT event_type, COUNT(*) as count FROM user_events WHERE created_at >= datetime('now', '-7 days') GROUP BY event_type ORDER BY count DESC"),
       db.prepare("SELECT COUNT(*) as c FROM user_events WHERE created_at >= datetime('now', '-7 days')"),

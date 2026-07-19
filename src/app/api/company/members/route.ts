@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
     const hashed = await hashPassword(password);
 
     await execute(db,
-      `INSERT INTO workers (worker_id, name, phone, password, sponsor_id, sponsor_name, level, join_date, membership_status)
-       VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'), 'active')`,
+       `INSERT INTO workers (worker_id, name, phone, password, sponsor_id, sponsor_name, level, join_date, membership_status)
+       VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'), 'general')`,
       [workerId, displayName, phone, hashed, sponsorId || null, sponsorName]
     );
 

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
                 w.total_team_members, t.parent_id
          FROM workers w 
          INNER JOIN mlm_tree t ON w.worker_id = t.worker_id 
-         WHERE w.membership_status = 'active'
+         WHERE w.membership_status IN ('general', 'premium')
          AND w.worker_id IN (SELECT worker_id FROM subtree)
           ORDER BY t.level_number ASC
           LIMIT 1000`,
@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
                 w.total_team_members, t.parent_id
          FROM workers w 
          INNER JOIN mlm_tree t ON w.worker_id = t.worker_id 
-         WHERE w.membership_status = 'active'
+         WHERE w.membership_status IN ('general', 'premium')
          ORDER BY t.level_number ASC
          LIMIT 1000`,
-        []
+         []
       );
     }
 

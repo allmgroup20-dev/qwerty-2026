@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
                 t.parent_id
          FROM workers w
          INNER JOIN mlm_tree t ON t.worker_id = w.worker_id
-         WHERE w.membership_status = 'active'
+         WHERE w.membership_status IN ('general', 'premium')
          AND w.worker_id IN (SELECT worker_id FROM subtree)
           ORDER BY w.created_at ASC
           LIMIT 1000`,

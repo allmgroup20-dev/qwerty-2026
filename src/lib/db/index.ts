@@ -44,7 +44,7 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       total_earned REAL DEFAULT 0,
       total_spent REAL DEFAULT 0,
       total_team_members INTEGER DEFAULT 0,
-      membership_status TEXT DEFAULT 'active',
+      membership_status TEXT DEFAULT 'general',
       is_test_account INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))

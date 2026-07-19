@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     const worker = await queryFirst<{ worker_id: string; name: string; password: string }>(
       await getDB(),
-      "SELECT worker_id, name, password FROM workers WHERE phone = ? AND membership_status = 'active'",
+      "SELECT worker_id, name, password FROM workers WHERE phone = ? AND membership_status IN ('general', 'premium')",
       [phone]
     );
 
