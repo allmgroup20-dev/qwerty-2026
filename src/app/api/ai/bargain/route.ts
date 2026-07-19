@@ -11,6 +11,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "workerId and resourceCount required" }, { status: 400 });
     }
 
+    if (body.resourceCount < 2) {
+      return NextResponse.json({ error: "১টি রিসোর্সের জন্য বার্গেনিং করা যাবে না — মূল্য ফিক্সড ৯৯ ৳" }, { status: 400 });
+    }
+
     const db = await getDB();
     const basePrice = body.resourceCount * BASE_PRICE_PER_RESOURCE;
 

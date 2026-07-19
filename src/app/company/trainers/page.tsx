@@ -34,8 +34,6 @@ export default function CompanyTrainersPage() {
   });
   const [saving, setSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
-  const [errored, setErrored] = useState<Set<number>>(new Set());
 
   const load = useCallback(async () => {
     const [tRes, iRes] = await Promise.all([
@@ -93,30 +91,6 @@ export default function CompanyTrainersPage() {
     finally { setSaving(false); }
   };
 
-  const handleDragStart = (e: React.DragEvent, id: number) => {
-    e.dataTransfer.setData("text/plain", String(id));
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDrop = async (e: React.DragEvent, targetId: number) => {
-    e.preventDefault();
-    setDragOverIdx(null);
-    const dragId = parseInt(e.dataTransfer.getData("text/plain"));
-    if (isNaN(dragId) || dragId === targetId) return;
-    const sorted = [...trainers].sort((a, b) => a.sort_order - b.sort_order);
-    const sourceIdx = sorted.findIndex(t => t.id === dragId);
-    const targetIdx = sorted.findIndex(t => t.id === targetId);
-    if (sourceIdx === -1 || targetIdx === -1) return;
-    const [moved] = sorted.splice(sourceIdx, 1);
-    sorted.splice(targetIdx, 0, moved);
-    const updates: { id: number; sort_order: number }[] = [];
-    sorted.forEach((item, i) => { if (item.sort_order !== i) updates.push({ id: item.id, sort_order: i }); });
-    if (updates.length > 0) {
-      await Promise.all(updates.map(u => fetch(`/api/trainers/${u.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sort_order: u.sort_order }) })));
-      load();
-    }
-  };
-
   const remove = async (id: number) => {
     if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete?")) return;
     await fetch(`/api/trainers/${id}`, { method: "DELETE" });
@@ -124,7 +98,6 @@ export default function CompanyTrainersPage() {
   };
 
   if (loading) return <div className="p-6 text-text-secondary">Loading...</div>;
-  const sortedTrainers = [...trainers].sort((a, b) => a.sort_order - b.sort_order);
 
   return (
     <div className="p-6">
@@ -207,26 +180,9 @@ export default function CompanyTrainersPage() {
             </tr>
           </thead>
           <tbody>
-            {sortedTrainers.map((t, i) => (
-              <tr key={t.id} draggable="true"
-                onDragStart={e => handleDragStart(e, t.id)}
-                onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverIdx(i); }}
-                onDragLeave={() => setDragOverIdx(null)}
-                onDrop={e => handleDrop(e, t.id)}
-                onDragEnd={() => setDragOverIdx(null)}
-                className={`border-t border-border transition-colors ${dragOverIdx === i ? "bg-blue-50 border-blue-300" : "hover:bg-gray-50"} cursor-grab active:cursor-grabbing`}>
-                <td className="p-3">
-                  <div className="flex items-center gap-2.5">
-                    {t.image_url && !errored.has(t.id) ? (
-                      <img src={t.image_url} alt={t.name} className="w-9 h-9 rounded-full object-cover border border-border" onError={() => setErrored(p => new Set(p).add(t.id))} />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold shrink-0">
-                        {(lang === "bn" ? t.name_bn || t.name : t.name).charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <span className="font-medium text-primary">{lang === "bn" ? t.name_bn || t.name : t.name}</span>
-                  </div>
-                </td>
+            {trainers.map(t => (
+              <tr key={t.id} className="border-t border-border hover:bg-gray-50">
+                <td className="p-3 font-medium text-primary">{lang === "bn" ? t.name_bn || t.name : t.name}</td>
                 <td className="p-3 text-text-secondary">{lang === "bn" ? t.credential_bn || t.specialty_bn : t.credential_en || t.specialty_en}</td>
                 <td className="p-3 text-text-secondary">{t.institution_name || "-"}</td>
                 <td className="p-3 text-text-secondary">{t.experience_years}y</td>
