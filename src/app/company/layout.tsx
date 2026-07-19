@@ -109,6 +109,7 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/company/privacy", en: "Privacy", bn: "প্রাইভেসি", icon: "🔒", desc: "গোপনীয়তা — ইউজার কনসেন্ট ও ডেটা সুরক্ষা তথ্য" },
       { href: "/company/test-mode", en: "Test Mode", bn: "টেস্ট মোড", icon: "🧪", desc: "টেস্ট মোড — মক ডেটা দিয়ে ফিচার টেস্টিং" },
       { href: "/company/updates", en: "Updates", bn: "আপডেট", icon: "🔄", desc: "আপডেট লগ — প্ল্যাটফর্মের নতুন ফিচার ও চেঞ্জলগ" },
+      { href: "/system", en: "System Monitor", bn: "সিস্টেম মনিটর", icon: "📡", desc: "সিস্টেম মনিটরিং — ইরর লগ, পারফরমেন্স, এআই রিপোর্ট ও হেলথ চেক" },
     ],
   },
 ];
