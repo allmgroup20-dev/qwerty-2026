@@ -7,6 +7,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import Footer from "@/components/layout/Footer";
 import SmartInstall from "@/components/home/SmartInstall";
 import { CookieConsentBanner } from "@/components/privacy/CookieConsentBanner";
+import PwaRegister from "@/components/PwaRegister";
 import { useLanguageStore } from "@/lib/store";
 import { useTracker } from "@/lib/tracking/tracker";
 import { SystemErrorBoundary } from "@/components/system/SystemErrorBoundary";
@@ -95,6 +96,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <BottomNav />
       <SmartInstall />
       <CookieConsentBanner />
+      <PwaRegister />
     </>
   );
 }

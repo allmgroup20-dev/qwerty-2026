@@ -1,23 +1,21 @@
 {
   "name": "Jobayer Group Career",
-  "short_name": "JG Career",
-  "description": "প্রিমিয়াম ক্যারিয়ার এবং ই-কমার্স প্ল্যাটফর্ম — ক্যারিয়ার গড়ুন আমাদের সাথে",
-  "start_url": "/?utm_source=pwa",
+  "short_name": "JGCareer",
+  "description": "Jobayer Group Career - Your learning & career platform",
+  "start_url": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
-  "background_color": "#F8FAFC",
+  "background_color": "#ffffff",
   "theme_color": "#1E3A5A",
-  "orientation": "portrait",
-  "scope": "/",
-  "categories": ["business", "shopping", "professional"],
-  "handle_links": "preferred",
-  "launch_handler": {
-    "client_mode": "focus-existing"
-  },
+  "orientation": "portrait-primary",
   "icons": [
-    {"src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
-    {"src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
-  ]
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "career"],
+  "lang": "bn",
+  "dir": "ltr"
 }

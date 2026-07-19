@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { DetailSkeleton } from "@/components/ui/Skeleton";
 
 interface CourseFile {
   id: number; courseId: number; label: string | null; labelBn: string | null;
@@ -188,7 +189,7 @@ export default function CourseDetailPage() {
     } catch { alert("রেটিং দিতে ব্যর্থ"); }
   };
 
-  if (loading) return <div className="min-h-screen bg-bg flex items-center justify-center"><div className="text-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" /><p className="mt-4 text-text-secondary font-semibold">লোড হচ্ছে...</p></div></div>;
+  if (loading) return <DetailSkeleton />;
   if (error || !course) return <div className="min-h-screen bg-bg flex items-center justify-center"><div className="text-center"><p className="text-5xl mb-4">😕</p><p className="text-text-secondary font-bold text-lg">{error || "Course not found"}</p></div></div>;
 
   const catDisplay = course.categoryNamesBn?.filter(Boolean).join(", ") || course.categoryNames?.join(", ") || "";

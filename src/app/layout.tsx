@@ -8,11 +8,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon.svg",
-    apple: [
-      { url: "/icons/apple-touch-icon-180x180.png", sizes: "180x180", type: "image/png" },
-      { url: "/icons/apple-touch-icon-152x152.png", sizes: "152x152", type: "image/png" },
-      { url: "/icons/apple-touch-icon-120x120.png", sizes: "120x120", type: "image/png" },
-    ],
+    apple: "/favicon.svg",
   },
   openGraph: {
     title: "Jobayer Group Career",
