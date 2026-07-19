@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendTelegramMessage } from "@/lib/telegram/sender";
-import { ensureDB } from "@/lib/db";
+import { getDB } from "@/lib/db";
 import {
   processMessage,
   analyzePainPoints,
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       reply = brainResult.text;
 
       if (isWorker && brainResult.agentsUsed.length > 0) {
-        const db2 = await ensureDB();
+        const { DB: db2 } = await getDB();
         const agentName = brainResult.agentsUsed[0];
         await linkWorkerToAgent(db2, phone, agentName, agentName);
         await saveAgentKnowledge(db2, phone, agentName, agentName, reply.slice(0, 1000));

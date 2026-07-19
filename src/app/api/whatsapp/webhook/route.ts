@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateContactStatus, createContact } from "@/lib/whatsapp/contacts";
 import { sendMessage } from "@/lib/whatsapp/sender";
-import { calculatePriorityScore } from "@/lib/whatsapp/numbers";
 import { execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 import {
@@ -92,11 +91,7 @@ export async function POST(request: NextRequest) {
     await updateProfileFromChat(phone, text);
 
     // Priority scoring
-    const score = calculatePriorityScore({
-      gender_guess: profile?.gender_guess,
-      age_group_guess: profile?.age_group_guess,
-      sector: profile?.sector,
-    });
+    const score = calculateSimpleScore(profile);
     if (score > 0) {
       await updateProfileScore(phone, score);
     }
@@ -214,6 +209,15 @@ export async function POST(request: NextRequest) {
       error: error instanceof Error ? error.message : "Webhook failed",
     }, { status: 500 });
   }
+}
+
+function calculateSimpleScore(profile: any): number {
+  let score = 0;
+  if (profile?.gender_guess === "female") score += 5;
+  if (profile?.age_group_guess === "18-25") score += 3;
+  else if (profile?.age_group_guess === "26-35") score += 2;
+  if (profile?.sector) score += 2;
+  return score;
 }
 
 export async function GET(request: NextRequest) {
