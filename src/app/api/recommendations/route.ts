@@ -12,12 +12,12 @@ export async function GET(req: NextRequest) {
     const scores = workerId ? await getWorkerInterestScores(workerId) : null;
     const topCategories = scores ? Object.entries(scores).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([c]) => c) : [];
 
-    let courses: ReturnType<typeof getRecommendedCourses> = [];
+    let courses: Awaited<ReturnType<typeof getRecommendedCourses>> = [];
     let products: ReturnType<typeof getRecommendedProducts> = [];
 
     if (type === "all" || type === "courses") {
       if (scores) {
-        courses = getRecommendedCourses(scores, limit);
+        courses = await getRecommendedCourses(scores, limit);
       }
     }
 

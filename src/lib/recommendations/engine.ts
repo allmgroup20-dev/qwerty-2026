@@ -1,5 +1,5 @@
-import { ensureDB } from "@/lib/db";
-import { courses, type CourseItem } from "@/data/courses-data";
+import { ensureDB, getDB } from "@/lib/db";
+import { query } from "@/lib/db/queries";
 
 const SCORE_TO_COURSE_CAT: Record<string, string[]> = {
   web_development: ["Web Development", "Programming"],
@@ -89,8 +89,25 @@ export interface ProductRecommendation {
   score: number;
 }
 
-export function getRecommendedCourses(interestScores: Record<string, number>, limit = 6): CourseRecommendation[] {
-  const scored: Map<string, { item: CourseItem; score: number }> = new Map();
+export async function getRecommendedCourses(interestScores: Record<string, number>, limit = 6): Promise<CourseRecommendation[]> {
+  const db = await getDB();
+  const allCourses = await query<any>(db,
+    `SELECT c.id, c.title as title, c.title_bn as titleBn, c.description, c.description_bn as descriptionBn,
+            c.icon, c.price, c.is_premium as isPremium,
+            COALESCE((SELECT json_group_array(cat.name) FROM course_category_map m JOIN course_categories cat ON cat.id = m.category_id WHERE m.course_id = c.id), '[]') as categoryNames
+     FROM courses c WHERE c.is_visible = 1 ORDER BY c.is_new DESC, c.created_at DESC`
+  );
+
+  const courseItems = allCourses.map((r: any) => ({
+    id: r.id,
+    title: r.titleBn || r.title,
+    desc: r.descriptionBn || r.description || "",
+    url: `/courses/${r.id}`,
+    icon: r.icon || "📌",
+    cat: JSON.parse(r.categoryNames || "[]")[0] || "",
+  }));
+
+  const scored: Map<string, { item: typeof courseItems[0]; score: number }> = new Map();
 
   for (const [scoreCat, score] of Object.entries(interestScores)) {
     if (score < 10) continue;
@@ -98,9 +115,9 @@ export function getRecommendedCourses(interestScores: Record<string, number>, li
     if (!courseCats) continue;
 
     for (const courseCat of courseCats) {
-      const matches = courses.filter(c => c.cat === courseCat);
+      const matches = courseItems.filter(c => c.cat === courseCat);
       for (const item of matches) {
-        const key = item.title + item.url;
+        const key = item.url;
         const existing = scored.get(key);
         const weight = score / 100;
         if (existing) {
@@ -119,7 +136,7 @@ export function getRecommendedCourses(interestScores: Record<string, number>, li
       title: s.item.title,
       description: s.item.desc,
       url: s.item.url,
-      icon: s.item.icon.includes("fa-") ? s.item.icon : "fa-link",
+      icon: s.item.icon,
       category: s.item.cat,
       score: s.score,
     }));
@@ -160,7 +177,7 @@ export function getRecommendedProducts(
 }
 
 export function getInterestScoresFromWorker(workerId: string): Record<string, number> {
-  return {}; // placeholder — scores loaded in the API route
+  return {};
 }
 
 export async function getWorkerInterestScores(workerId: string): Promise<Record<string, number> | null> {
@@ -177,16 +194,26 @@ export async function getWorkerInterestScores(workerId: string): Promise<Record<
   }
 }
 
-export function getPopularCourses(limit = 6): CourseItem[] {
-  const grouped: Record<string, CourseItem[]> = {};
-  for (const c of courses) {
-    if (!grouped[c.cat]) grouped[c.cat] = [];
-    grouped[c.cat].push(c);
+export async function getPopularCourses(limit = 6): Promise<{ title: string; url: string; icon: string; category: string }[]> {
+  const db = await getDB();
+  const rows = await query<any>(db,
+    `SELECT c.id, c.title as title, c.title_bn as titleBn, c.icon,
+            COALESCE((SELECT cat.name FROM course_category_map m JOIN course_categories cat ON cat.id = m.category_id WHERE m.course_id = c.id LIMIT 1), '') as cat
+     FROM courses c WHERE c.is_visible = 1 ORDER BY c.is_new DESC, c.created_at DESC LIMIT ?`,
+    [limit * 3]
+  );
+  const grouped: Record<string, typeof rows> = {};
+  for (const r of rows) {
+    const cat = r.cat || "General";
+    if (!grouped[cat]) grouped[cat] = [];
+    if (grouped[cat].length < 2) grouped[cat].push(r);
   }
-  const result: CourseItem[] = [];
+  const result: { title: string; url: string; icon: string; category: string }[] = [];
   for (const cat of Object.keys(grouped)) {
-    for (const item of grouped[cat].slice(0, 2)) {
-      if (result.length < limit) result.push(item);
+    for (const item of grouped[cat]) {
+      if (result.length < limit) {
+        result.push({ title: item.titleBn || item.title, url: `/courses/${item.id}`, icon: item.icon || "📌", category: cat });
+      }
     }
   }
   return result;

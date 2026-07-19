@@ -87,7 +87,6 @@ export default function CompanyCoursesPage() {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [seeding, setSeeding] = useState(false);
 
   const [files, setFiles] = useState<CourseFile[]>([]);
   const [newFileUrl, setNewFileUrl] = useState("");
@@ -212,25 +211,6 @@ export default function CompanyCoursesPage() {
             <p className="text-sm text-text-secondary mt-1">{courses.length} {lang === "bn" ? "টি রিসোর্স" : "resources"}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={async () => {
-              if (courses.length > 0 && !confirm(lang === "bn"
-                ? `${courses.length} টি রিসোর্স আছে। আবার ইম্পোর্ট করলে পুরনো ডাটা মুছে নতুন করে বসবে। নিশ্চিত?`
-                : `${courses.length} resources exist. Re-importing will delete all and re-seed. Confirm?`)) return;
-              setSeeding(true); setError("");
-              try {
-                const res = await fetch("/api/courses/seed", { method: "POST" });
-                const data = await res.json() as { error?: string; coursesSeeded?: number; categoriesSeeded?: number };
-                if (!res.ok) throw new Error(data.error || "Seed failed");
-                refreshCourses(); refreshCats();
-                alert(lang === "bn"
-                  ? `${data.categoriesSeeded}টি ক্যাটাগরি ও ${data.coursesSeeded}টি রিসোর্স ইম্পোর্ট হয়েছে`
-                  : `${data.categoriesSeeded} categories and ${data.coursesSeeded} resources imported`);
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "Seed failed");
-              } finally { setSeeding(false); }
-            }} disabled={seeding}>
-              {seeding ? "⏳" : "🌱"} {lang === "bn" ? (courses.length > 0 ? "পুনরায় ইম্পোর্ট" : "স্ট্যাটিক ডাটা ইম্পোর্ট") : (courses.length > 0 ? "Re-import Data" : "Import Static Data")}
-            </Button>
             <Button onClick={() => { resetForm(); setShowAdd(!showAdd); }}>
               {lang === "bn" ? "নতুন রিসোর্স" : "Add Resource"}
             </Button>
