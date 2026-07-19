@@ -9,6 +9,8 @@ import SmartInstall from "@/components/home/SmartInstall";
 import { CookieConsentBanner } from "@/components/privacy/CookieConsentBanner";
 import { useLanguageStore } from "@/lib/store";
 import { useTracker } from "@/lib/tracking/tracker";
+import { SystemErrorBoundary } from "@/components/system/SystemErrorBoundary";
+import { initGlobalErrorReporter } from "@/lib/system/reporter";
 
 function ScrollProgressBar() {
   const barRef = useRef<HTMLDivElement>(null);
@@ -66,6 +68,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     }
   }, []);
 
+  // Global error reporter — catches uncaught errors + promise rejections
+  useEffect(() => {
+    initGlobalErrorReporter();
+  }, []);
+
   // Global referral code tracker — saves last ?ref= to localStorage (once)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -79,7 +86,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     <>
       <ScrollProgressBar />
       <Navbar />
-      <main className={isHome ? "" : "min-h-screen pt-16 md:pt-20"}>{children}</main>
+      <main className={isHome ? "" : "min-h-screen pt-16 md:pt-20"}>
+        <SystemErrorBoundary>{children}</SystemErrorBoundary>
+      </main>
       <Footer />
       <BottomNav />
       {!isHome && <SmartInstall />}

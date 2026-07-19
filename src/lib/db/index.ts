@@ -455,6 +455,19 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       completed_at TEXT
     )`).run();
     await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_resource_purchases_worker ON resource_purchases(worker_id)`).run().catch(() => {});
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS bargain_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      resource_count INTEGER NOT NULL,
+      base_price REAL NOT NULL,
+      current_offer REAL NOT NULL,
+      rounds INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'active',
+      session_key TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_bargain_sessions_worker ON bargain_sessions(worker_id)`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS course_category_map (
       course_id INTEGER NOT NULL,
       category_id INTEGER NOT NULL,
@@ -1049,6 +1062,51 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
 
+    // ─── System monitoring tables (Phase 1: Error Tracking) ───
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS system_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      log_type TEXT NOT NULL DEFAULT 'info',
+      source TEXT NOT NULL DEFAULT 'unknown',
+      message TEXT NOT NULL DEFAULT '',
+      details TEXT,
+      stack_trace TEXT,
+      duration_ms REAL,
+      status_code INTEGER,
+      ip_address TEXT,
+      user_agent TEXT,
+      worker_id TEXT,
+      session_id TEXT,
+      route TEXT,
+      method TEXT,
+      is_ai_analyzed INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS perf_snapshots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      route TEXT,
+      method TEXT,
+      avg_duration_ms REAL,
+      max_duration_ms REAL,
+      min_duration_ms REAL,
+      request_count INTEGER DEFAULT 0,
+      error_count INTEGER DEFAULT 0,
+      total_db_queries INTEGER DEFAULT 0,
+      period_start TEXT,
+      period_end TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_analysis_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      report_type TEXT NOT NULL,
+      title TEXT NOT NULL DEFAULT '',
+      summary TEXT,
+      details TEXT,
+      affected_routes TEXT,
+      severity TEXT DEFAULT 'medium',
+      suggested_fixes TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
     g[DONE_FLAG] = true;
     g[DONE_LOCK] = false;
 
@@ -1096,6 +1154,13 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_sessions_created ON user_sessions(created_at)`).run().catch(() => {});
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_communication_created ON communication_history(created_at)`).run().catch(() => {});
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at)`).run().catch(() => {});
+
+    // System monitoring indexes
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_system_logs_type ON system_logs(log_type, created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_system_logs_source ON system_logs(source, created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_system_logs_created ON system_logs(created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_perf_snapshots_route ON perf_snapshots(route, created_at)`).run().catch(() => {});
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_ai_reports_type ON ai_analysis_reports(report_type, created_at)`).run().catch(() => {});
 
     env.DB.prepare(`INSERT OR IGNORE INTO notification_preferences (worker_id, channel, category, enabled)
       SELECT w.worker_id, 'whatsapp', 'promotional', 1 FROM workers w

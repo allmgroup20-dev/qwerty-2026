@@ -758,6 +758,19 @@ export const courseProgress = sqliteTable("course_progress", {
   createdAt: text("created_at"),
 });
 
+export const bargainSessions = sqliteTable("bargain_sessions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workerId: text("worker_id").notNull(),
+  resourceCount: integer("resource_count").notNull(),
+  basePrice: real("base_price").notNull(),
+  currentOffer: real("current_offer").notNull(),
+  rounds: integer("rounds").default(0),
+  status: text("status").default("active"),
+  sessionKey: text("session_key"),
+  createdAt: text("created_at"),
+  updatedAt: text("updated_at"),
+});
+
 export const resourcePurchases = sqliteTable("resource_purchases", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   orderId: text("order_id").unique().notNull(),
