@@ -37,11 +37,14 @@ export async function GET(request: NextRequest) {
         profile.communicationPreference && profile.budgetRange && profile.religion);
     }
 
-    const [commissions, accounts, analytics, settingsRows] = await Promise.all([
+    const [commissions, accounts, analytics, settingsRows, levelRow, teamCount, withdrawalSum] = await Promise.all([
       queryFirst<any>(db, "SELECT COUNT(*) as totalCommissions, COALESCE(SUM(total_amount), 0) as totalEarned, COALESCE(SUM(CASE WHEN status = 'paid' THEN total_amount ELSE 0 END), 0) as paidAmount FROM commissions WHERE to_worker_id = ?", [workerId]),
       query<any>(db, "SELECT id, account_type as accountType, account_number as accountNumber, account_name as accountName, is_default as isDefault FROM saved_accounts WHERE worker_id = ? ORDER BY is_default DESC, created_at ASC", [workerId]),
       queryFirst<any>(db, "SELECT COUNT(*) as totalViews, COUNT(DISTINCT session_id) as totalSessions FROM user_events WHERE worker_id = ? AND event_type = 'page_view'", [workerId]),
       query<{ setting_key: string; setting_value: string }>(db, "SELECT setting_key, setting_value FROM company_settings"),
+      queryFirst<any>(db, "SELECT level_name as levelName, level_name_bn as levelNameBn FROM commission_levels WHERE level_number = ?", [profile?.level || 1]),
+      queryFirst<any>(db, "SELECT COUNT(*) as cnt FROM mlm_tree WHERE parent_id = ? OR sponsor_id = ?", [workerId, workerId]),
+      queryFirst<any>(db, "SELECT COALESCE(SUM(final_amount), 0) as withdrawn FROM withdrawals WHERE worker_id = ? AND status = 'completed'", [workerId]),
     ]);
 
     const settingsMap: Record<string, string> = {};
@@ -49,11 +52,25 @@ export async function GET(request: NextRequest) {
       settingsMap[row.setting_key] = row.setting_value;
     }
 
+    const totalEarned = commissions?.totalEarned || 0;
+    const balance = Math.max(0, (commissions?.paidAmount || 0) - (withdrawalSum?.withdrawn || 0));
+    const totalTeamMembers = teamCount?.cnt || 0;
+
+    if (profile) {
+      profile.totalEarned = totalEarned;
+      profile.balance = balance;
+      profile.totalTeamMembers = totalTeamMembers;
+      if (levelRow) {
+        profile.levelName = levelRow.levelName;
+        profile.levelNameBn = levelRow.levelNameBn;
+      }
+    }
+
     return NextResponse.json({
       profile,
       commissions: {
         totalCommissions: commissions?.totalCommissions || 0,
-        totalEarned: commissions?.totalEarned || 0,
+        totalEarned,
         paidAmount: commissions?.paidAmount || 0,
       },
       accounts: accounts || [],

@@ -205,6 +205,12 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       ('min_withdrawal_premium', '20', 'number'),
       ('general_member_withdrawal_tax_percent', '5', 'number')
     `).run();
+    await env.DB.prepare(`INSERT OR IGNORE INTO commission_levels (level_number, level_name, level_name_bn, percentage, fixed_amount, commission_type, min_referral_base) VALUES
+      (1, 'Associate', 'সহযোগী', 10, 20, 'both', 0),
+      (2, 'Executive Officer', 'কার্যনির্বাহী কর্মকর্তা', 0, 10, 'fixed', 3),
+      (3, 'Senior Manager', 'জ্যেষ্ঠ ব্যবস্থাপক', 0, 10, 'fixed', 9),
+      (4, 'Director', 'পরিচালক', 0, 10, 'fixed', 27)
+    `).run();
     await env.DB.prepare(`INSERT OR IGNORE INTO company_users (username, password, name, role) VALUES
       ('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'Company Admin', 'superadmin')
     `).run();
