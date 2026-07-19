@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS trainers (
   bio_bn TEXT,
   image_url TEXT,
   experience_years INTEGER DEFAULT 0,
+  courses_en TEXT,
+  courses_bn TEXT,
   institution_id INTEGER,
   sort_order INTEGER DEFAULT 0,
   is_active INTEGER DEFAULT 1,
