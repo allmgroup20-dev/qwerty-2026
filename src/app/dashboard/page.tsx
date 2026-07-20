@@ -40,7 +40,7 @@ export default function WorkerDashboard() {
   const [minWithdraw, setMinWithdraw] = useState(500);
   const [premiumMinWithdraw, setPremiumMinWithdraw] = useState(200);
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [withdrawChannel, setWithdrawChannel] = useState("bkash");
+
   const [pwStep, setPwStep] = useState<0 | 1 | 2>(0);
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState("");
@@ -619,10 +619,7 @@ export default function WorkerDashboard() {
                       {savedAccounts.map(acc => (
                         <div
                           key={acc.id}
-                          onClick={() => {
-                            setSelectedAccId(acc.id);
-                            setWithdrawChannel(acc.account_type);
-                          }}
+                          onClick={() => setSelectedAccId(acc.id)}
                           className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
                             selectedAccId === acc.id
                               ? "border-action bg-action/5"
@@ -742,54 +739,6 @@ export default function WorkerDashboard() {
                     placeholder={lang === "bn" ? "পরিমাণ" : "Amount"}
                     className="input-field w-full"
                   />
-                </div>
-
-                {/* Channel Selection */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                    {lang === "bn" ? "পেমেন্ট চ্যানেল" : "Payment Channel"}
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {channels.map((ch) => {
-                      const isPaused = ch.status === "paused";
-                      const isRecommended = ch.recommended;
-                      const isSelected = withdrawChannel === ch.id;
-                      return (
-                        <button
-                          key={ch.id}
-                          type="button"
-                          onClick={() => !isPaused && setWithdrawChannel(ch.id)}
-                          disabled={isPaused}
-                          title={isPaused ? (lang === "bn" ? "এই চ্যানেলটি সাময়িকভাবে বন্ধ রয়েছে" : "This channel is temporarily paused") : ""}
-                          className={`relative py-3 px-3 rounded-xl text-sm font-medium border transition-all ${
-                            isPaused
-                              ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60"
-                              : isSelected
-                                ? "border-action bg-action/10 text-action"
-                                : "border-border text-text-secondary hover:border-action/50"
-                          }`}
-                        >
-                          <div className="flex items-center justify-center gap-1.5">
-                            {ch.id === "nagad" && <span>💚</span>}
-                            {ch.id === "bkash" && <span>🩷</span>}
-                            {ch.id === "rocket" && <span>🚀</span>}
-                            {ch.id === "bank" && <span>🏦</span>}
-                            <span>{lang === "bn" ? ch.labelBn || ch.label : ch.label}</span>
-                            {isRecommended && (
-                              <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-semibold">
-                                {lang === "bn" ? "সেরা পছন্দ" : "Best"}
-                              </span>
-                            )}
-                          </div>
-                          {isPaused && (
-                            <div className="text-[10px] text-gray-400 mt-1">
-                              {lang === "bn" ? "⏸ সাময়িকভাবে বন্ধ" : "⏸ Temporarily paused"}
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
 
                 {/* Min withdrawal info */}
