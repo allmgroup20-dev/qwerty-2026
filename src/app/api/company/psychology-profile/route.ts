@@ -138,6 +138,8 @@ export async function GET(request: NextRequest) {
         trustScore: profile.trust_score,
         controlSensitivity: profile.control_sensitivity,
         manipulationRisk: profile.manipulation_risk,
+        communicationStyle: profile.communication_style || "standard",
+        trustReadiness: profile.trust_readiness || "needs_time",
       },
       conversations: convWithPsych,
       recommendations: recs,

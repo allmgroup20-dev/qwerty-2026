@@ -5,7 +5,7 @@ import {
   analyzePainPoints, analyzeInterests,
   detectTrustLevel, detectControlResistance, detectManipulationVulnerability,
   detectFearProfile, detectMaskStatus,
-  getOrCreateProfile, updateProfileTrust, isWorkerPhone, getWorkerPremiumStatus,
+  getOrCreateProfile, updateProfileTrust, updateProfileCommunication, isWorkerPhone, getWorkerPremiumStatus,
   getOrCreateLead,
 } from "@/lib/ai";
 import type { MessageCtx } from "@/lib/ai/brain/types";
@@ -93,6 +93,8 @@ export async function POST(request: NextRequest) {
       trustLevel === "trusting" ? 8 : trustLevel === "neutral" ? 5 : trustLevel === "defensive" ? 3 : 1,
       controlResistance, manipulationVulnerability
     );
+
+    await updateProfileCommunication(phone, text);
 
     await getOrCreateLead(phone);
 

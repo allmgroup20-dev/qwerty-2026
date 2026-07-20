@@ -1024,6 +1024,11 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN trust_score REAL DEFAULT 0").run(); } catch {}
     try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN control_sensitivity TEXT DEFAULT 'medium'").run(); } catch {}
     try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN manipulation_risk TEXT DEFAULT 'medium'").run(); } catch {}
+    try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN communication_style TEXT DEFAULT 'standard'").run(); } catch {}
+    try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN trust_readiness TEXT DEFAULT 'needs_time'").run(); } catch {}
+    try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN value_sensitivity TEXT DEFAULT 'balanced'").run(); } catch {}
+    try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN listening_need TEXT DEFAULT 'medium'").run(); } catch {}
+    // Update communication_styles on every profile interaction via triggers — handled in profiler.ts
 
     // ─── AI Knowledge Distribution ───
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_knowledge_distribution (

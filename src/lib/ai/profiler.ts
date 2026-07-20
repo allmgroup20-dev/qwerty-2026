@@ -1,6 +1,6 @@
 import { queryFirst, execute } from "@/lib/db/queries";
 import { ensureDB } from "@/lib/db";
-import { detectLanguage } from "./analyzer";
+import { detectLanguage, detectCommStyle, detectTrustReadiness } from "./analyzer";
 
 export interface PhoneProfile {
   phone: string;
@@ -19,6 +19,10 @@ export interface PhoneProfile {
   trust_score: number;
   control_sensitivity: string | null;
   manipulation_risk: string | null;
+  communication_style: string | null;
+  trust_readiness: string | null;
+  value_sensitivity: string | null;
+  listening_need: string | null;
 }
 
 const SECTOR_PATTERNS: [RegExp, string][] = [
@@ -153,6 +157,40 @@ export async function updateProfileTrust(
         { DB: db },
         `UPDATE ai_phone_profiles SET trust_score = ?, control_sensitivity = ?, manipulation_risk = ?, updated_at = datetime('now') WHERE phone = ?`,
         [trustScore, controlSensitivity, manipulationRisk, phone]
+      );
+    } catch {}
+  }
+}
+
+export async function updateProfileCommunication(
+  phone: string,
+  text: string
+): Promise<void> {
+  const db = await ensureDB();
+  const commStyle = detectCommStyle(text);
+  const trustReadiness = detectTrustReadiness(text);
+  try {
+    await execute(
+      { DB: db },
+      `UPDATE ai_phone_profiles SET communication_style = ?, trust_readiness = ?, updated_at = datetime('now') WHERE phone = ?`,
+      [commStyle, trustReadiness, phone]
+    );
+    await execute(
+      { DB: db },
+      `INSERT INTO communication_styles (phone, style, trust_readiness, updated_at) VALUES (?, ?, ?, datetime('now'))
+       ON CONFLICT(phone) DO UPDATE SET style = ?, trust_readiness = ?, updated_at = datetime('now')`,
+      [phone, commStyle, trustReadiness, commStyle, trustReadiness]
+    );
+  } catch {
+    try {
+      await execute({ DB: db }, "ALTER TABLE ai_phone_profiles ADD COLUMN communication_style TEXT DEFAULT 'standard'");
+      await execute({ DB: db }, "ALTER TABLE ai_phone_profiles ADD COLUMN trust_readiness TEXT DEFAULT 'needs_time'");
+      await execute({ DB: db }, "ALTER TABLE ai_phone_profiles ADD COLUMN value_sensitivity TEXT DEFAULT 'balanced'");
+      await execute({ DB: db }, "ALTER TABLE ai_phone_profiles ADD COLUMN listening_need TEXT DEFAULT 'medium'");
+      await execute(
+        { DB: db },
+        `UPDATE ai_phone_profiles SET communication_style = ?, trust_readiness = ?, updated_at = datetime('now') WHERE phone = ?`,
+        [commStyle, trustReadiness, phone]
       );
     } catch {}
   }
