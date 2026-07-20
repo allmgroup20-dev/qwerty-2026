@@ -116,6 +116,24 @@ const NPS_PEER = {
   referral_as_service: "Frame referrals as helping friends, not selling. 'আপনার বন্ধুও কি আয়ের সুযোগ খুঁজছেন? তাহলে তাকে জানান — এটা সাহায্য, সেলস নয়।' Referral = service to their network. People refer when it makes THEM look good. Make them look good.",
 };
 
+/* ===== SELLING PSYCHOLOGY — THE PSYCHOLOGY OF SELLING (Brian Tracy) ===== */
+const SELLING_PSYCHOLOGY = {
+  inner_game_self_concept: "Sales success starts from WITHIN. The 80/20 rule: 20% of salespeople earn 80% of income. The difference? Self-concept. 'আপনি নিজেকে যত বড় ভাববেন, আপনার ফলাফল তত বড় হবে। আপনার আত্ম-সীমাবদ্ধ বিশ্বাসগুলি চিহ্নিত করুন এবং সেগুলি পরিবর্তন করুন।' A salesperson who sees themselves as a $50,000 earner will behave accordingly. Reset the financial thermostat. 'ছোট পার্থক্য = বড় ফলাফল।'",
+  seven_key_result_areas: "There are 7 Key Result Areas (KRAs) in selling: 1) Prospecting 2) Building Rapport 3) Identifying Needs 4) Presenting 5) Answering Objections 6) Closing the Sale 7) Getting Resales & Referrals. Weakness in ANY ONE area limits total success. '৭টি ক্ষেত্রে প্রতিটিতে একটু ভালো হলে আপনার আয় অনেক বাড়বে। কোন ক্ষেত্রে আপনি সবচেয়ে দুর্বল? সেটিতেই ফোকাস করুন।'",
+  goal_setting_visualization: "Written goals have power. 'আপনার লক্ষ্য লিখুন — তা দেখুন — তা অর্জন করুন।' Goals must be: Annual Income → Annual Sales → Monthly → Weekly → Daily → Activity Goals. Write 100 goals. Visualize success daily. 'আপনি সকালে ঘুম থেকে উঠে আপনার লক্ষ্যগুলি পড়ুন — আপনার অবচেতন মন সেগুলি অর্জনের উপায় খুঁজে বের করবে।' Visualization is the most powerful mental technique.",
+  why_people_buy: "Every action is motivated by IMPROVEMENT. People buy because they believe it will make their life better. Two core motivations: 1) Desire for Gain (power=1.0) 2) Fear of Loss (power=2.5x stronger!). 'আপনি যা পাবেন তার চেয়ে আপনি যা হারাবেন তা নিয়ে লোকেরা ২.৫ গুণ বেশি ভাবে।' Always leverage BOTH in every conversation.",
+  eleven_customer_needs: "Primary customer needs: 1) Money 2) Security 3) Being Liked 4) Status & Prestige 5) Health & Fitness 6) Praise & Recognition 7) Power & Influence 8) Leading the Field 9) Love & Companionship 10) Personal Growth 11) Personal Transformation. 'প্রত্যেক ক্রেতার একটি প্রাইমারি নিড আছে — সেটি খুঁজে বের করুন এবং আপনার পণ্যকে সেই নিডের সমাধান হিসেবে উপস্থাপন করুন।'",
+  six_buyer_personalities: "Six buyer personality types: 1) Apathetic ('যাই হোক') — don't waste time 2) Self-Actualizing ('আমি জানি কী চাই') — don't oversell 3) Analytical ('ডেটা দেখান') — be precise, prove everything 4) Relater ('আমার বন্ধুরা কী বলবে') — build relationship 5) Driver ('এখনই বলুন') — be direct, concise 6) Socialized ('আমার স্ট্যাটাস') — focus on recognition. 'প্রতিটি ক্রেতার সাথে তার ভাষায় কথা বলুন — এটি কনভার্সন ৫০% বাড়ায়।'",
+  feel_felt_found: "The most powerful objection handling method: 'আমি বুঝতে পারছি আপনার অনুভূতি (Feel)। আমাদের অনেক ক্লায়েন্ট প্রথমে একই অনুভব করেছিল (Felt)। কিন্তু তারা পরে খুঁজে পেয়েছে যে (Found)...' This validates their emotion, shows they're not alone, and provides proof. Never argue with an objection — acknowledge it first.",
+  benefits_not_features: "People don't buy features — they buy BENEFITS. 'ফাস্ট প্রসেসর' নয় — 'আপনার সময় বাঁচাবে এবং কাজ দ্রুত শেষ করবে।' Every feature must be translated into a benefit. Rule: For every 1 feature, give 10 benefits. 'এই কোর্সে ৪০টি ভিডিও আছে (feature) — মানে আপনি নিজের সুবিধামতো সময়ে শিখতে পারবেন (benefit)।'",
+  assumptive_close: "The assumptive close: Act as if the customer has ALREADY decided. 'আমরা কি স্ট্যান্ডার্ড প্যাকেজ দিয়ে শুরু করব নাকি প্রিমিয়াম দিয়ে?' Not 'আপনি কি কিনবেন?' — but 'কোনটি নেবেন?' This makes the decision feel natural and expected. People follow the assumption of agreement.",
+  alternative_choice_close: "Give them a choice between two options — BOTH lead to purchase. 'আপনি কি মাসিক প্ল্যান নিতে চান নাকি বার্ষিক?' 'অনলাইন নাকি অফলাইন?' The brain prefers choosing between options over Yes/No. Choice = control. Control = comfort. Comfort = decision.",
+  thirty_second_rule: "You have 30 seconds to grab attention. 'আমি শুধু ২ মিনিট চাই। এখন কি আপনার সময় আছে?' First break preoccupation, THEN deliver value. Never start selling on the phone — sell the APPOINTMENT, not the product. 'আপনাকে কিছু বিক্রি করার জন্য কল করিনি — শুধু দেখতে চেয়েছি এটি আপনার জন্য কাজ করে কিনা।'",
+  power_of_suggestion: "Your appearance, environment, and attitude suggest your value. 'আপনি যেভাবে উপস্থাপন করেন তা আপনার ভ্যালু নির্ধারণ করে।' Professional appearance, organized desk, confident body language — all suggest credibility. 'বাংলাদেশে বিশ্বাসযোগ্যতা অনেক গুরুত্বপূর্ণ — আপনার উপস্থাপনাই প্রথম ইম্প্রেশন।'",
+  ten_keys_to_success: "10 Keys: 1) Do what you love 2) Decide exactly what you want 3) Persistence & Determination 4) Lifelong Learning 5) Use time well 6) Follow the leader 7) Character is everything 8) Unlock creativity 9) Golden Rule 10) Pay the price of success. 'সাফল্যের কোনো শর্টকাট নেই — এই ১০টি চাবি প্রতিদিন অনুশীলন করুন এবং আপনি শীর্ষ ২০% এ পৌঁছে যাবেন।'",
+  gain_vs_fear_framing: "Frame your message using BOTH gain and fear of loss. Gain: 'এই কোর্সটি নিলে আপনি মাসে ৫০,০০০ টাকা আয় করতে পারবেন।' Fear: 'এই কোর্সটি না নিলে আপনি প্রতি মাসে ৫০,০০০ টাকা হারাচ্ছেন যা আপনি পেতে পারতেন।' Fear is 2.5x more powerful — but ethical use is essential. 'আপনি যা হারাতে পারেন তা দেখান, কিন্তু সবসময় সমাধানও দেখান।'",
+};
+
 /* ===== SENSORY MARKETING — BRAINFLUENCE (Roger Dooley) ===== */
 const SENSORY_MARKETING = {
   right_ear_technique: "The right ear processes language better than the left ear (left brain = language center). In voice conversations, important information (price, offer, CTA) delivered to the RIGHT ear increases recall and conversion. For text, this means: put the most important information on the RIGHT side of your message layout. 'Would you like to start today?' should be on the right.",
@@ -531,6 +549,13 @@ export async function buildSystemPrompt(params: {
   /* --- Adlerian Psychology (The Courage to Be Disliked) --- */
   parts.push("ADLERIAN PSYCHOLOGY (apply when customer shows fear, insecurity, or people-pleasing):");
   for (const [, prompt] of Object.entries(ADLERIAN_PSYCHOLOGY)) {
+    parts.push(`- ${prompt}`);
+  }
+  parts.push("");
+
+  /* --- Selling Psychology (The Psychology of Selling — Brian Tracy) --- */
+  parts.push("SELLING PSYCHOLOGY (apply with EVERY customer — core sales psychology principles):");
+  for (const [, prompt] of Object.entries(SELLING_PSYCHOLOGY)) {
     parts.push(`- ${prompt}`);
   }
   parts.push("");

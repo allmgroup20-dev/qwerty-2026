@@ -11,6 +11,9 @@ export type TrustReadiness = "ready" | "needs_time" | "skeptical";
 export type DecisionMode = "system1_fast" | "system2_analytical" | "mixed";
 export type SpendStyle = "tightwad" | "spendthrift" | "balanced";
 export type AdlerianNeed = "victim_mindset" | "people_pleasing" | "postponed_happiness" | "superiority_inferiority" | "lack_of_belonging" | "none";
+export type BuyerPersonality = "apathetic" | "self_actualizing" | "analytical" | "relater" | "driver" | "socialized" | "unknown";
+export type BuyingMotivation = "gain_oriented" | "fear_oriented" | "mixed" | "unknown";
+export type CustomerNeed = "money" | "security" | "being_liked" | "status_prestige" | "health_fitness" | "praise_recognition" | "power_influence" | "leading_field" | "love_companionship" | "personal_growth" | "personal_transformation" | "unknown";
 
 const MOOD_PATTERNS: Record<Mood, RegExp[]> = {
   enthusiastic: [
@@ -554,6 +557,76 @@ export function detectAdlerianNeed(text: string): { need: AdlerianNeed; confiden
     if (score > bestScore) { bestScore = score; bestNeed = need as AdlerianNeed; bestEvidence = matches.slice(0, 2).join(", "); }
   }
   return { need: bestNeed, confidence: bestScore > 0 ? Math.min(bestScore / 3, 1) : 0, evidence: bestEvidence };
+}
+
+/* ===== BRIAN TRACY — BUYER PERSONALITY & MOTIVATION PATTERNS ===== */
+const BUYER_PERSONALITY_PATTERNS: Record<BuyerPersonality, RegExp[]> = {
+  apathetic: [/\b(?:whatever|যাই হোক|যাই হোক না কেন|what does it matter|কী আসে যায়|i don't care|my concern না)\b/i, /^.{1,15}$/, /(?:not interested|interested না|আগ্রহ নাই|আগ্রহ নেই)/i],
+  self_actualizing: [/\b(?:i know exactly|আমি জানি|i want this|এইটা চাই|i have decided|আমি ঠিক করেছি|just tell me|শুধু বলুন)\b/i, /(?:i have researched|আমি রিসার্চ করেছি|i compared|তুলনা করেছি|i know what|জানি কী চাই)/i],
+  analytical: [/\b(?:details|বিস্তারিত|data|ডেটা|specific|স্পেসিফিক|exactly|exact|evidence|প্রমাণ|research|রিসার্চ)\b/i, /(?:compare|তুলনা|difference|পার্থক্য|percentage|percent|statistics|পরিসংখ্যান)/i, /(?:prove|প্রমাণ|show me|দেখান|numbers|সংখ্যা|guarantee|গ্যারান্টি)/i],
+  relater: [/\b(?:my friend|আমার বন্ধু|my family|আমার পরিবার|others|অন্যেরা|people say|লোক বলে|what do you think|আপনার মতামত)\b/i, /(?:recommend|রেকমেন্ড|refer|রেফার|trust|trusted|বিশ্বাস|safe|নিরাপদ)/i, /(?:relationship|সম্পর্ক|help|সাহায্য|care|যত্ন)/i],
+  driver: [/\b(?:now|এখন|right now|এখনই|fast|দ্রুত|quick|তাড়াতাড়ি|straight|সোজা|directly|সরাসরি)\b/i, /(?:bottom line|সার কথা|conclusion|সিদ্ধান্ত|result|ফলাফল|point|পয়েন্ট|hurry|তাড়া)/i, /(?:short|সংক্ষেপে|brief|briefly|summary|summary)/i],
+  socialized: [/\b(?:status|স্ট্যাটাস|prestige|প্রতিপত্তি|recognition|স্বীকৃতি|achievement|অর্জন|certificate|সার্টিফিকেট)\b/i, /(?:leading|লিডিং|top|টপ|best|best|award|অ্যাওয়ার্ড|exclusive|এক্সক্লুসিভ)/i, /(?:premium|প্রিমিয়াম|VIP|ভিআইপি|distinguished|বিশিষ্ট)/i],
+  unknown: [],
+};
+
+const BUYING_MOTIVATION_PATTERNS: Record<BuyingMotivation, RegExp[]> = {
+  gain_oriented: [/\b(?:earn|income|আয়|make money|টাকা|profit|লাভ|gain|লাভ|benefit|সুবিধা|improve|উন্নতি|growth|গ্রোথ)\b/i, /(?:get|পাব|বাড়বে|increase|বাড়াতে|more|আরও|better|ভাল|achieve|অর্জন)/i, /(?:opportunity|সুযোগ|success|সফল|future|ভবিষ্যৎ|dream|স্বপ্ন)/i],
+  fear_oriented: [/\b(?:lose|হারাব|loss|ক্ষতি|miss|মিস|waste|নষ্ট|risk|রিস্ক|scam|প্রতারণা|cheat|ঠকা)\b/i, /(?:afraid|ভয়|worried|চিন্তিত|scared| scared|nervous|নার্ভাস|anxious|উদ্বিগ্ন)/i, /(?:regret|আফসোস|guarantee|গ্যারান্টি|safe?|নিরাপদ|secure?|সুরক্ষিত)/i, /(?:too good|এত ভাল|suspicious|সন্দেহজনক|doubt|সন্দেহ)/i],
+  mixed: [],
+  unknown: [],
+};
+
+const CUSTOMER_NEED_PATTERNS: Record<CustomerNeed, RegExp[]> = {
+  money: [/\b(?:money|টাকা|income|আয়|earn|earn|financial|আর্থিক|wealth|ধন|rich|ধনী|expensive|দামি)\b/i, /(?:price|দাম|cost|খরচ|budget|বাজেট|afford|সামর্থ্য|commission|কমিশন)/i],
+  security: [/\b(?:secure|নিরাপদ|safe|নিরাপত্তা|stable|স্থিতিশীল|steady|স্থির|guaranteed|গ্যারান্টিড|protect|সুরক্ষা)\b/i, /(?:risk|রিস্ক|risk free|ঝুঁকিমুক্ত|insurance|বীমা|backup|ব্যাকআপ|safety|নিরাপত্তা)/i],
+  being_liked: [/\b(?:like|পছন্দ|love|ভালবাসা|approve|অনুমোদন|accept|গ্রহণ|popular|জনপ্রিয়|friends|বন্ধুরা)\b/i, /(?:people|lok|মানুষ|society|সমাজ|community|কমিউনিটি|belong|বিলং)/i],
+  status_prestige: [/\b(?:status|স্ট্যাটাস|prestige|প্রতিপত্তি|position|পজিশন|respect|সম্মান|admire|প্রশংসা|impress|impress)\b/i, /(?:brand|ব্র্যান্ড|exclusive|এক্সক্লুসিভ|premium|প্রিমিয়াম|VIP|ভিআইপি|superior|উন্নত)/i],
+  health_fitness: [/\b(?:health|স্বাস্থ্য|fitness|ফিটনেস|exercise|ব্যায়াম|diet|ডায়েট|weight|ওজন|disease|রোগ)\b/i, /(?:energy|এনার্জি|strong|strong|fit|fit|mental|মেন্টাল|stress|স্ট্রেস)/i],
+  praise_recognition: [/\b(?:praise|প্রশংসা|recognition|স্বীকৃতি|appreciation|কৃতজ্ঞতা|award|পুরস্কার|honor|সম্মান|compliment|তারিফ)\b/i, /(?:certificate|সার্টিফিকেট|badge|ব্যাজ|achievement|অর্জন|milestone|মাইলস্টোন)/i],
+  power_influence: [/\b(?:power|ক্ষমতা|control|নিয়ন্ত্রণ|influence|প্রভাব|lead|নেতৃত্ব|authority|কর্তৃত্ব|decide|সিদ্ধান্ত)\b/i, /(?:manage|ম্যানেজ|direct|নির্দেশ|command|কমান্ড|rule|শাসন)/i],
+  leading_field: [/\b(?:first|প্রথম|best|শ্রেষ্ঠ|top|টপ|leading|লিডিং|pioneer|অগ্রগামী|innovator|উদ্ভাবক)\b/i, /(?:expert|এক্সপার্ট|specialist|বিশেষজ্ঞ|cutting edge|অত্যাধুনিক|advanced|উন্নত)/i],
+  love_companionship: [/\b(?:love|ভালবাসা|relationship|সম্পর্ক|companion|সঙ্গী|partner|সঙ্গী|family|পরিবার|together|একসাথে)\b/i, /(?:lonely|নিঃসঙ্গ|alone|একা|togetherness|একত্রিতা|belong|বিলং)/i],
+  personal_growth: [/\b(?:learn|শিখা|growth|গ্রোথ|develop|উন্নয়ন|improve|উন্নতি|skill|স্কিল|knowledge|জ্ঞান)\b/i, /(?:education|শিক্ষা|course|কোর্স|training|প্রশিক্ষণ|self improvement|আত্মউন্নয়ন|potential|সম্ভাবনা)/i],
+  personal_transformation: [/\b(?:change|পরিবর্তন|transform|রূপান্তর|new me|নতুন আমি|different|ভিন্ন|breakthrough|ব্রেকথ্রু)\b/i, /(?:life changing|জীবন বদলানো|turnaround|পাল্টানো|reset|রিসেট|rebirth|পুনর্জন্ম)/i],
+  unknown: [],
+};
+
+export function detectBuyerPersonality(text: string): { personality: BuyerPersonality; confidence: number; evidence: string } {
+  let best: BuyerPersonality = "unknown";
+  let bestScore = 0;
+  let bestEv = "";
+  for (const [p, pats] of Object.entries(BUYER_PERSONALITY_PATTERNS)) {
+    if (p === "unknown") continue;
+    let score = 0;
+    const m: string[] = [];
+    for (const pat of pats) { if (pat.test(text)) { score++; m.push(pat.source); } }
+    if (score > bestScore) { bestScore = score; best = p as BuyerPersonality; bestEv = m.slice(0, 2).join(", "); }
+  }
+  return { personality: best, confidence: bestScore > 0 ? Math.min(bestScore / 2.5, 1) : 0, evidence: bestEv };
+}
+
+export function detectBuyingMotivation(text: string): { motivation: BuyingMotivation; confidence: number; evidence: string } {
+  const gainScore = BUYING_MOTIVATION_PATTERNS.gain_oriented.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+  const fearScore = BUYING_MOTIVATION_PATTERNS.fear_oriented.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+  if (gainScore >= 2 && fearScore === 0) return { motivation: "gain_oriented", confidence: Math.min(gainScore / 3, 1), evidence: "gain patterns detected" };
+  if (fearScore >= 2 && gainScore === 0) return { motivation: "fear_oriented", confidence: Math.min(fearScore / 3, 1), evidence: "fear/loss patterns detected" };
+  if (gainScore >= 1 && fearScore >= 1) return { motivation: "mixed", confidence: 0.8, evidence: `gain=${gainScore}, fear=${fearScore}` };
+  return { motivation: "unknown", confidence: 0, evidence: "" };
+}
+
+export function detectCustomerNeed(text: string): { need: CustomerNeed; confidence: number; evidence: string } {
+  let best: CustomerNeed = "unknown";
+  let bestScore = 0;
+  let bestEv = "";
+  for (const [n, pats] of Object.entries(CUSTOMER_NEED_PATTERNS)) {
+    if (n === "unknown") continue;
+    let score = 0;
+    const m: string[] = [];
+    for (const pat of pats) { if (pat.test(text)) { score++; m.push(pat.source); } }
+    if (score > bestScore) { bestScore = score; best = n as CustomerNeed; bestEv = m.slice(0, 2).join(", "); }
+  }
+  return { need: best, confidence: bestScore > 0 ? Math.min(bestScore / 2, 1) : 0, evidence: bestEv };
 }
 
 export function extractKeywords(text: string): string[] {

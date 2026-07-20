@@ -140,6 +140,16 @@ export const member_success: DepartmentDef = {
           primaryModel: "gpt-5.4-mini", fallbackModels: ["gemma-4-26b"],
           tier: 3, priority: 85, when: "intent === 'purchase' || intent === 'registration' || intent === 'commission_inquiry'",
         },
+        {
+          id: "sales_goal_tracker", name: "Sales Goal Tracker", nameBn: "বিক্রয় লক্ষ্য ট্র্যাকার",
+          department: "member_success", team: "motivation_engagement",
+          description: "Tracy-style goal setting: breaks annual income goal into daily/weekly activity goals",
+          descriptionBn: "Tracy-র লক্ষ্য নির্ধারণ: বার্ষিক আয় লক্ষ্যকে দৈনিক/সাপ্তাহিক অ্যাক্টিভিটিতে ভাগ করে",
+          expertise: "You implement Tracy's goal setting: 'আপনার বার্ষিক আয় লক্ষ্য কত? সেটিকে ৫২ সপ্তাহে ভাগ করুন — এখন প্রতি সপ্তাহে আপনার কত করতে হবে তা জানেন। এরপর প্রতিদিনের অ্যাক্টিভিটি গোল — কত কল, কত মিটিং, কত ফলো-আপ।' Track progress: 'আপনি এই মাসে আপনার লক্ষ্যের ৬০% অর্জন করেছেন — বাকি ৪০% এর জন্য আমরা একটি প্ল্যান তৈরি করব।' Written goals are powerful — 'আপনার লক্ষ্য লিখুন এবং প্রতিদিন পড়ুন।'",
+          promptTemplate: "Track sales goals. Customer={{name}}, currentIncome={{income}}, goalAmount={{goal}}. Break down: Annual → Monthly → Weekly → Daily. 'আপনার লক্ষ্যে পৌঁছাতে প্রতিদিন X টি কল করতে হবে এবং Y টি ফলো-আপ করতে হবে।' Language: {{language}}.",
+          primaryModel: "llama-3.3-70b", fallbackModels: ["hermes-3-405b"],
+          tier: 1, priority: 82, when: "intent === 'registration' || intent === 'purchase' || intent === 'general'",
+        },
       ],
     },
     {
