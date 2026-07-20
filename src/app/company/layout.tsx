@@ -38,6 +38,7 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/company/funnel", en: "Funnel", bn: "ফানেল", icon: "🔄", desc: "গ্রাহক ফানেল — ভিজিট→সাইনআপ→অর্ডার→পুনরায় ক্রয়" },
       { href: "/company/events", en: "Events", bn: "ইভেন্ট", icon: "📋", desc: "সকল ইভেন্ট লগ — পেজ ভিজিট, ক্লিক, সার্চ ইত্যাদি" },
       { href: "/company/sessions", en: "Sessions", bn: "সেশন", icon: "🕒", desc: "সেশন টাইমলাইন — লগইন থেকে লগআউট পর্যন্ত কার্যকলাপ" },
+      { href: "/company/funnel-psychology", en: "Funnel Psychology", bn: "ফানেল সাইকোলজি", icon: "🔮", desc: "ফানেল সাইকোলজি ডিপ ডাইভ — বিশ্বাস, ভয় ও প্রতিরোধ বিশ্লেষণ" },
     ],
   },
   {
@@ -84,6 +85,8 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/company/skills", en: "Skills", bn: "দক্ষতা", icon: "🧠", desc: "এআই স্কিলস — কীওয়ার্ড-ভিত্তিক স্বয়ংক্রিয় উত্তর" },
       { href: "/company/ai-distribution", en: "AI Distribution", bn: "এআই বিতরণ", icon: "📚", desc: "AI জ্ঞান বিতরণ — কোন এজেন্ট/কর্মচারীর কি জ্ঞান আছে ট্র্যাক করুন" },
       { href: "/company/ai-conversations", en: "Conversations", bn: "কথোপকথন", icon: "💬", desc: "এআই কনভার্সেশন — ইউজারদের সাথে এআই-এর কথোপকথনের লগ" },
+      { href: "/company/psychology-insights", en: "Psychology Insights", bn: "সাইকোলজি ইনসাইটস", icon: "🧠", desc: "গ্রাহক মনস্তাত্ত্বিক প্রোফাইল ড্যাশবোর্ড — বিশ্বাস, ভয়, মাস্ক স্ট্যাটাস" },
+      { href: "/company/ai-training", en: "AI Training", bn: "এআই প্রশিক্ষণ", icon: "📚", desc: "AI প্রশিক্ষণ মডিউল — সাইকোলজিক্যাল ট্রেনিং ও নলেজ রিপোজিটরি" },
       { href: "/company/courses/ai-pricing", en: "AI Pricing", bn: "এআই প্রাইসিং", icon: "💰", desc: "এআই-ভিত্তিক রিসোর্স প্রাইসিং — অটোমেটিক প্রাইস ও প্রিমিয়াম সাজেশন" },
     ],
   },
@@ -138,13 +141,13 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     const path = pathname;
-    if (path === "/company" || path.startsWith("/company/analytics") || path.startsWith("/company/funnel") || path.startsWith("/company/events") || path.startsWith("/company/sessions")) {
+    if (path === "/company" || path.startsWith("/company/analytics") || path.startsWith("/company/funnel") || path.startsWith("/company/funnel-psychology") || path.startsWith("/company/events") || path.startsWith("/company/sessions")) {
       setExpandedGroups(["overview"]);
     } else if (path.startsWith("/company/members") || path.startsWith("/company/customers") || path.startsWith("/company/users") || path.startsWith("/company/notifications")) {
       setExpandedGroups(["people"]);
     } else if (path.startsWith("/company/products") || path.startsWith("/company/courses") || path.startsWith("/company/orders") || path.startsWith("/company/reviews") || path.startsWith("/company/levels") || path.startsWith("/company/finance") || path.startsWith("/company/withdrawals") || path.startsWith("/company/currencies") || path.startsWith("/company/payment-gateway") || path.startsWith("/company/trainers") || path.startsWith("/company/institutions")) {
       setExpandedGroups(["products"]);
-    } else if (path.startsWith("/company/ai") || path.startsWith("/company/automation") || path.startsWith("/company/sentiment") || path.startsWith("/company/skills") || path.startsWith("/company/ai-conversations")) {
+    } else if (path.startsWith("/company/ai") || path.startsWith("/company/automation") || path.startsWith("/company/sentiment") || path.startsWith("/company/skills") || path.startsWith("/company/psychology-insights") || path.startsWith("/company/ai-training")) {
       setExpandedGroups(["ai"]);
     } else if (path.startsWith("/dashboard/platforms") || path.startsWith("/company/translations")) {
       setExpandedGroups(["communication"]);
