@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Hind_Siliguri, Inter } from "next/font/google";
+import { Noto_Sans_Bengali, Inter } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "./client-layout";
 
-const hindSiliguri = Hind_Siliguri({
+const notoSansBengali = Noto_Sans_Bengali({
   subsets: ["bengali", "latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
@@ -48,7 +48,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="bn" className={`${hindSiliguri.variable} ${inter.variable}`}>
+    <html lang="bn" className={`${notoSansBengali.variable} ${inter.variable}`}>
       <head>
         <link rel="dns-prefetch" href="https://career.jobayergroup.com" />
         <link rel="preload" href="/favicon.svg" as="image" />
