@@ -395,6 +395,28 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       recorded_at TEXT DEFAULT (datetime('now'))
     )`).run();
 
+    // Employee persuasion skill scores (Bob Berg metrics per employee)
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS employee_persuasion_scores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      employee_name TEXT DEFAULT '',
+      metric_type TEXT NOT NULL,
+      score REAL DEFAULT 0,
+      recorded_by TEXT DEFAULT '',
+      notes TEXT DEFAULT '',
+      recorded_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    // Member communication style tracking
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS member_communication_profiles (
+      worker_id TEXT PRIMARY KEY,
+      comm_style TEXT DEFAULT 'standard',
+      trust_readiness TEXT DEFAULT 'needs_time',
+      sector TEXT DEFAULT '',
+      last_interaction TEXT,
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
     // ── Courses Module Tables ──
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS course_categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
