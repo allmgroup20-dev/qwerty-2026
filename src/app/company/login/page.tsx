@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguageStore } from "@/lib/store";
+import { LoadingDots } from "@/components/ui/LoadingDots";
 
 export default function CompanyLoginPage() {
   const { lang } = useLanguageStore();
@@ -10,6 +11,27 @@ export default function CompanyLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [checkingCookie, setCheckingCookie] = useState(true);
+
+  useEffect(() => {
+    const token = document.cookie.split("; ").find(r => r.startsWith("company_token="))?.split("=")[1];
+    if (token && token.length > 20) {
+      window.location.href = "/company";
+    } else {
+      setCheckingCookie(false);
+    }
+  }, []);
+
+  if (checkingCookie) {
+    return (
+      <div className="min-h-screen flex items-center justify-center py-20 px-4 bg-gray-50">
+        <div className="flex flex-col items-center gap-3">
+          <LoadingDots className="text-primary" />
+          <p className="text-sm text-text-secondary animate-loading-pulse">{lang === "bn" ? "চেক করা হচ্ছে..." : "Checking..."}</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,8 +156,13 @@ export default function CompanyLoginPage() {
             </div>
           </div>
           <div className="flex gap-3">
-            <button type="submit" disabled={loading} className="btn-primary flex-1 text-base !py-3.5">
-              {loading ? (lang === "bn" ? "লগইন হচ্ছে..." : "Logging in...") : (lang === "bn" ? "লগইন" : "Login")}
+            <button type="submit" disabled={loading} className="btn-primary flex-1 text-base !py-3.5 flex items-center justify-center gap-2 min-h-[48px]">
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <LoadingDots />
+                  <span className="animate-loading-pulse">{lang === "bn" ? "লগইন হচ্ছে..." : "Logging in..."}</span>
+                </span>
+              ) : (lang === "bn" ? "লগইন" : "Login")}
             </button>
             <button
               type="button"

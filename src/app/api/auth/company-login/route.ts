@@ -4,6 +4,14 @@ import { getDB } from "@/lib/db";
 import { verifyCompanyPassword, generateCompanyToken, getJwtSecret } from "@/lib/auth";
 import { getCached, setCached } from "@/lib/cache";
 
+const MEMO = "__companyAuthMemo";
+
+function getMemo(): Map<string, { username: string; name: string; password: string; role: string }> {
+  const g = globalThis as any;
+  if (!g[MEMO]) g[MEMO] = new Map();
+  return g[MEMO];
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json() as { username: string; password: string };
@@ -14,12 +22,25 @@ export async function POST(request: NextRequest) {
     const usernameHash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(username.toLowerCase()))))
       .map(b => b.toString(16).padStart(2, "0")).join("");
 
+    const memo = getMemo();
+    const memoized = memo.get(usernameHash);
+    if (memoized) {
+      const valid = await verifyCompanyPassword(password, memoized.password);
+      if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      const token = await generateCompanyToken(memoized.username, getJwtSecret());
+      const response = NextResponse.json({ token, username: memoized.username, name: memoized.name, role: memoized.role });
+      response.cookies.set("company_token", token, { httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 86400 });
+      response.cookies.set("company_user", JSON.stringify({ name: memoized.name, username: memoized.username, role: memoized.role }), { httpOnly: false, secure: false, sameSite: "lax", path: "/", maxAge: 86400 });
+      return response;
+    }
+
     const cached = await getCached<{ username: string; name: string; password: string; role: string }>(`auth:company:${usernameHash}`, 1800);
     if (cached) {
       const valid = await verifyCompanyPassword(password, cached.password);
       if (!valid) {
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       }
+      memo.set(usernameHash, cached);
       const token = await generateCompanyToken(cached.username, getJwtSecret());
       const response = NextResponse.json({ token, username: cached.username, name: cached.name, role: cached.role });
       response.cookies.set("company_token", token, { httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 86400 });
@@ -43,6 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     setCached(`auth:company:${usernameHash}`, { username: admin.username, name: admin.name, password: admin.password, role: admin.role }).catch(() => {});
+    memo.set(usernameHash, { username: admin.username, name: admin.name, password: admin.password, role: admin.role });
 
     const token = await generateCompanyToken(admin.username, getJwtSecret());
     const response = NextResponse.json({ token, username: admin.username, name: admin.name, role: admin.role });
