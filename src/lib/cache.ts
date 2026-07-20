@@ -38,11 +38,19 @@ export async function setCached(key: string, data: unknown): Promise<void> {
   } catch {}
 }
 
-export async function invalidateCache(key: string): Promise<void> {
+export async function invalidateCache(keyOrPrefix: string): Promise<void> {
   try {
     const kv = await getKV();
     if (!kv) return;
-    await kv.delete(key);
+    if (keyOrPrefix.endsWith(":*")) {
+      const prefix = keyOrPrefix.slice(0, -2);
+      const listed = await kv.list({ prefix });
+      for (const k of listed.keys) {
+        kv.delete(k.name).catch(() => {});
+      }
+    } else {
+      await kv.delete(keyOrPrefix);
+    }
   } catch {}
 }
 

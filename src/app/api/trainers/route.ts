@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, queryFirst, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
-import { invalidateCache } from "@/lib/cache";
+import { getCached, setCached, invalidateCache } from "@/lib/cache";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get("all") === "1";
+    const cacheKey = `trainers:${includeInactive ? "all" : "active"}`;
+    const cached = await getCached<any[]>(cacheKey, 300);
+    if (cached) return NextResponse.json({ trainers: cached });
+
     const sql = `SELECT t.*, i.name as institution_name, i.name_bn as institution_name_bn, i.logo_url as institution_logo
        FROM trainers t LEFT JOIN institutions i ON i.id = t.institution_id
        WHERE ${includeInactive ? "1" : "t.is_active = 1"}
@@ -17,6 +21,7 @@ export async function GET(request: NextRequest) {
       coursesEn: r.courses_en ? JSON.parse(r.courses_en) : [],
       coursesBn: r.courses_bn ? JSON.parse(r.courses_bn) : [],
     }));
+    await setCached(cacheKey, trainers);
     return NextResponse.json({ trainers });
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -36,7 +41,7 @@ export async function POST(request: NextRequest) {
     };
     if (!body.name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
     const db = await getDB();
-    await invalidateCache("trainers");
+    await invalidateCache("trainers:*");
     const result = await execute(db,
       `INSERT INTO trainers (name, name_bn, specialty_en, specialty_bn, credential_en, credential_bn,
         bio_en, bio_bn, image_url, experience_years, institution_id, sort_order, courses_en, courses_bn)

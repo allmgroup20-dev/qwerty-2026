@@ -11,10 +11,10 @@ export async function GET(request: NextRequest) {
     const visibleOnly = searchParams.get("visibleOnly");
 
     const cacheKey = `courses:c:${categoryId || ""}:n:${isNew ?? ""}:v:${visibleOnly || ""}`;
-    const cached = await getCached<any[]>(cacheKey, 30);
+    const cached = await getCached<any[]>(cacheKey, 300);
     if (cached) {
       const resp = NextResponse.json({ courses: cached });
-      resp.headers.set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120");
+      resp.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
       return resp;
     }
 
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     }));
     await setCached(cacheKey, courses);
     const resp = NextResponse.json({ courses });
-    resp.headers.set("Cache-Control", "public, s-maxage=30, stale-while-revalidate=120");
+    resp.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
     return resp;
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await getDB();
-    await invalidateCache("courses");
+    await invalidateCache("courses:*");
     const result = await execute(db,
       `INSERT INTO courses (title, title_bn, description, description_bn,
         is_new, is_visible, price, is_premium, trainer_id, institution_id)

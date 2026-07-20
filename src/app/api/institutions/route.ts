@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, queryFirst, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
-import { invalidateCache } from "@/lib/cache";
+import { getCached, setCached, invalidateCache } from "@/lib/cache";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get("all") === "1";
+    const cacheKey = `institutions:${includeInactive ? "all" : "active"}`;
+    const cached = await getCached<any[]>(cacheKey, 300);
+    if (cached) return NextResponse.json({ institutions: cached });
+
     const sql = `SELECT * FROM institutions WHERE ${includeInactive ? "1" : "is_active = 1"} ORDER BY sort_order ASC, id DESC`;
     const institutions = await query<any>(await getDB(), sql);
+    await setCached(cacheKey, institutions);
     return NextResponse.json({ institutions });
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -24,7 +29,7 @@ export async function POST(request: NextRequest) {
     };
     if (!body.name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
     const db = await getDB();
-    await invalidateCache("institutions");
+    await invalidateCache("institutions:*");
     await execute(db,
       `INSERT INTO institutions (name, name_bn, logo_url, description_en, description_bn, website_url, sort_order)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
