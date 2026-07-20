@@ -10,6 +10,7 @@ export type CommStyle = "analytical" | "emotional" | "direct" | "warm" | "standa
 export type TrustReadiness = "ready" | "needs_time" | "skeptical";
 export type DecisionMode = "system1_fast" | "system2_analytical" | "mixed";
 export type SpendStyle = "tightwad" | "spendthrift" | "balanced";
+export type AdlerianNeed = "victim_mindset" | "people_pleasing" | "postponed_happiness" | "superiority_inferiority" | "lack_of_belonging" | "none";
 
 const MOOD_PATTERNS: Record<Mood, RegExp[]> = {
   enthusiastic: [
@@ -504,6 +505,55 @@ export function detectDecisionMode(text: string): DecisionMode {
   if (s1Score === s2Score && s1Score > 0) return "mixed";
   if (words < 15) return "system1_fast";
   return "mixed";
+}
+
+const ADLERIAN_PATTERNS: Record<AdlerianNeed, RegExp[]> = {
+  victim_mindset: [
+    /(?:i can't because|আমি পারি না কারণ|আমার দ্বারা হবে না|ভাগ্য খারাপ|আমার luck খারাপ)/i,
+    /(?:past|অতীত|আগে).{0,30}(?:ruined|নষ্ট|ক্ষতি|damage|ভেঙে|বাধা)/i,
+    /(?:no choice|choice নাই|no option|option নাই|বাধ্য|উপায় নেই)/i,
+    /(?:always|সবসময়).{0,20}(?:bad|খারাপ|problem|সমস্যা|misfortune|দুর্ভাগ্য)/i,
+  ],
+  people_pleasing: [
+    /(?:what will people say|লোক কী বলবে|মানুষ কী ভাববে|সমাজ কী বলবে)/i,
+    /(?:everyone|সবাই).{0,20}(?:approve|accept|agree|মত|ভাল|পছন্দ)/i,
+    /(?:ashamed|লজ্জা|শরম|face|মুখ দেখাব).{0,20}(?:family|পরিবার|people|লোক)/i,
+    /(?:disappoint|নিরাশ|upset|মন খারাপ).{0,20}(?:family|পরিবার|father|mother|parents|বাবা|মা)/i,
+  ],
+  postponed_happiness: [
+    /(?:when i get success|if i earn|যখন সফল হব|যখন টাকা হবে|আমি পারলে).{0,30}(?:then|তখন|will|হব|করব)/i,
+    /(?:after|পরে).{0,20}(?:success|সফল|rich|ধনী|earn|আয়).{0,20}(?:happy|সুখী|enjoy|উপভোগ)/i,
+    /(?:one day|একদিন|someday|কোনো একদিন).{0,30}(?:happy|সুখী|good life|ভাল জীবন)/i,
+  ],
+  superiority_inferiority: [
+    /(?:i am not good enough|আমি যথেষ্ট ভাল না|আমি পারব না|আমি পিছিয়ে|আমি কম)/i,
+    /(?:others are better|অনেকে বেশি|সবাই এগিয়ে|অনেকের চেয়ে|তুলনায় পিছিয়ে)/i,
+    /(?:i am better|আমি আলাদা|আমি স্পেশাল|আমি সবার থেকে|শুধু আমি পারি)/i,
+    /(?:nobody understands|কেউ বোঝে না|কেউ বুঝবে না|কেউ বুঝতে চায় না)/i,
+  ],
+  lack_of_belonging: [
+    /(?:alone|একা|alone|alone|isolated|আইসোলেটেড|lonely|নিঃসঙ্গ)/i,
+    /(?:nobody cares|কেউ care করে না|কেউ খোঁজ নেয় না|কেউ সাহায্য করে না)/i,
+    /(?:not part of|আমি অংশ না|fit in|fit করি না|বিলং করি না)/i,
+    /(?:outsider|বাইরের|আউটসাইডার|different|অন্য রকম|আলাদা)/i,
+  ],
+  none: [],
+};
+
+export function detectAdlerianNeed(text: string): { need: AdlerianNeed; confidence: number; evidence: string } {
+  let bestNeed: AdlerianNeed = "none";
+  let bestScore = 0;
+  let bestEvidence = "";
+  for (const [need, patterns] of Object.entries(ADLERIAN_PATTERNS)) {
+    if (need === "none") continue;
+    let score = 0;
+    const matches: string[] = [];
+    for (const pat of patterns) {
+      if (pat.test(text)) { score++; matches.push(pat.source); }
+    }
+    if (score > bestScore) { bestScore = score; bestNeed = need as AdlerianNeed; bestEvidence = matches.slice(0, 2).join(", "); }
+  }
+  return { need: bestNeed, confidence: bestScore > 0 ? Math.min(bestScore / 3, 1) : 0, evidence: bestEvidence };
 }
 
 export function extractKeywords(text: string): string[] {
