@@ -106,11 +106,6 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 pb-16 lg:pb-0">
-        {children}
-      </main>
-
       {/* Desktop Secondary Nav */}
       <nav className="hidden lg:flex items-center gap-0.5 px-4 py-1.5 bg-white border-b border-border/40 overflow-x-auto scrollbar-none">
         <button
@@ -127,6 +122,11 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
           </Link>
         ))}
       </nav>
+
+      {/* Main Content */}
+      <main className="flex-1 pb-16 lg:pb-0">
+        {children}
+      </main>
 
       {/* Bottom Tab Bar (mobile) */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border/80 flex items-center gap-0.5 h-14 px-1 overflow-x-auto scrollbar-none safe-area-bottom">
