@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callAI, buildSystemPrompt, getPersona, analyzePainPoints, analyzeInterests, detectLanguage, detectMood, detectTrustLevel, detectControlResistance, detectManipulationVulnerability, detectFearProfile, detectMaskStatus, getOrCreateProfile, updateProfileFromChat, updateProfileTrust, saveMessage } from "@/lib/ai";
+import { callAI, buildSystemPrompt, getPersona, analyzePainPoints, analyzeInterests, detectLanguage, detectMood, detectTrustLevel, detectControlResistance, detectManipulationVulnerability, detectFearProfile, detectMaskStatus, detectDecisionMode, getOrCreateProfile, updateProfileFromChat, updateProfileTrust, saveMessage } from "@/lib/ai";
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
     const manipulationVulnerability = detectManipulationVulnerability(prompt);
     const fearProfile = detectFearProfile(prompt);
     const maskStatus = detectMaskStatus(prompt);
+    const decisionMode = detectDecisionMode(prompt);
 
     let profile = null;
     if (phone) {
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
       manipulationVulnerability,
       fearProfile,
       maskStatus,
+      decisionMode,
     });
 
     const result = await callAI({

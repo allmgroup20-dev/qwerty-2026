@@ -3,7 +3,7 @@ import { getHistory } from "./history";
 import { getSimilarUserContext } from "./cross-user-learning";
 import type { Persona } from "./persona";
 import type { PhoneProfile } from "./profiler";
-import type { Mood, Dialect, Religion, TrustLevel, ControlResistance, ManipulationVulnerability, FearProfile, MaskStatus, CommStyle, TrustReadiness } from "./analyzer";
+import type { Mood, Dialect, Religion, TrustLevel, ControlResistance, ManipulationVulnerability, FearProfile, MaskStatus, CommStyle, TrustReadiness, DecisionMode } from "./analyzer";
 
 /* ===== CUSTOMER PSYCHOLOGY (14 techniques) ===== */
 const CUSTOMER_PSYCHOLOGY: Record<string, string> = {
@@ -60,6 +60,15 @@ const DEEP_PSYCHOLOGY: Record<string, string> = {
   pattern_interrupt: "If they're stuck in negative loop (scam fear, doubt), interrupt with unexpected question: 'If money weren't a factor, what would your ideal life look like?'",
   deep_listening: "Listen to what's NOT said. Pauses, hesitations, vague answers reveal more than words. Acknowledge the silence: 'I can see you're thinking deeply about this.'",
   identity_affirmation: "Connect the offer to who they ARE, not who they could be: 'You're someone who values security for your family. This aligns with that.'",
+};
+
+/* ===== DUAL-PROCESS THEORY (System 1 & System 2 — Kahneman & Tversky) ===== */
+const DUAL_PROCESS = {
+  system1_first: "95% of decisions are made by System 1 (fast, emotional, subconscious). Your FIRST 3 seconds must hook System 1: use simple language, short sentences, emotional connection, vivid imagery. Then serve System 2 with details, data, comparisons. Never lead with logic — lead with feeling, then justify with facts.",
+  system2_pain: "When you must present complex information (pricing, comparisons, specs), do it AFTER establishing emotional safety. System 2 consumes energy — people avoid it when stressed or distracted. If they're in System 1 mode (fast replies, emotional words), stay in System 1. If they start asking analytical questions, switch to System 2.",
+  hook_anchor: "Open every message with a System 1 hook in the first line: a vivid image, an emotional question, a relatable scenario. 'কল্পনা করুন...' 'আপনি কি কখনও ভেবেছেন...' 'একথা কি সম্ভব...' Then follow with System 2 substance.",
+  hot_cold_state: "System 1 = 'hot state' (emotional, impulsive, now-focused). System 2 = 'cold state' (calm, rational, future-focused). When someone is in a hot state (excited, scared, angry), DO NOT present complicated options. Validate their emotion first. Guide them to a cold state before System 2 reasoning.",
+  default_system1: "Default to System 1 communication: emotional safety → vivid imagery → social proof → simple choice. Add System 2 (data, comparisons, specifications) only when the person explicitly asks for it or shows analytical communication style.",
 };
 
 /* ===== PERSUASION TECHNIQUES (8 — from The Art of Persuasion by Bob Berg) ===== */
@@ -263,6 +272,7 @@ export async function buildSystemPrompt(params: {
   maskStatus?: MaskStatus;
   commStyle?: CommStyle;
   trustReadiness?: TrustReadiness;
+  decisionMode?: DecisionMode;
 }): Promise<string> {
   const parts: string[] = [];
 
@@ -397,6 +407,13 @@ export async function buildSystemPrompt(params: {
   }
   parts.push("");
 
+  /* --- Dual-Process Theory (System 1 & System 2 — Neuromarketing) --- */
+  parts.push("DUAL-PROCESS THEORY (System 1 & System 2 — apply every message):");
+  for (const [, prompt] of Object.entries(DUAL_PROCESS)) {
+    parts.push(`- ${prompt}`);
+  }
+  parts.push("");
+
   /* --- Persuasion Techniques (The Art of Persuasion) --- */
   parts.push("PERSUASION TECHNIQUES (apply contextually — the user should feel understood, not sold to):");
   for (const [, prompt] of Object.entries(PERSUASION_TECHNIQUES)) {
@@ -459,6 +476,13 @@ export async function buildSystemPrompt(params: {
       skeptical: "They are skeptical about trusting. Be hyper-transparent. Provide proof. Validate their caution.",
     };
     profileSections.push(`Trust Readiness: ${params.trustReadiness}. ${trustReadinessGuides[params.trustReadiness] || ""}`);
+  }
+  if (params.decisionMode && params.decisionMode !== "mixed") {
+    const modeGuides: Record<string, string> = {
+      system1_fast: "They are in System 1 mode (fast, emotional, impulsive). Keep messages short. Lead with feeling not data. Use vivid imagery, stories, and simple choices. DO NOT dump complex information.",
+      system2_analytical: "They are in System 2 mode (analytical, logical, careful). They want data, comparisons, proof. Provide structured information — bullet points, numbers, evidence. But still anchor emotionally at the end.",
+    };
+    profileSections.push(`Decision Mode: ${params.decisionMode}. ${modeGuides[params.decisionMode] || ""}`);
   }
   if (profileSections.length > 0) {
     parts.push("DEEP PSYCHOLOGICAL PROFILE:");

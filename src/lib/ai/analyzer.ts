@@ -8,6 +8,7 @@ export type FearProfile = "financial_loss" | "social_status" | "being_deceived" 
 export type MaskStatus = "open" | "partial" | "masked";
 export type CommStyle = "analytical" | "emotional" | "direct" | "warm" | "standard";
 export type TrustReadiness = "ready" | "needs_time" | "skeptical";
+export type DecisionMode = "system1_fast" | "system2_analytical" | "mixed";
 
 const MOOD_PATTERNS: Record<Mood, RegExp[]> = {
   enthusiastic: [
@@ -453,6 +454,33 @@ export function detectTrustReadiness(text: string): TrustReadiness {
     if (sc > bestScore) { bestScore = sc; best = s as TrustReadiness; }
   }
   return best;
+}
+
+const DECISION_MODE_PATTERNS: Record<DecisionMode, RegExp[]> = {
+  system1_fast: [
+    /\b(?:yes|no|ok|tell me|want|need|now|right now|i like|interested|give me|show me|how much|koto|দাম|কত|cost)\b/i,
+    /(?:excited|worried|scared|happy|sad|angry|love|hate|feel|ভয়|চাই|দরকার|এখনি|তাড়াতাড়ি)/i,
+    /^.{1,50}$/,  // short messages
+  ],
+  system2_analytical: [
+    /\b(?:compare|specific|exactly|reason|because|explain|difference|why|how exactly|evidence|data|research|details)\b/i,
+    /\b(?:percent|percentage|ratio|average|statistics|analysis|analyz|evaluate|assess)\b/i,
+    /\b(?:tell more|details|বিস্তারিত|ডিটেল|compare|তুলনা|specification|স্পেসিফিকেশন)\b/i,
+    /.{200,}/,  // long messages
+  ],
+  mixed: [],
+};
+
+export function detectDecisionMode(text: string): DecisionMode {
+  const s1Score = DECISION_MODE_PATTERNS.system1_fast.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+  const s2Score = DECISION_MODE_PATTERNS.system2_analytical.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+  const words = text.split(/\s+/).length;
+  const hasQuestion = text.includes("?");
+  if (s1Score >= 2 && s2Score <= 1 && words < 30) return "system1_fast";
+  if (s2Score >= 2 || (words > 40 && hasQuestion)) return "system2_analytical";
+  if (s1Score === s2Score && s1Score > 0) return "mixed";
+  if (words < 15) return "system1_fast";
+  return "mixed";
 }
 
 export function extractKeywords(text: string): string[] {
