@@ -16,6 +16,9 @@ export interface PhoneProfile {
   last_chat_at: string | null;
   status: string;
   notes: string | null;
+  trust_score: number;
+  control_sensitivity: string | null;
+  manipulation_risk: string | null;
 }
 
 const SECTOR_PATTERNS: [RegExp, string][] = [
@@ -126,4 +129,31 @@ export async function updateProfileScore(phone: string, score: number): Promise<
     "UPDATE ai_phone_profiles SET priority_score = ?, updated_at = datetime('now') WHERE phone = ?",
     [score, phone]
   );
+}
+
+export async function updateProfileTrust(
+  phone: string,
+  trustScore: number,
+  controlSensitivity: string,
+  manipulationRisk: string
+): Promise<void> {
+  const db = await ensureDB();
+  try {
+    await execute(
+      { DB: db },
+      `UPDATE ai_phone_profiles SET trust_score = ?, control_sensitivity = ?, manipulation_risk = ?, updated_at = datetime('now') WHERE phone = ?`,
+      [trustScore, controlSensitivity, manipulationRisk, phone]
+    );
+  } catch {
+    try {
+      await execute({ DB: db }, "ALTER TABLE ai_phone_profiles ADD COLUMN trust_score REAL DEFAULT 0");
+      await execute({ DB: db }, "ALTER TABLE ai_phone_profiles ADD COLUMN control_sensitivity TEXT DEFAULT 'medium'");
+      await execute({ DB: db }, "ALTER TABLE ai_phone_profiles ADD COLUMN manipulation_risk TEXT DEFAULT 'medium'");
+      await execute(
+        { DB: db },
+        `UPDATE ai_phone_profiles SET trust_score = ?, control_sensitivity = ?, manipulation_risk = ?, updated_at = datetime('now') WHERE phone = ?`,
+        [trustScore, controlSensitivity, manipulationRisk, phone]
+      );
+    } catch {}
+  }
 }

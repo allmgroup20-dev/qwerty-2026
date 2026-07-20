@@ -825,3 +825,21 @@ export const knowledgeAccumulation = sqliteTable("knowledge_accumulation", {
   reviewedAt: text("reviewed_at"),
   createdAt: text("created_at").default("datetime('now')"),
 });
+
+// ── AI Knowledge Distribution (tracks what knowledge each agent/employee has & where it came from) ──
+export const aiKnowledgeDistribution = sqliteTable("ai_knowledge_distribution", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  sourceType: text("source_type").notNull(), // 'book' | 'training' | 'agent' | 'system' | 'manual'
+  sourceId: text("source_id").notNull(), // e.g. 'talking_with_psychopaths', 'training_module_1'
+  sourceName: text("source_name"), // e.g. "Talking with Psychopaths and Savages"
+  targetType: text("target_type").notNull(), // 'agent' | 'employee' | 'department' | 'all'
+  targetId: text("target_id").notNull(), // agent_id, employee_id, department_id, or 'all'
+  targetName: text("target_name"),
+  knowledgeTitle: text("knowledge_title").notNull(),
+  knowledgeContent: text("knowledge_content").notNull(),
+  knowledgeCategory: text("knowledge_category").default("general"),
+  origin: text("origin").default("system"),
+  confidence: real("confidence").default(1.0),
+  createdAt: text("created_at").default("datetime('now')"),
+  updatedAt: text("updated_at"),
+});

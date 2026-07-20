@@ -63,6 +63,11 @@ export interface MessageCtx {
   interests: string[];
   isWorker: boolean;
   isPremium: boolean;
+  trustLevel?: string;
+  controlResistance?: string;
+  manipulationVulnerability?: string;
+  fearProfile?: string;
+  maskStatus?: string;
 }
 
 export interface CrossDeptStep {

@@ -34,6 +34,7 @@ const linkGroups = [
       { href: "/company/ai", en: "AI Hub", bn: "এআই হাব", icon: "🤖", color: "bg-indigo-50 text-indigo-600" },
       { href: "/company/automation", en: "Automation", bn: "অটোমেশন", icon: "⚡", color: "bg-amber-50 text-amber-600" },
       { href: "/company/sentiment", en: "Sentiment", bn: "সেন্টিমেন্ট", icon: "📈", color: "bg-rose-50 text-rose-600" },
+      { href: "/company/ai-distribution", en: "AI Distribution", bn: "এআই বিতরণ", icon: "📚", color: "bg-emerald-50 text-emerald-600" },
     ],
   },
   {

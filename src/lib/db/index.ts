@@ -962,6 +962,29 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
 
+    // ─── AI Phone Profile new columns ───
+    try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN trust_score REAL DEFAULT 0").run(); } catch {}
+    try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN control_sensitivity TEXT DEFAULT 'medium'").run(); } catch {}
+    try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN manipulation_risk TEXT DEFAULT 'medium'").run(); } catch {}
+
+    // ─── AI Knowledge Distribution ───
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_knowledge_distribution (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_type TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      source_name TEXT,
+      target_type TEXT NOT NULL,
+      target_id TEXT NOT NULL,
+      target_name TEXT,
+      knowledge_title TEXT NOT NULL,
+      knowledge_content TEXT NOT NULL,
+      knowledge_category TEXT DEFAULT 'general',
+      origin TEXT DEFAULT 'system',
+      confidence REAL DEFAULT 1.0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT
+    )`).run();
+
     // ─── System monitoring tables (Phase 1: Error Tracking) ───
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS system_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

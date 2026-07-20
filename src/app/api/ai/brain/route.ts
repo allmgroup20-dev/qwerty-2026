@@ -3,7 +3,9 @@ import {
   processMessage,
   detectLanguage, detectMood, detectDialect, detectReligion,
   analyzePainPoints, analyzeInterests,
-  getOrCreateProfile, isWorkerPhone, getWorkerPremiumStatus,
+  detectTrustLevel, detectControlResistance, detectManipulationVulnerability,
+  detectFearProfile, detectMaskStatus,
+  getOrCreateProfile, updateProfileTrust, isWorkerPhone, getWorkerPremiumStatus,
   getOrCreateLead,
 } from "@/lib/ai";
 import type { MessageCtx } from "@/lib/ai/brain/types";
@@ -81,6 +83,17 @@ export async function POST(request: NextRequest) {
     const painPoints = analyzePainPoints(text);
     const interests = analyzeInterests(text);
 
+    const trustLevel = detectTrustLevel(text);
+    const controlResistance = detectControlResistance(text);
+    const manipulationVulnerability = detectManipulationVulnerability(text);
+    const fearProfile = detectFearProfile(text);
+    const maskStatus = detectMaskStatus(text);
+
+    await updateProfileTrust(phone,
+      trustLevel === "trusting" ? 8 : trustLevel === "neutral" ? 5 : trustLevel === "defensive" ? 3 : 1,
+      controlResistance, manipulationVulnerability
+    );
+
     await getOrCreateLead(phone);
 
     const ctx: MessageCtx = {
@@ -97,6 +110,11 @@ export async function POST(request: NextRequest) {
       interests,
       isWorker,
       isPremium,
+      trustLevel,
+      controlResistance,
+      manipulationVulnerability,
+      fearProfile,
+      maskStatus,
     };
 
     // ── Check cache — skip processing if cached ──

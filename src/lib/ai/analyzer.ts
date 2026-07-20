@@ -1,6 +1,11 @@
 export type Mood = "enthusiastic" | "neutral" | "skeptical" | "bored" | "distracted";
 export type Dialect = "dhaka" | "chittagong" | "sylhet" | "rural" | "standard";
 export type Religion = "muslim" | "hindu" | "christian" | "unknown";
+export type TrustLevel = "trusting" | "neutral" | "defensive" | "suspicious";
+export type ControlResistance = "low" | "medium" | "high";
+export type ManipulationVulnerability = "low" | "medium" | "high";
+export type FearProfile = "financial_loss" | "social_status" | "being_deceived" | "losing_autonomy" | "unknown";
+export type MaskStatus = "open" | "partial" | "masked";
 
 const MOOD_PATTERNS: Record<Mood, RegExp[]> = {
   enthusiastic: [
@@ -129,6 +134,118 @@ const INTEREST_PATTERNS: Record<string, RegExp[]> = {
   ],
 };
 
+const TRUST_PATTERNS: Record<TrustLevel, RegExp[]> = {
+  trusting: [
+    /\b(?:trust|বিশ্বাস|believe|আস্থা|confident|আত্মবিশ্বাস)\b/i,
+    /(?:thank you|ধন্যবাদ|great|চমৎকার).{0,30}(?:help|সাহায্য|guide|গাইড)/i,
+    /(?:sure|অবশ্যই|ok|ঠিক আছে).{0,20}(?:tell me|বলুন|আপনিই|you decide)/i,
+  ],
+  neutral: [
+    /\b(?:ok|okay|ঠিক আছে|হ্যাঁ|accha|আচ্ছা|ji|জি)\b/i,
+    /(?:tell me|বলুন|what is|কি|how|কিভাবে).{0,20}(?:more|আরও)/i,
+    /^.{3,30}\?$/,
+  ],
+  defensive: [
+    /\b(?:why|কেন|how|কিভাবে).{0,30}(?:trust|বিশ্বাস|believe|আস্থা|sure|নিশ্চিত)\b/i,
+    /(?:not sure|নিশ্চিত না| doubt|সন্দেহ|confus|কনফিউজ)/i,
+    /(?:need|চাই).{0,20}(?:proof|প্রমাণ|time|সময়|think|ভাবি)/i,
+    /(?:too good|এত ভাল|suspicious|সন্দেহজনক|scam|প্রতারণা)/i,
+  ],
+  suspicious: [
+    /\b(?:scam|fraud|cheat|fake|ভুয়া|প্রতারণা|ঠক)\b/i,
+    /(?:prove|প্রমাণ|show.{0,10}evidence|legal|আইন).{0,30}(?:first|আগে|document|কাগজ)/i,
+    /(?:police|থানা|court|কোর্ট|lawyer|আইনজীবী|complaint|অভিযোগ)/i,
+    /(?:don't|না).{0,10}(?:trust|বিশ্বাস|believe|আস্থা)/i,
+  ],
+};
+
+const CONTROL_RESISTANCE_PATTERNS: Record<ControlResistance, RegExp[]> = {
+  low: [
+    /\b(?:you decide|আপনিই বলুন|whatever|যাই বলেন|up to you)\b/i,
+    /(?:tell me|বলুন|guide|গাইড|suggest|পরামর্শ).{0,20}(?:what to|কি|what should)/i,
+    /(?:please|প্লিজ|অনুগ্রহ).{0,20}(?:help|সাহায্য|show|দেখান)/i,
+  ],
+  medium: [
+    /\b(?:ok but|ঠিক আছে কিন্তু|yes but|হ্যাঁ কিন্তু|maybe|হয়তো)\b/i,
+    /(?:let me|আমি.{0,10}(?:think|ভাবি|see|দেখি|check|চেক))/i,
+    /(?:need.{0,20}(?:info|তথ্য|details|বিস্তারিত|understand|বুঝি))/i,
+  ],
+  high: [
+    /\b(?:no|না|nah|nι)\b/i,
+    /(?:don't|করবেন না|stop|বন্ধ|enough|ঢের|my choice|আমার সিদ্ধান্ত)/i,
+    /(?:i will|আমি.{0,10}(?:decide|সিদ্ধান্ত|know|জানি|choose|নেব))/i,
+    /(?:not interested|আগ্রহী না|busy|ব্যস্ত|later|পরে).{0,20}(?:no|না|don't|নাই)/i,
+  ],
+};
+
+const MANIPULATION_VULNERABILITY_PATTERNS: Record<ManipulationVulnerability, RegExp[]> = {
+  low: [
+    /\b(?:prove|প্রমাণ|evidence|document|কাগজ|legal|আইনি)\b/i,
+    /(?:check|চেক|verify|ভেরিফাই|research|রিসার্চ).{0,20}(?:first|আগে|before|পূর্বে)/i,
+    /(?:scam|fraud|fake|প্রতারণা).{0,20}(?:detect|identify|চেনা)/i,
+    /\b(?:reference|রেফারেন্স|source|উৎস|link|লিংক)\b/i,
+  ],
+  medium: [
+    /\b(?:trust|বিশ্বাস|believe|আস্থা).{0,20}(?:you|আপনাকে|them|তাদের)\b/i,
+    /(?:ok tell me|বলুন|show me|দেখান|interested|আগ্রহী)/i,
+    /(?:how much|কত|price|দাম|cost|খরচ|join|যোগদান)/i,
+  ],
+  high: [
+    /\b(?:please|প্লিজ).{0,20}(?:help|সাহায্য|tell|বলুন|show|দেখান)\b/i,
+    /(?:urgent|জরুরি|immediate|এখনি|quick|দ্রুত).{0,20}(?:need|চাই|help|সাহায্য)/i,
+    /(?:desperate|হতাশ|struggl|স্ট্রাগল|suffer|কষ্ট).{0,20}(?:money|টাকা|income|আয়)/i,
+    /(?:any.{0,10}(?:help|সাহায্য|work|কাজ|job|চাকরি)).{0,20}(?:please|প্লিজ|need|চাই)/i,
+  ],
+};
+
+const FEAR_PATTERNS: Record<FearProfile, RegExp[]> = {
+  financial_loss: [
+    /\b(?:money|টাকা|income|আয়).{0,30}(?:loss|ক্ষতি|waste|নষ্ট|risk|ঝুঁকি)\b/i,
+    /(?:savings|সঞ্চয়|investment|বিনিয়োগ).{0,20}(?:lost|হারিয়ে|gone|নেই|risk|ঝুঁকি)/i,
+    /(?:expensive|দামী|costly|ব্যয়বহুল|waste|নষ্ট).{0,20}(?:money|টাকা|taka|টাকা)/i,
+    /(?:poor|গরিব|beggar|ভিক্ষুক).{0,20}(?:become|হয়ে|become|হওয়া)/i,
+  ],
+  social_status: [
+    /\b(?:people|মানুষ|লোক).{0,20}(?:think|ভাববে|say|বলবে|judge|বিচার)\b/i,
+    /(?:embarrass|লজ্জা|shame|অপমান|prestige|মর্যাদা|izzat|ইজ্জত)/i,
+    /(?:family|পরিবার|parents|বাবা|mother|মা).{0,20}(?:ashamed|লজ্জিত|upset|মনঃক্ষুণ্ণ)/i,
+    /(?:society|সমাজ|community|কমিউনিটি|village|গ্রাম).{0,20}(?:gossip|গসিপ|talk|কথা)/i,
+  ],
+  being_deceived: [
+    /\b(?:scam|fraud|cheat|fake|প্রতারণা|ভুয়া|ঠক)\b/i,
+    /(?:trust|বিশ্বাস|believe|আস্থা).{0,20}(?:broken|ভাঙা|betray|প্রতারণা|lost|হারানো)/i,
+    /(?:fool|বোকা|foolish|মূর্খ).{0,20}(?:make|বানানো|treated|ব্যবহার)/i,
+    /(?:deceive|প্রতারণা|mislead|ভুল.{0,10}পথে|dishonest|অসৎ)/i,
+  ],
+  losing_autonomy: [
+    /\b(?:control|নিয়ন্ত্রণ|freedom|স্বাধীনতা|choice|পছন্দ|option|অপশন)\b/i,
+    /(?:trap|ফাঁদ|bind|বাঁধা|pressure|চাপ|force|জোর).{0,20}(?:me|আমাকে|into|করানো)/i,
+    /(?:my.{0,10}(?:decision|সিদ্ধান্ত|life|জীবন|choice|পছন্দ))/i,
+    /(?:don't|না).{0,20}(?:control|নিয়ন্ত্রণ|dominate|আধিপত্য|tell.{0,10}what|বলে)/i,
+  ],
+  unknown: [],
+};
+
+const MASK_PATTERNS: Record<MaskStatus, RegExp[]> = {
+  open: [
+    /\b(?:honest|সত্যি|truth|সত্য|real|আসল|actually|আসলে)\b/i,
+    /(?:struggl|স্ট্রাগল|struggle|কষ্ট|hard|কঠিন|difficult|সমস্যা)/i,
+    /(?:feel|অনুভব|feelings|আবেগ|emotion|অনুভূতি).{0,30}(?:lonely|একা|sad|দুঃখ|frustrat|হতাশ)/i,
+    /(?:need|চাই|want|চাই|require|দরকার).{0,20}(?:help|সাহায্য|support|সাপোর্ট|guidance|পরামর্শ)/i,
+  ],
+  partial: [
+    /\b(?:fine|ভালো|ok|ঠিক|alright|আচ্ছা)\b/i,
+    /(?:normal|স্বাভাবিক|same|একই|usual|সাধারণ).{0,20}(?:nothing|কিছু না|everything|সব ঠিক)/i,
+    /(?:i'm ok|আমি ঠিক|no problem|সমস্যা নেই|it's ok|ঠিক আছে).{0,20}(?:but|কিন্তু)/i,
+  ],
+  masked: [
+    /\b(?:great|চমৎকার|perfect|পারফেক্ট|excellent|excellent|all good|সব ভালো)\b/i,
+    /(?:everything|সবকিছু).{0,20}(?:fine|ভালো|great|চমৎকার|perfect|পারফেক্ট)/i,
+    /(?:no.{0,10}(?:problem|সমস্যা|issue|কিছু|worry|চিন্তা))/i,
+    /(?:never|কখনো না|nothing|কিছু না|no need|দরকার নেই).{0,20}(?:better|ভালো|fine|ঠিক)/i,
+  ],
+};
+
 export function detectLanguage(text: string): "bn" | "en" | "mixed" {
   const bengaliChars = text.match(/[\u0980-\u09FF]/g);
   if (!bengaliChars) return "en";
@@ -202,6 +319,90 @@ export function detectReligion(text: string): Religion {
     }
   }
   return "unknown";
+}
+
+export function detectTrustLevel(text: string): TrustLevel {
+  const scores: Record<TrustLevel, number> = { trusting: 0, neutral: 0, defensive: 0, suspicious: 0 };
+  for (const [level, patterns] of Object.entries(TRUST_PATTERNS)) {
+    for (const pattern of patterns) {
+      if (pattern.test(text)) scores[level as TrustLevel] += 1.5;
+    }
+  }
+  const len = text.length;
+  if (len < 10) scores.neutral += 1;
+  if (/\b(?:but|kintu|কিন্তু|তবে)\b/i.test(text) && /\b(?:ok|ঠিক)\b/i.test(text)) scores.defensive += 1;
+  if (text.includes("??") || text.includes("!!")) scores.suspicious += 0.5;
+  let best: TrustLevel = "neutral";
+  let bestScore = 0;
+  for (const [level, score] of Object.entries(scores)) {
+    if (score > bestScore) { bestScore = score; best = level as TrustLevel; }
+  }
+  return best;
+}
+
+export function detectControlResistance(text: string): ControlResistance {
+  const scores: Record<ControlResistance, number> = { low: 0, medium: 0, high: 0 };
+  for (const [level, patterns] of Object.entries(CONTROL_RESISTANCE_PATTERNS)) {
+    for (const pattern of patterns) {
+      if (pattern.test(text)) scores[level as ControlResistance] += 1.5;
+    }
+  }
+  if (text.includes("?")) scores.medium += 0.5;
+  if (/\b(?:my|আমার|i|আমি)\b/i.test(text) && /\b(?:want|চাই|will|করব|need|দরকার)\b/i.test(text)) scores.high += 1;
+  let best: ControlResistance = "medium";
+  let bestScore = 0;
+  for (const [level, score] of Object.entries(scores)) {
+    if (score > bestScore) { bestScore = score; best = level as ControlResistance; }
+  }
+  return best;
+}
+
+export function detectManipulationVulnerability(text: string): ManipulationVulnerability {
+  const scores: Record<ManipulationVulnerability, number> = { low: 0, medium: 0, high: 0 };
+  for (const [level, patterns] of Object.entries(MANIPULATION_VULNERABILITY_PATTERNS)) {
+    for (const pattern of patterns) {
+      if (pattern.test(text)) scores[level as ManipulationVulnerability] += 1.5;
+    }
+  }
+  const urgent = /\b(?:urgent|জরুরি|now|এখন|fast|দ্রুত|quick|তাড়াতাড়ি)\b/i.test(text);
+  const desperate = /\b(?:please|প্লিজ|beg|ভিক্ষা|help.{0,10}me|আমাকে সাহায্য)\b/i.test(text);
+  if (urgent && desperate) scores.high += 2;
+  if (text.includes("?")) scores.medium += 0.5;
+  let best: ManipulationVulnerability = "medium";
+  let bestScore = 0;
+  for (const [level, score] of Object.entries(scores)) {
+    if (score > bestScore) { bestScore = score; best = level as ManipulationVulnerability; }
+  }
+  return best;
+}
+
+export function detectFearProfile(text: string): FearProfile {
+  for (const [fear, patterns] of Object.entries(FEAR_PATTERNS)) {
+    if (fear === "unknown") continue;
+    for (const pattern of patterns) {
+      if (pattern.test(text)) return fear as FearProfile;
+    }
+  }
+  return "unknown";
+}
+
+export function detectMaskStatus(text: string): MaskStatus {
+  const scores: Record<MaskStatus, number> = { open: 0, partial: 0, masked: 0 };
+  for (const [status, patterns] of Object.entries(MASK_PATTERNS)) {
+    for (const pattern of patterns) {
+      if (pattern.test(text)) scores[status as MaskStatus] += 1.5;
+    }
+  }
+  const len = text.length;
+  if (len < 20) scores.masked += 1;
+  if (len > 50) scores.open += 0.5;
+  if (text.includes("?")) scores.partial += 0.5;
+  let best: MaskStatus = "partial";
+  let bestScore = 0;
+  for (const [status, score] of Object.entries(scores)) {
+    if (score > bestScore) { bestScore = score; best = status as MaskStatus; }
+  }
+  return best;
 }
 
 export function extractKeywords(text: string): string[] {

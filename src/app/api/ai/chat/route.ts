@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callAI, buildSystemPrompt, getPersona, analyzePainPoints, analyzeInterests, detectLanguage, getOrCreateProfile, updateProfileFromChat, saveMessage } from "@/lib/ai";
+import { callAI, buildSystemPrompt, getPersona, analyzePainPoints, analyzeInterests, detectLanguage, detectMood, detectTrustLevel, detectControlResistance, detectManipulationVulnerability, detectFearProfile, detectMaskStatus, getOrCreateProfile, updateProfileFromChat, updateProfileTrust, saveMessage } from "@/lib/ai";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,19 +16,35 @@ export async function POST(request: NextRequest) {
 
     const persona = getPersona(phone);
     const lang = detectLanguage(prompt);
+    const mood = detectMood(prompt);
     const painPoints = analyzePainPoints(prompt);
     const interests = analyzeInterests(prompt);
+    const trustLevel = detectTrustLevel(prompt);
+    const controlResistance = detectControlResistance(prompt);
+    const manipulationVulnerability = detectManipulationVulnerability(prompt);
+    const fearProfile = detectFearProfile(prompt);
+    const maskStatus = detectMaskStatus(prompt);
 
     let profile = null;
     if (phone) {
       profile = await getOrCreateProfile(phone);
       await updateProfileFromChat(phone, prompt);
+      await updateProfileTrust(phone,
+        trustLevel === "trusting" ? 8 : trustLevel === "neutral" ? 5 : trustLevel === "defensive" ? 3 : 1,
+        controlResistance, manipulationVulnerability
+      );
       await saveMessage(phone, "user", prompt, {
         personaName: persona.name,
         personaGender: persona.gender,
         language: lang,
+        mood,
         painPoints,
         interests,
+        trustLevel,
+        controlResistance,
+        manipulationVulnerability,
+        fearProfile,
+        maskStatus,
       });
     }
 
@@ -40,6 +56,12 @@ export async function POST(request: NextRequest) {
       interests,
       language: lang,
       phone,
+      mood,
+      trustLevel,
+      controlResistance,
+      manipulationVulnerability,
+      fearProfile,
+      maskStatus,
     });
 
     const result = await callAI({
@@ -55,8 +77,14 @@ export async function POST(request: NextRequest) {
         personaName: persona.name,
         personaGender: persona.gender,
         language: lang,
+        mood,
         painPoints,
         interests,
+        trustLevel,
+        controlResistance,
+        manipulationVulnerability,
+        fearProfile,
+        maskStatus,
       });
     }
 

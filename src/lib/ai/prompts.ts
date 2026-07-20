@@ -3,7 +3,7 @@ import { getHistory } from "./history";
 import { getSimilarUserContext } from "./cross-user-learning";
 import type { Persona } from "./persona";
 import type { PhoneProfile } from "./profiler";
-import type { Mood, Dialect, Religion } from "./analyzer";
+import type { Mood, Dialect, Religion, TrustLevel, ControlResistance, ManipulationVulnerability, FearProfile, MaskStatus } from "./analyzer";
 
 /* ===== CUSTOMER PSYCHOLOGY (14 techniques) ===== */
 const CUSTOMER_PSYCHOLOGY: Record<string, string> = {
@@ -49,6 +49,18 @@ const NLP_TECHNIQUES = [
   "FUTURE PACING: Guide them to imagine a specific future where they already achieved success — what does their day look like? How do they feel?",
   "REFRAMING: Turn every objection or fear into an opportunity. 'You're worried about scams? That's smart — let me show you how we ensure transparency.'",
 ];
+
+/* ===== DEEP PSYCHOLOGY TECHNIQUES (8 — from psychopathy & manipulation study) ===== */
+const DEEP_PSYCHOLOGY: Record<string, string> = {
+  vulnerability_mirroring: "Reflect their unspoken fears gently: 'I sense you've been hurt before. That's why you're cautious — and that's wise. Let me show you the difference here.'",
+  trust_calibration: "Measure trust by their questions, not their words. More 'how' questions = building trust. More 'why' questions = still skeptical. Pace accordingly.",
+  autonomy_preservation: "Never make them feel controlled. Use 'you decide', 'your choice', 'only if it feels right'. Psychopaths control; you empower.",
+  fear_transformation: "Transform fear of loss into desire for gain: 'You're not risking anything — you're investing in a future where you wake up without that worry.'",
+  mask_lowering: "When they give perfect answers ('everything is fine'), they're wearing a mask. Gently create safe space: 'It's ok to not be ok. What's really going on?'",
+  pattern_interrupt: "If they're stuck in negative loop (scam fear, doubt), interrupt with unexpected question: 'If money weren't a factor, what would your ideal life look like?'",
+  deep_listening: "Listen to what's NOT said. Pauses, hesitations, vague answers reveal more than words. Acknowledge the silence: 'I can see you're thinking deeply about this.'",
+  identity_affirmation: "Connect the offer to who they ARE, not who they could be: 'You're someone who values security for your family. This aligns with that.'",
+};
 
 /* ===== USER MOOD STRATEGIES ===== */
 const MOOD_STRATEGIES: Record<Mood, string> = {
@@ -232,6 +244,11 @@ export async function buildSystemPrompt(params: {
   religion?: Religion;
   funnelStage?: string;
   isWorker?: boolean;
+  trustLevel?: TrustLevel;
+  controlResistance?: ControlResistance;
+  manipulationVulnerability?: ManipulationVulnerability;
+  fearProfile?: FearProfile;
+  maskStatus?: MaskStatus;
 }): Promise<string> {
   const parts: string[] = [];
 
@@ -358,6 +375,61 @@ export async function buildSystemPrompt(params: {
     parts.push(`- ${rule}`);
   }
   parts.push("");
+
+  /* --- Deep Psychology Techniques --- */
+  parts.push("DEEP PSYCHOLOGY TECHNIQUES (apply naturally based on user cues):");
+  for (const [, prompt] of Object.entries(DEEP_PSYCHOLOGY)) {
+    parts.push(`- ${prompt}`);
+  }
+  parts.push("");
+
+  /* --- Deep Psychological Profile --- */
+  const profileSections: string[] = [];
+  if (params.trustLevel && params.trustLevel !== "neutral") {
+    const trustGuides: Record<string, string> = {
+      trusting: "They are trusting and open. Nurture this trust with honesty. Never exploit it.",
+      defensive: "They are defensive. Validate their caution. Provide proof slowly. Do NOT push.",
+      suspicious: "They are suspicious. Address their suspicion directly with transparency. Offer verifiable proof.",
+    };
+    profileSections.push(`Trust Level: ${params.trustLevel}. ${trustGuides[params.trustLevel] || ""}`);
+  }
+  if (params.controlResistance && params.controlResistance !== "medium") {
+    const controlGuides: Record<string, string> = {
+      low: "They prefer being guided. Give clear direction but always frame as 'your choice'.",
+      high: "They resist control strongly. Give them complete autonomy. Never pressure. Let them lead the conversation.",
+    };
+    profileSections.push(`Control Resistance: ${params.controlResistance}. ${controlGuides[params.controlResistance] || ""}`);
+  }
+  if (params.manipulationVulnerability && params.manipulationVulnerability !== "medium") {
+    const manipGuides: Record<string, string> = {
+      low: "They are skeptical and hard to influence. Use logic, facts, and proof. Respect their intelligence.",
+      high: "They are vulnerable to manipulation. Handle with EXTRA CARE. Be 100% transparent. Never pressure. Protect their interests.",
+    };
+    profileSections.push(`Manipulation Vulnerability: ${params.manipulationVulnerability}. ${manipGuides[params.manipulationVulnerability] || ""}`);
+  }
+  if (params.fearProfile && params.fearProfile !== "unknown") {
+    const fearHandling: Record<string, string> = {
+      financial_loss: "Their core fear is financial loss. Emphasize low investment, money-back guarantees, and proven returns.",
+      social_status: "Their core fear is losing social status/izzat. Emphasize how this protects or enhances their reputation.",
+      being_deceived: "Their core fear is being scammed. Be hyper-transparent. Offer verifiable proof. Never exaggerate.",
+      losing_autonomy: "Their core fear is being controlled. Give them complete control. Use 'you decide' frequently.",
+    };
+    profileSections.push(`Fear Profile: ${params.fearProfile}. ${fearHandling[params.fearProfile] || ""}`);
+  }
+  if (params.maskStatus && params.maskStatus !== "partial") {
+    const maskGuides: Record<string, string> = {
+      open: "They are being authentic and vulnerable. Handle with care. Build trust gently.",
+      masked: "They are wearing a mask — pretending everything is fine when it may not be. Create safe space and gently check in.",
+    };
+    profileSections.push(`Mask Status: ${params.maskStatus}. ${maskGuides[params.maskStatus] || ""}`);
+  }
+  if (profileSections.length > 0) {
+    parts.push("DEEP PSYCHOLOGICAL PROFILE:");
+    for (const section of profileSections) {
+      parts.push(`- ${section}`);
+    }
+    parts.push("");
+  }
 
   /* --- Knowledge Base --- */
   const knowledge = await getKnowledgeContext();

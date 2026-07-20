@@ -66,6 +66,11 @@ export async function saveMessage(
     mood?: string;
     personality?: string;
     buyingStage?: string;
+    trustLevel?: string;
+    controlResistance?: string;
+    manipulationVulnerability?: string;
+    fearProfile?: string;
+    maskStatus?: string;
   }
 ): Promise<void> {
   const db = await ensureDB();
@@ -112,6 +117,11 @@ export async function saveMessage(
   if (context?.buyingStage) keyPoints.buyingStage = context.buyingStage;
   if (context?.painPoints) keyPoints.painPoints = context.painPoints;
   if (context?.interests) keyPoints.interests = context.interests;
+  if (context?.trustLevel) keyPoints.trustLevel = context.trustLevel;
+  if (context?.controlResistance) keyPoints.controlResistance = context.controlResistance;
+  if (context?.manipulationVulnerability) keyPoints.manipulationVulnerability = context.manipulationVulnerability;
+  if (context?.fearProfile) keyPoints.fearProfile = context.fearProfile;
+  if (context?.maskStatus) keyPoints.maskStatus = context.maskStatus;
   keyPoints.lastMessageCount = (keyPoints.lastMessageCount || 0) + 1;
 
   if (conv) {
