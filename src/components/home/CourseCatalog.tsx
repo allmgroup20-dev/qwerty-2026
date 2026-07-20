@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useLanguageStore } from "@/lib/store";
 import { courseCategories, trainers, bundlePricingData, tab0OverviewItems } from "@/data/landing-page-data";
+import { CourseCount } from "@/components/ui/CourseCount";
 
 export default function CourseCatalog() {
   const { lang } = useLanguageStore();
@@ -18,9 +19,9 @@ export default function CourseCatalog() {
           📚 {lang === "bn" ? "৯৯ টাকায় আপনি কী পাচ্ছেন" : "What You Get at ৳99"}
         </div>
         <h3 className="text-lg md:text-xl font-black text-text">
-          {lang === "bn"
-            ? "১০টি বিভাগ — ২৩০+ প্রিমিয়াম কোর্স"
-            : "10 Categories — 230+ Premium Courses"}
+          {lang === "bn" ? "১০টি বিভাগ — " : "10 Categories — "}
+          <CourseCount />
+          {lang === "bn" ? "+ প্রিমিয়াম কোর্স" : "+ Premium Courses"}
         </h3>
         <p className="text-sm font-semibold text-text-secondary mt-1">
           {lang === "bn"

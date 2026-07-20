@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLanguageStore } from "@/lib/store";
+import { CourseCount } from "@/components/ui/CourseCount";
 
 export default function Footer() {
   const { lang } = useLanguageStore();
@@ -38,9 +39,9 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-white/60 leading-relaxed max-w-sm">
-              {lang === "bn"
-                ? "আপনার ক্যারিয়ার গড়ার বিশ্বস্ত প্ল্যাটফর্ম। ২৩০+ কোর্স, ১২ জন বিশেষজ্ঞ প্রশিক্ষক, আজীবন অ্যাক্সেস।"
-                : "Your trusted career-building platform. 230+ courses, 12 expert trainers, lifetime access."}
+              {lang === "bn" ? "আপনার ক্যারিয়ার গড়ার বিশ্বস্ত প্ল্যাটফর্ম। " : "Your trusted career-building platform. "}
+              <CourseCount />
+              {lang === "bn" ? "+ কোর্স, ১২ জন বিশেষজ্ঞ প্রশিক্ষক, আজীবন অ্যাক্সেস।" : "+ courses, 12 expert trainers, lifetime access."}
             </p>
             <div className="flex gap-3">
               {["📘", "💬", "📱", "📧"].map((icon, i) => (

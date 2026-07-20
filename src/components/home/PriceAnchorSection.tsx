@@ -2,6 +2,7 @@
 
 import { useLanguageStore } from "@/lib/store";
 import { priceAnchorData } from "@/data/landing-page-data";
+import { CourseCount } from "@/components/ui/CourseCount";
 
 export default function PriceAnchorSection() {
   const { lang } = useLanguageStore();
@@ -12,9 +13,9 @@ export default function PriceAnchorSection() {
       <div className="text-xs font-semibold text-text-secondary mb-1 tracking-wider uppercase">
         {lang === "bn" ? "🔥 ভ্যালু শক — নিজেই তুলনা করে দেখুন" : "🔥 Value Shock — Compare Yourself"}
       </div>
-      <div className="text-sm font-semibold text-text-secondary mb-2">
-        ২৩০+ কোর্সের বাজারমূল্য: <span className="line-through text-text-secondary">{lang === "bn" ? d.marketValueBn : d.marketValueEn}</span>
-      </div>
+       <div className="text-sm font-semibold text-text-secondary mb-2">
+         <CourseCount />+ কোর্সের বাজারমূল্য: <span className="line-through text-text-secondary">{lang === "bn" ? d.marketValueBn : d.marketValueEn}</span>
+       </div>
       <div className="text-xl md:text-2xl font-black text-text my-3">
         {lang === "bn" ? "আজকের অফার মূল্য:" : "Today's Offer Price:"} <span className="text-success text-3xl md:text-4xl">{lang === "bn" ? d.offerPriceBn : d.offerPriceEn}</span>
       </div>
