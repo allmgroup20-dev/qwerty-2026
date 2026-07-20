@@ -58,44 +58,41 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "challenge" }),
       });
-      const chalData = await chalRes.json() as { challengeId?: string; challenge?: string; error?: string };
-      if (!chalRes.ok) throw new Error(chalData.error || "Failed to get challenge");
-      const { challengeId, challenge } = chalData;
-
-      const challengeBytes = Uint8Array.from(atob(challenge!.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
-      const credential = (await navigator.credentials.get({
+      if (!chalRes.ok) throw new Error(lang === "bn" ? "বায়োমেট্রিক চ্যালেঞ্জ ব্যর্থ" : "Biometric challenge failed");
+      const chalData = await chalRes.json() as { challenge?: string; allowCredentials?: { id: string; type: string }[] };
+      if (!chalData.challenge) throw new Error(lang === "bn" ? "কোনো বায়োমেট্রিক ডাটা পাওয়া যায়নি" : "No biometric data found");
+      const challenge = Uint8Array.from(atob(chalData.challenge.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
+      const allowCredentials = (chalData.allowCredentials || []).map((cred) => ({
+        id: Uint8Array.from(atob(cred.id.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)),
+        type: cred.type as PublicKeyCredentialType,
+      }));
+      const cred = await navigator.credentials.get({
         publicKey: {
-          challenge: challengeBytes,
-          rpId: window.location.hostname,
-          userVerification: "required" as UserVerificationRequirement,
+          challenge,
+          allowCredentials: allowCredentials.length > 0 ? allowCredentials : undefined,
+          userVerification: "required",
+          timeout: 60000,
         },
-      })) as PublicKeyCredential;
-
-      const resp = credential.response as any;
-      const credId = base64url(credential.rawId);
-      const cdJSON = btoa(String.fromCharCode(...new Uint8Array(resp.clientDataJSON)));
-      const authData = btoa(String.fromCharCode(...new Uint8Array(resp.authenticatorData)));
-      const sig = btoa(String.fromCharCode(...new Uint8Array(resp.signature)));
-
-      const finishRes = await fetch("/api/auth/biometric/auth", {
+      }) as PublicKeyCredential;
+      const authData = cred.response as AuthenticatorAssertionResponse;
+      const uh = authData.userHandle || new Uint8Array(0);
+      const verifyRes = await fetch("/api/auth/biometric/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "complete",
-          challengeId,
-          credentialId: credId,
-          clientDataJSON: cdJSON,
-          authenticatorData: authData,
-          signature: sig,
+          action: "verify",
+          credentialId: base64url(uh instanceof Uint8Array ? uh.buffer : uh),
+          authenticatorData: base64url(authData.authenticatorData),
+          clientDataJSON: base64url(authData.clientDataJSON),
+          signature: base64url(authData.signature),
         }),
       });
-      const finishData = await finishRes.json() as { error?: string; token?: string; workerId?: string; userType?: string };
-      if (!finishRes.ok) throw new Error(finishData.error || "Biometric auth failed");
-      if (finishData.userType === "company") {
-        window.location.href = "/company";
-      } else {
-        if (finishData.token) localStorage.setItem("worker_token", finishData.token);
-        if (finishData.workerId) localStorage.setItem("worker_id", finishData.workerId);
+      if (!verifyRes.ok) throw new Error(lang === "bn" ? "বায়োমেট্রিক যাচাই ব্যর্থ" : "Biometric verification failed");
+      const verifyData = await verifyRes.json() as { token?: string; workerId?: string; name?: string };
+      if (verifyData.token) {
+        localStorage.setItem("worker_token", verifyData.token);
+        localStorage.setItem("worker_id", verifyData.workerId || "");
+        localStorage.setItem("worker_name", verifyData.name || "");
         window.location.href = "/dashboard";
       }
     } catch (err) {
@@ -105,222 +102,175 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const name = prompt(lang === "bn" ? "গুগল একাউন্টের নাম দিন:" : "Enter your Google name:") || "Google User";
-      const email = prompt(lang === "bn" ? "গুগল ইমেইল দিন:" : "Enter your Google email:") || "";
-      const res = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: "mock." + btoa(JSON.stringify({ sub: "google_" + Date.now() })) + ".sig", name, email }),
-      });
-      const data = await res.json() as { error?: string; token?: string; workerId?: string; name?: string };
-      if (!res.ok) throw new Error(data.error || "Google login failed");
-      if (data.token) localStorage.setItem("worker_token", data.token);
-      if (data.workerId) localStorage.setItem("worker_id", data.workerId);
-      if (data.name) localStorage.setItem("worker_name", data.name);
-      window.location.href = "/dashboard";
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Google login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFacebookLogin = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const name = prompt(lang === "bn" ? "ফেসবুক একাউন্টের নাম দিন:" : "Enter your Facebook name:") || "FB User";
-      const email = prompt(lang === "bn" ? "ফেসবুক ইমেইল দিন:" : "Enter your Facebook email:") || "";
-      const res = await fetch("/api/auth/facebook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessToken: "mock_fb_token_" + Date.now(), name, email }),
-      });
-      const data = await res.json() as { error?: string; token?: string; workerId?: string; name?: string };
-      if (!res.ok) throw new Error(data.error || "Facebook login failed");
-      if (data.token) localStorage.setItem("worker_token", data.token);
-      if (data.workerId) localStorage.setItem("worker_id", data.workerId);
-      if (data.name) localStorage.setItem("worker_name", data.name);
-      window.location.href = "/dashboard";
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Facebook login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center py-20 px-4">
-      <div className="w-full max-w-md animate-fade-up">
+    <div className="min-h-screen bg-gradient-to-br from-bg via-primary/5 to-accent/5 flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md">
+        {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 gradient-premium rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
-            <span className="text-2xl text-white font-bold">JGC</span>
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-2xl mx-auto mb-4 shadow-xl shadow-primary/20">
+            🚀
           </div>
-          <h1 className="text-2xl font-bold text-primary">
+          <h1 className="text-2xl md:text-3xl font-black text-primary">
             {lang === "bn" ? "স্বাগতম" : "Welcome Back"}
           </h1>
-          <p className="text-sm text-text-secondary mt-2">
+          <p className="text-sm text-text-secondary mt-1">
             {lang === "bn" ? "আপনার অ্যাকাউন্টে লগইন করুন" : "Login to your account"}
           </p>
         </div>
 
-        <div className="card shadow-xl border-0">
-          <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+        {/* Tabs */}
+        <div className="flex bg-white rounded-2xl p-1.5 shadow-sm border border-border/80 mb-6">
+          {(["worker", "company"] as const).map((tab) => (
             <button
-              onClick={() => { setActiveTab("worker"); setError(""); }}
-              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                activeTab === "worker" ? "bg-white shadow-sm text-primary" : "text-text-secondary"
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+                activeTab === tab
+                  ? "bg-gradient-to-r from-primary to-primary-light text-white shadow-md"
+                  : "text-text-secondary hover:text-primary"
               }`}
             >
-              {lang === "bn" ? "সদস্য লগইন" : "Member Login"}
+              {tab === "worker"
+                ? (lang === "bn" ? "মেম্বর" : "Member")
+                : (lang === "bn" ? "কোম্পানি" : "Company")}
             </button>
-            <button
-              onClick={() => { setActiveTab("company"); setError(""); }}
-              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                activeTab === "company" ? "bg-white shadow-sm text-primary" : "text-text-secondary"
-              }`}
-            >
-              {lang === "bn" ? "কোম্পানি লগইন" : "Company Login"}
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
-                {error}
-              </div>
-            )}
-
-            {activeTab === "worker" && (
-              <div className="grid grid-cols-4 gap-2">
-                <button
-                  type="button"
-                  onClick={handleBiometric}
-                  disabled={loading}
-                  className="flex flex-col items-center gap-1 py-2.5 rounded-xl border border-border hover:bg-gray-50 hover:border-action/40 transition-all disabled:opacity-50 group"
-                  title={lang === "bn" ? "ফিঙ্গারপ্রিন্ট" : "Fingerprint"}
-                >
-                  <FingerprintIcon className="text-action transition-transform group-hover:scale-110" size={24} />
-                  <span className="text-[10px] font-medium text-text-secondary">{lang === "bn" ? "ফিঙ্গার" : "Finger"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBiometric}
-                  disabled={loading}
-                  className="flex flex-col items-center gap-1 py-2.5 rounded-xl border border-border hover:bg-gray-50 hover:border-action/40 transition-all disabled:opacity-50 group"
-                  title={lang === "bn" ? "ফেস আইডি" : "Face ID"}
-                >
-                  <FaceIcon className="text-action transition-transform group-hover:scale-110" size={24} />
-                  <span className="text-[10px] font-medium text-text-secondary">{lang === "bn" ? "ফেস" : "Face"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  disabled={loading}
-                  className="flex flex-col items-center gap-1 py-2.5 rounded-xl border border-border hover:bg-gray-50 transition-all disabled:opacity-50 group"
-                  title="Google"
-                >
-                  <svg className="w-5 h-5 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                  </svg>
-                  <span className="text-[10px] font-medium text-text-secondary">Google</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleFacebookLogin}
-                  disabled={loading}
-                  className="flex flex-col items-center gap-1 py-2.5 rounded-xl border border-border hover:bg-gray-50 transition-all disabled:opacity-50 group"
-                  title="Facebook"
-                >
-                  <svg className="w-5 h-5 text-[#1877F2] transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                  <span className="text-[10px] font-medium text-text-secondary">Meta</span>
-                </button>
-              </div>
-            )}
-
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-text-secondary font-medium">
-                {lang === "bn" ? "মোবাইল নাম্বার দিয়ে" : "With Phone Number"}
-              </span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                  {activeTab === "worker"
-                    ? (lang === "bn" ? "মোবাইল নম্বর" : "Phone Number")
-                    : (lang === "bn" ? "ইউজারনেম" : "Username")}
-                </label>
-                <input
-                  type={activeTab === "worker" ? "tel" : "text"}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="input-field"
-                  placeholder={activeTab === "worker" ? "01XXXXXXXXX" : "Enter username"}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                  {lang === "bn" ? "পাসওয়ার্ড" : "Password"}
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="input-field w-full pr-11"
-                    placeholder="••••••••"
-                    required
-                  />
-                  <button type="button" onClick={() => setShowPassword((p) => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 border-none bg-transparent cursor-pointer text-[#94A3B8] hover:text-[#64748B] transition-colors">
-                    {showPassword ? (
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit" disabled={loading} className={`w-full text-base !py-3.5 rounded-xl font-medium transition-all ${
-                loading ? "bg-gray-300 text-gray-500" : "btn-primary"
-              }`}>
-                {loading
-                  ? (lang === "bn" ? "লগইন হচ্ছে..." : "Logging in...")
-                  : (lang === "bn" ? "লগইন করুন" : "Login")}
-              </button>
-            </form>
-
-            {activeTab === "worker" && (
-              <div className="text-center text-sm mt-4">
-                <span className="text-text-secondary">
-                  {lang === "bn" ? "একাউন্ট নেই?" : "Don't have an account?"}
-                </span>
-                <Link href="/register" className="text-action font-medium hover:underline ml-1">
-                  {lang === "bn" ? "এখন নিবন্ধন করুন" : "Register Now"}
-                </Link>
-              </div>
-            )}
-          </div>
+          ))}
         </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mb-4 p-3 rounded-xl bg-danger/5 border border-danger/20 text-sm text-danger font-medium flex items-center gap-2">
+            <span>⚠️</span> {error}
+          </div>
+        )}
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-border/80 space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
+              {activeTab === "worker"
+                ? (lang === "bn" ? "ফোন নম্বর" : "Phone Number")
+                : (lang === "bn" ? "ইউজারনেম" : "Username")}
+            </label>
+            <input
+              type={activeTab === "worker" ? "tel" : "text"}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder={activeTab === "worker" ? "০১XXX-XXXXXX" : "company@email.com"}
+              className="input-field"
+              required
+              autoComplete={activeTab === "worker" ? "tel" : "username"}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
+              {lang === "bn" ? "পাসওয়ার্ড" : "Password"}
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="input-field pr-10"
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary transition-colors"
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-accent to-accent-light text-white font-bold text-base shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading
+              ? (lang === "bn" ? "লগইন হচ্ছে..." : "Logging in...")
+              : (lang === "bn" ? "লগইন করুন" : "Login")}
+          </button>
+
+          {/* Divider */}
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/60" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="px-3 text-xs font-bold text-text-secondary bg-white">
+                {lang === "bn" ? "অথবা" : "OR"}
+              </span>
+            </div>
+          </div>
+
+          {/* Social & Biometric */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const email = prompt(lang === "bn" ? "গুগল ইমেইল দিন:" : "Enter Google email:");
+                if (email) {
+                  fetch("/api/auth/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) })
+                    .then(r => r.json() as Promise<Record<string, unknown>>).then((d) => {
+                      if (d.token) {
+                        localStorage.setItem("worker_token", d.token as string);
+                        localStorage.setItem("worker_name", (d.name as string) || "");
+                        window.location.href = "/dashboard";
+                      }
+                    }).catch(() => setError("Google login failed"));
+                }
+              }}
+              className="flex items-center justify-center gap-2 py-3 rounded-xl border border-border/80 text-sm font-bold text-text-secondary hover:bg-primary/5 hover:border-primary/30 transition-all"
+            >
+              <span>🔵</span> Google
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const email = prompt(lang === "bn" ? "ফেসবুক ইমেইল দিন:" : "Enter Facebook email:");
+                if (email) {
+                  fetch("/api/auth/facebook", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) })
+                    .then(r => r.json() as Promise<Record<string, unknown>>).then((d) => {
+                      if (d.token) {
+                        localStorage.setItem("worker_token", d.token as string);
+                        localStorage.setItem("worker_name", (d.name as string) || "");
+                        window.location.href = "/dashboard";
+                      }
+                    }).catch(() => setError("Facebook login failed"));
+                }
+              }}
+              className="flex items-center justify-center gap-2 py-3 rounded-xl border border-border/80 text-sm font-bold text-text-secondary hover:bg-primary/5 hover:border-primary/30 transition-all"
+            >
+              <span>🔷</span> Facebook
+            </button>
+          </div>
+
+          {activeTab === "worker" && (
+            <button
+              type="button"
+              onClick={handleBiometric}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-accent/30 text-sm font-bold text-accent hover:bg-accent/5 transition-all disabled:opacity-50"
+            >
+              <FingerprintIcon className="w-5 h-5" />
+              {lang === "bn" ? "ফিঙ্গারপ্রিন্ট / ফেস আইডি" : "Fingerprint / Face ID"}
+            </button>
+          )}
+        </form>
+
+        {/* Register link */}
+        <p className="text-center text-sm text-text-secondary mt-6">
+          {lang === "bn" ? "কোনো অ্যাকাউন্ট নেই?" : "Don't have an account?"}{" "}
+          <Link href="/register" className="font-bold text-accent hover:text-accent-light transition-colors">
+            {lang === "bn" ? "রেজিস্টার করুন" : "Register"}
+          </Link>
+        </p>
       </div>
     </div>
   );

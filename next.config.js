@@ -2,10 +2,9 @@
 module.exports = {
   reactStrictMode: true,
   images: {
-    unoptimized: false,
-    formats: ["image/webp", "image/avif"],
+    unoptimized: true,
+    formats: ["image/webp"],
     deviceSizes: [640, 768, 1024, 1280],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256],
   },
   headers: async () => [
     {

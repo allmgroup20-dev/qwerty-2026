@@ -30,140 +30,149 @@ export default function Testimonials({ compact }: { compact?: boolean }) {
     intervalRef.current = setInterval(() => setSlideIdx((p) => (p + 1) % displayCarousel.length), 4000);
   };
 
-  const visibleGrid = showAllGrid ? gridTestimonials : gridTestimonials.slice(0, 4);
+  const goNext = () => goTo((slideIdx + 1) % displayCarousel.length);
+  const goPrev = () => goTo((slideIdx - 1 + displayCarousel.length) % displayCarousel.length);
 
-  const tabs: { id: TabType; labelBn: string; labelEn: string }[] = [
-    { id: "carousel", labelBn: "ক্যারোজেল", labelEn: "Carousel" },
-    { id: "chat", labelBn: "চ্যাট", labelEn: "Chat" },
-    { id: "grid", labelBn: "গ্রিড", labelEn: "Grid" },
+  const tabs: { key: TabType; icon: string; bn: string; en: string }[] = [
+    { key: "carousel", icon: "⭐", bn: "প্রত্যয়ন", en: "Testimonials" },
+    { key: "chat", icon: "💬", bn: "রিয়েল চ্যাট", en: "Real Chats" },
+    { key: "grid", icon: "📋", bn: "সকল", en: "All Reviews" },
   ];
 
   return (
-    <div className="rounded-2xl p-5 md:p-6 bg-white border border-border">
-      {/* Tab Switcher — hidden in compact mode */}
-      {!compact && (
-        <div className="flex flex-wrap gap-2 justify-center mb-5">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => { setActiveTab(tab.id); setSlideIdx(0); }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === tab.id
-                  ? "bg-info text-white shadow-lg shadow-info/30"
-                  : "bg-white border border-border text-text-secondary hover:border-info/30"
-              }`}
-            >
-              {lang === "bn" ? tab.labelBn : tab.labelEn}
-            </button>
-          ))}
-        </div>
-      )}
-
+    <div className="rounded-3xl p-6 md:p-8 bg-white border border-border/80 shadow-sm">
       <div className="section-header">
-        <div className="badge mx-auto mb-3 border-info/20 bg-info/10 text-info">
-          💬 {lang === "bn" ? "শিক্ষার্থীদের মতামত" : "Student Testimonials"}
-        </div>
-        <h3 className="text-lg md:text-xl font-black text-text">
+        <div className="badge mx-auto mb-3">💬 {lang === "bn" ? "শিক্ষার্থীদের মতামত" : "Student Testimonials"}</div>
+        <h3 className="text-xl md:text-2xl font-black text-primary">
           {lang === "bn" ? "যারা ইতিমধ্যেই সফল হয়েছেন" : "Those Who Have Already Succeeded"}
         </h3>
-        <p className="text-sm font-semibold text-text-secondary mt-1">
-          {allCarouselTestimonials.length + chatTestimonials.length + gridTestimonials.length}{" "}
-          {lang === "bn" ? "জন শিক্ষার্থীর সাফল্যের গল্প" : "success stories of our students"}
-        </p>
       </div>
 
-      {/* Carousel */}
-      {(activeTab === "carousel" || compact) && (
-        <div className="overflow-hidden relative">
-          <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${slideIdx * 100}%)` }}>
-            {displayCarousel.map((t, i) => (
-              <div key={i} className="min-w-full px-2 box-border">
-                <div className="p-6 md:p-7 rounded-xl bg-bg border border-border text-center">
-                  <div className="text-info text-xl mb-2.5">{t.stars} <span className="text-text-secondary text-sm font-bold">{t.rating}</span></div>
-                  <p className="text-sm text-text leading-relaxed mb-3.5 italic">&ldquo;{lang === "bn" ? t.quoteBn : t.quoteEn}&rdquo;</p>
-                  <div className="font-bold text-sm text-info">{lang === "bn" ? t.authorBn : t.authorEn}</div>
-                  <div className="text-xs text-text-secondary font-semibold">{lang === "bn" ? t.labelBn : t.labelEn}</div>
+      {/* Tabs */}
+      <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 ${
+              activeTab === tab.key
+                ? "bg-primary text-white shadow-md"
+                : "bg-primary/5 text-text-secondary hover:bg-primary/10 hover:text-primary"
+            }`}
+          >
+            <span>{tab.icon}</span> {lang === "bn" ? tab.bn : tab.en}
+          </button>
+        ))}
+      </div>
+
+      {/* Carousel Tab */}
+      {activeTab === "carousel" && (
+        <div>
+          {displayCarousel.length > 0 && (
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 border border-primary/10">
+              <div className="p-6 md:p-8">
+                <div className="flex flex-col md:flex-row gap-6 items-start">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-2xl mb-2 text-secondary">{displayCarousel[slideIdx].stars}</div>
+                    <p className="text-sm md:text-base text-text leading-relaxed font-medium">
+                      &ldquo;{lang === "bn" ? displayCarousel[slideIdx].quoteBn : displayCarousel[slideIdx].quoteEn}&rdquo;
+                    </p>
+                    <div className="mt-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-white">
+                        {(lang === "bn" ? displayCarousel[slideIdx].authorBn : displayCarousel[slideIdx].authorEn).charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-text">{lang === "bn" ? displayCarousel[slideIdx].authorBn : displayCarousel[slideIdx].authorEn}</p>
+                        <p className="text-xs text-text-secondary">{lang === "bn" ? displayCarousel[slideIdx].labelBn : displayCarousel[slideIdx].labelEn}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="hidden md:flex flex-col items-center justify-center px-6 py-4 rounded-xl bg-white/50 border border-border/50">
+                    <span className="text-2xl font-black text-primary">{displayCarousel[slideIdx].rating}</span>
+                    <span className="text-[10px] text-text-secondary font-medium uppercase tracking-wider">{lang === "bn" ? "রেটিং" : "Rating"}</span>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-          <div className="flex justify-center gap-2 mt-3.5">
-            {displayCarousel.map((_, i) => (
-              <button key={i} onClick={() => goTo(i)} className={`w-2.5 h-2.5 rounded-full border-none p-0 cursor-pointer transition-all ${i === slideIdx ? "bg-info scale-125" : "bg-border"}`} />
-            ))}
-          </div>
+
+              {/* Controls */}
+              <div className="flex items-center justify-between px-6 pb-6">
+                <div className="flex gap-1.5">
+                  {displayCarousel.map((_, i) => (
+                    <button key={i} onClick={() => goTo(i)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        i === slideIdx ? "w-6 bg-primary" : "bg-primary/20 hover:bg-primary/40"
+                      }`} />
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={goPrev} className="w-8 h-8 rounded-xl bg-white border border-border/80 flex items-center justify-center text-sm hover:bg-primary/5 hover:border-primary/30 transition-all">←</button>
+                  <button onClick={goNext} className="w-8 h-8 rounded-xl bg-white border border-border/80 flex items-center justify-center text-sm hover:bg-primary/5 hover:border-primary/30 transition-all">→</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Chat-style testimonials */}
-      {!compact && activeTab === "chat" && (
+      {/* Chat Tab */}
+      {activeTab === "chat" && (
         <div className="space-y-4">
-          {chatTestimonials.map((t, i) => (
-            <div key={i} className="bg-white border border-border rounded-2xl p-4 md:p-5 flex gap-3.5 relative overflow-hidden">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-info to-orange-400" />
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-info to-orange-400 flex items-center justify-center text-lg shrink-0 mt-0.5">
-                {t.avatar}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className="font-bold text-sm text-text">
-                    {lang === "bn" ? t.nameBn : t.nameEn}
-                  </span>
-                  <span className="text-[10px] font-semibold text-text-secondary whitespace-nowrap">
-                    {lang === "bn" ? t.platformBn : t.platformEn}
-                  </span>
+          {chatTestimonials.slice(0, compact ? 3 : 6).map((c, i) => (
+            <div key={i} className="p-4 rounded-2xl bg-gradient-to-r from-primary/[0.02] to-accent/[0.02] border border-border/60 hover:border-accent/20 transition-all">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">{c.avatar}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-bold text-text">{lang === "bn" ? c.nameBn : c.nameEn}</span>
+                    <span className="text-[10px] text-text-secondary">{lang === "bn" ? c.platformBn : c.platformEn}</span>
+                  </div>
+                  <p className="text-sm text-text-secondary mt-1 leading-relaxed">{lang === "bn" ? c.msgBn : c.msgEn}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs text-secondary">{c.stars}</span>
+                    <span className="text-[10px] text-text-secondary">{lang === "bn" ? c.timeBn : c.timeEn}</span>
+                  </div>
                 </div>
-                <div className="text-[#f59e0b] text-xs mt-0.5">{t.stars}</div>
-                <p className="text-sm text-text leading-relaxed mt-1.5">
-                  &ldquo;{lang === "bn" ? t.msgBn : t.msgEn}&rdquo;
-                </p>
-                <span className="text-[10px] font-semibold text-text-secondary mt-1.5 block">
-                  {lang === "bn" ? t.timeBn : t.timeEn}
-                </span>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Grid testimonials */}
-      {!compact && activeTab === "grid" && (
-        <div className="mt-4">
-          <h4 className="text-base md:text-lg font-bold text-text mb-4 text-center">
-            {lang === "bn" ? "আরও সফল শিক্ষার্থীদের মতামত" : "More Success Stories"}
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {visibleGrid.map((t, i) => (
-              <div key={i} className="bg-white border border-border rounded-xl p-4">
-                <div className="text-[#f59e0b] text-xs">{t.stars}</div>
-                <span className="text-text-secondary text-xs font-bold ml-1">{t.rating}</span>
-                <div className="font-bold text-sm text-text mt-1.5">
-                  {lang === "bn" ? t.nameBn : t.nameEn}
-                </div>
-                <p className="text-sm text-text leading-relaxed mt-1.5">
+      {/* Grid Tab */}
+      {activeTab === "grid" && (
+        <div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(showAllGrid ? gridTestimonials : gridTestimonials.slice(0, compact ? 4 : 6)).map((t, i) => (
+              <div key={i} className="p-4 rounded-2xl bg-white border border-border/60 hover:border-accent/20 hover:shadow-md transition-all">
+                <div className="flex items-center gap-1.5 mb-2 text-xs text-secondary">{t.stars} <span className="text-text-secondary">({t.rating})</span></div>
+                <p className="text-sm text-text-secondary leading-relaxed">
                   &ldquo;{lang === "bn" ? t.textBn : t.textEn}&rdquo;
                 </p>
+                <p className="text-xs font-bold text-text mt-2">{lang === "bn" ? t.nameBn : t.nameEn}</p>
               </div>
             ))}
           </div>
-          {!showAllGrid && gridTestimonials.length > 4 && (
+          {gridTestimonials.length > 6 && (
             <div className="text-center mt-4">
-              <button
-                onClick={() => setShowAllGrid(true)}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-info text-white text-sm font-bold border-none cursor-pointer hover:bg-info/90 transition-colors"
-              >
-                {lang === "bn" ? "আরো মতামত দেখুন" : "Show More Testimonials"}
+              <button onClick={() => setShowAllGrid(!showAllGrid)}
+                className="inline-flex items-center gap-1 px-5 py-2.5 rounded-xl text-xs font-bold text-accent bg-accent/10 hover:bg-accent/20 transition-all">
+                {showAllGrid
+                  ? (lang === "bn" ? "সংক্ষিপ্ত দেখুন" : "Show Less")
+                  : (lang === "bn" ? `সবগুলো দেখুন (${gridTestimonials.length})` : `Show All (${gridTestimonials.length})`)}
               </button>
             </div>
           )}
         </div>
       )}
 
-      <div className="text-center mt-5 pt-4 border-t border-border">
-        <Link href="/reviews" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-info text-white text-sm font-bold hover:bg-info/90 transition-colors shadow-lg shadow-info/30">
-          {lang === "bn" ? "সব মতামত দেখুন →" : "View All Reviews →"}
-        </Link>
-      </div>
+      {compact && (
+        <div className="text-center mt-4">
+          <Link href="/reviews"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-accent bg-accent/10 hover:bg-accent/20 transition-all">
+            {lang === "bn" ? "সব মতামত দেখুন" : "View All Reviews"} →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
