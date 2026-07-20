@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryFirst } from "@/lib/db/queries";
+import { queryFirstSafe } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
-import { verifyCompanyPassword, generateCompanyToken, getJwtSecret } from "@/lib/auth";
+import { verifyCompanyPassword, hashCompanyPassword, generateCompanyToken, getJwtSecret } from "@/lib/auth";
 import { getCached, setCached } from "@/lib/cache";
 
 const MEMO = "__companyAuthMemo";
+
+const DEFAULT_ADMINS: { username: string; name: string; passwordHash: string; role: string }[] = [
+  { username: "admin", name: "Company Admin", passwordHash: "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", role: "superadmin" },
+  { username: "jobayer group", name: "Jobayer Group", passwordHash: "52d1d87c3b2027f3f2660015ddf6463e97430b4e60099217143ac75a45646aa1", role: "superadmin" },
+];
+
+const D1_TIMEOUT_MS = 5000;
+
+async function hashUsername(username: string): Promise<string> {
+  return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(username.toLowerCase()))))
+    .map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 function getMemo(): Map<string, { username: string; name: string; password: string; role: string }> {
   const g = globalThis as any;
@@ -12,46 +24,62 @@ function getMemo(): Map<string, { username: string; name: string; password: stri
   return g[MEMO];
 }
 
+async function respond(admin: { username: string; name: string; role: string }): Promise<NextResponse> {
+  const token = await generateCompanyToken(admin.username, getJwtSecret());
+  const response = NextResponse.json({ token, username: admin.username, name: admin.name, role: admin.role });
+  response.cookies.set("company_token", token, { httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 86400 });
+  response.cookies.set("company_user", JSON.stringify({ name: admin.name, username: admin.username, role: admin.role }), { httpOnly: false, secure: false, sameSite: "lax", path: "/", maxAge: 86400 });
+  return response;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { username, password } = await request.json() as { username: string; password: string };
+    const body = await request.json() as { username: string; password: string };
+    const { username, password } = body;
     if (!username || !password) {
       return NextResponse.json({ error: "Username and password required" }, { status: 400 });
     }
 
-    const usernameHash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(username.toLowerCase()))))
-      .map(b => b.toString(16).padStart(2, "0")).join("");
-
+    const usernameHash = await hashUsername(username);
     const memo = getMemo();
+
+    // 1. In-memory cache (0ms)
     const memoized = memo.get(usernameHash);
     if (memoized) {
       const valid = await verifyCompanyPassword(password, memoized.password);
       if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-      const token = await generateCompanyToken(memoized.username, getJwtSecret());
-      const response = NextResponse.json({ token, username: memoized.username, name: memoized.name, role: memoized.role });
-      response.cookies.set("company_token", token, { httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 86400 });
-      response.cookies.set("company_user", JSON.stringify({ name: memoized.name, username: memoized.username, role: memoized.role }), { httpOnly: false, secure: false, sameSite: "lax", path: "/", maxAge: 86400 });
-      return response;
+      return respond(memoized);
     }
 
+    // 2. KV cache (20ms)
     const cached = await getCached<{ username: string; name: string; password: string; role: string }>(`auth:company:${usernameHash}`, 1800);
     if (cached) {
       const valid = await verifyCompanyPassword(password, cached.password);
-      if (!valid) {
-        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-      }
+      if (!valid) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       memo.set(usernameHash, cached);
-      const token = await generateCompanyToken(cached.username, getJwtSecret());
-      const response = NextResponse.json({ token, username: cached.username, name: cached.name, role: cached.role });
-      response.cookies.set("company_token", token, { httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 86400 });
-      response.cookies.set("company_user", JSON.stringify({ name: cached.name, username: cached.username, role: cached.role }), { httpOnly: false, secure: false, sameSite: "lax", path: "/", maxAge: 86400 });
-      return response;
+      return respond(cached);
     }
 
-    const admin = await queryFirst<{ username: string; name: string; password: string; role: string }>(
+    // 3. Hardcoded default admin check (0ms — no D1)
+    const lowerUser = username.toLowerCase();
+    for (const def of DEFAULT_ADMINS) {
+      if (def.username === lowerUser) {
+        const inputHash = await hashCompanyPassword(password);
+        if (inputHash === def.passwordHash) {
+          const adminData = { username: def.username, name: def.name, password: def.passwordHash, role: def.role };
+          memo.set(usernameHash, adminData);
+          setCached(`auth:company:${usernameHash}`, adminData).catch(() => {});
+          return respond(adminData);
+        }
+      }
+    }
+
+    // 4. D1 query (last resort — 5s timeout)
+    const admin = await queryFirstSafe<{ username: string; name: string; password: string; role: string }>(
       await getDB(),
       "SELECT username, name, password, role FROM company_users WHERE username = ? COLLATE NOCASE",
-      [username]
+      [username],
+      D1_TIMEOUT_MS
     );
 
     if (!admin) {
@@ -66,23 +94,7 @@ export async function POST(request: NextRequest) {
     setCached(`auth:company:${usernameHash}`, { username: admin.username, name: admin.name, password: admin.password, role: admin.role }).catch(() => {});
     memo.set(usernameHash, { username: admin.username, name: admin.name, password: admin.password, role: admin.role });
 
-    const token = await generateCompanyToken(admin.username, getJwtSecret());
-    const response = NextResponse.json({ token, username: admin.username, name: admin.name, role: admin.role });
-    response.cookies.set("company_token", token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24,
-    });
-    response.cookies.set("company_user", JSON.stringify({ name: admin.name, username: admin.username, role: admin.role }), {
-      httpOnly: false,
-      secure: false,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24,
-    });
-    return response;
+    return respond(admin);
   } catch (error) {
     console.error("Company login error:", error);
     return NextResponse.json({

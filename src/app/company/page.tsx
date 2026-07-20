@@ -89,6 +89,7 @@ export default function CompanyDashboard() {
   const [totalEvents, setTotalEvents] = useState(0);
   const [memberCount, setMemberCount] = useState(0);
   const [predictions, setPredictions] = useState<Predictions | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
 
   const loadedRef = useRef(false);
 
@@ -111,8 +112,10 @@ export default function CompanyDashboard() {
       }
       const memberRes = await fetchWithCache<{ total?: number }>("/api/company/members?limit=1", 300000).catch(() => null);
       if (memberRes?.total) setMemberCount(memberRes.total);
+      setDashboardLoading(false);
     };
-    load();
+    const timeout = setTimeout(() => setDashboardLoading(false), 8000);
+    load().finally(() => clearTimeout(timeout));
   }, []);
 
   const maxSegment = Math.max(...segments.map(s => s.count), 1);

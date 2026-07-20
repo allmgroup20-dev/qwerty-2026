@@ -11,13 +11,15 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
   if (g[DONE_FLAG]) return;
   if (g[DONE_LOCK]) {
     let waited = 0;
-    while (g[DONE_FLAG] === false && g[DONE_LOCK] && waited < 100) {
+    while (g[DONE_FLAG] === false && g[DONE_LOCK] && waited < 300) {
       await new Promise(r => setTimeout(r, 100));
       waited++;
     }
     if (g[DONE_FLAG]) return;
   }
   g[DONE_LOCK] = true;
+
+  try { await env.DB.prepare("SELECT 1").all(); } catch {}
   try {
     const addCol = async (table: string, col: string, type: string) => {
       try {
