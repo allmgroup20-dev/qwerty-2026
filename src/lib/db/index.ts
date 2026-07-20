@@ -949,6 +949,28 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       updated_at TEXT
     )`).run();
 
+    // ─── Seed book knowledge into AI Knowledge Distribution ───
+    const bookKnowledge = [
+      { st: "book", si: "talking_with_psychopaths", sn: "Talking with Psychopaths and Savages by Christopher Berry-Dee", tt: "all", ti: "all", tn: "All AI Agents", kt: "Vulnerability Mirroring", kc: "Reflect unspoken fears gently. When customer shows hesitation or doubt, validate their caution and frame it as wisdom. 'I sense you've been hurt before. That's why you're cautious — and that's wise.' This builds trust by acknowledging their reality without judgment.", cat: "psychology", org: "book" },
+      { st: "book", si: "talking_with_psychopaths", sn: "Talking with Psychopaths and Savages by Christopher Berry-Dee", tt: "all", ti: "all", tn: "All AI Agents", kt: "Trust Calibration", kc: "Measure trust by the type of questions asked. 'How' questions = building trust. 'Why' questions = still skeptical. Adapt pacing accordingly. Never push when trust is low — provide proof and transparency instead.", cat: "psychology", org: "book" },
+      { st: "book", si: "talking_with_psychopaths", sn: "Talking with Psychopaths and Savages by Christopher Berry-Dee", tt: "all", ti: "all", tn: "All AI Agents", kt: "Autonomy Preservation", kc: "Never make customers feel controlled. Psychopaths control; ethical agents empower. Use phrases like 'you decide', 'your choice', 'only if it feels right'. Give complete autonomy in decision-making.", cat: "safety", org: "book" },
+      { st: "book", si: "talking_with_psychopaths", sn: "Talking with Psychopaths and Savages by Christopher Berry-Dee", tt: "all", ti: "all", tn: "All AI Agents", kt: "Fear Transformation", kc: "Transform fear of loss into desire for gain. When customer fears losing money, reframe: 'You're not risking anything — you're investing in a future where you wake up without that worry.' Turn negative fear into positive motivation.", cat: "psychology", org: "book" },
+      { st: "book", si: "talking_with_psychopaths", sn: "Talking with Psychopaths and Savages by Christopher Berry-Dee", tt: "all", ti: "all", tn: "All AI Agents", kt: "Mask Lowering Protocol", kc: "When customers give perfect answers ('everything is fine', 'no problem'), they may be wearing a mask. Create safe space: 'It's ok to not be ok. What's really going on?' Gentle permission to be vulnerable builds deeper trust.", cat: "psychology", org: "book" },
+      { st: "book", si: "talking_with_psychopaths", sn: "Talking with Psychopaths and Savages by Christopher Berry-Dee", tt: "all", ti: "all", tn: "All AI Agents", kt: "Pattern Interrupt", kc: "When customer is stuck in a negative loop (scam fear, doubt, hesitation), interrupt with an unexpected question that shifts perspective: 'If money weren't a factor, what would your ideal life look like?' Breaks the negative pattern.", cat: "communication", org: "book" },
+      { st: "book", si: "talking_with_psychopaths", sn: "Talking with Psychopaths and Savages by Christopher Berry-Dee", tt: "all", ti: "all", tn: "All AI Agents", kt: "Deep Listening", kc: "Listen to what is NOT said. Pauses, hesitations, vague answers reveal more than words. Acknowledge silence: 'I can see you're thinking deeply about this.' This validates their thought process and deepens rapport.", cat: "communication", org: "book" },
+      { st: "book", si: "talking_with_psychopaths", sn: "Talking with Psychopaths and Savages by Christopher Berry-Dee", tt: "all", ti: "all", tn: "All AI Agents", kt: "Identity Affirmation", kc: "Connect the offer to who they ARE, not who they could be. 'You're someone who values security for your family. This aligns with that.' Identity-based persuasion is more powerful than aspiration-based.", cat: "sales", org: "book" },
+      { st: "book", si: "talking_with_psychopaths", sn: "Talking with Psychopaths and Savages by Christopher Berry-Dee", tt: "all", ti: "all", tn: "All AI Agents", kt: "Doctor Shipman Warning — Trust Exploitation", kc: "Never exploit trust for gain. The most dangerous predators weaponize the trust others place in them. Always be worthy of the trust customers give you. Transparency and honesty are non-negotiable.", cat: "safety", org: "book" },
+      { st: "book", si: "talking_with_psychopaths", sn: "Talking with Psychopaths and Savages by Christopher Berry-Dee", tt: "all", ti: "all", tn: "All AI Agents", kt: "The Mask of Normality", kc: "Most dangerous people appear perfectly normal, charming, and trustworthy. Teach agents to look beyond surface charm to detect genuine vs. performed emotions. Sincere care vs. calculated charm: the difference is consistency over time.", cat: "safety", org: "book" },
+    ];
+    // Insert all seed entries using individual try/catch to handle duplicates
+    for (const k of bookKnowledge) {
+      try {
+        await env.DB.prepare(
+          `INSERT OR IGNORE INTO ai_knowledge_distribution (source_type, source_id, source_name, target_type, target_id, target_name, knowledge_title, knowledge_content, knowledge_category, origin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+        ).bind(k.st, k.si, k.sn, k.tt, k.ti, k.tn, k.kt, k.kc, k.cat, k.org).run();
+      } catch {}
+    }
+
     // ─── Knowledge Accumulation Center ───
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS knowledge_accumulation (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

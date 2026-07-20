@@ -29,23 +29,25 @@ const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
 
 // ── Negativity detection chains (run alongside every intent) ──
 export const NEGATIVITY_CHAINS: Record<string, string[]> = {
-  negativity_scan: ["mlm_trigger_detector", "recruitment_trigger_detector", "money_trigger_detector", "sentiment_negativity_scanner", "trust_barrier_identifier"],
+  negativity_scan: ["mlm_trigger_detector", "recruitment_trigger_detector", "money_trigger_detector", "trust_betrayal_detector", "control_feeling_detector", "fear_escalation_detector", "sentiment_negativity_scanner", "trust_barrier_identifier"],
+  negativity_deep_scan: ["mask_crack_detector", "manipulation_attempt_detector"],
   negativity_advisory: ["safe_wording_advisor", "cultural_sensitivity_checker"],
   negativity_knowledge: ["negativity_insight_miner"],
 };
 
 // ── Single-department sequential chains ──
 export const CHAINS: Record<string, string[]> = {
-  "sales_purchase": ["lead_scanner", "lead_scorer", "product_matcher", "price_explainer", "trust_objection_handler", "trial_closer", "payment_link_sender", "confirmation_sender"],
-  "sales_price_inquiry": ["lead_scanner", "lead_classifier", "price_explainer", "price_objection_handler", "discount_closer", "installment_closer"],
+  "sales_purchase": ["lead_scanner", "lead_scorer", "product_matcher", "price_explainer", "trust_objection_handler", "control_fear_objection_handler", "trial_closer", "payment_link_sender", "confirmation_sender"],
+  "sales_price_inquiry": ["lead_scanner", "lead_classifier", "price_explainer", "vulnerability_detector", "price_objection_handler", "manipulation_fear_objection_handler", "discount_closer", "installment_closer"],
   "sales_product_inquiry": ["lead_scanner", "lead_classifier", "product_matcher", "benefit_highlighter", "comparison_builder", "social_proof_injector", "urgency_creator"],
   "sales_referral": ["referral_explainer", "social_proof_injector", "referral_closer"],
-  "sales_general": ["lead_scanner", "followup_scheduler", "re_engagement_trigger"],
+  "sales_general": ["lead_scanner", "vulnerability_detector", "trust_meter", "followup_scheduler", "re_engagement_trigger"],
+  "sales_deep_objection": ["vulnerability_detector", "fear_pattern_identifier", "control_fear_objection_handler", "manipulation_fear_objection_handler", "identity_threat_objection_handler"],
   "member_success_registration": ["registration_guide", "welcome_pack_sender", "first_goal_setter", "profile_completer"],
   "member_success_commission_inquiry": ["commission_calculator", "earning_reporter", "payout_optimizer"],
   "member_success_motivation": ["daily_motivation_sender", "achievement_celebrator"],
   "member_success_general": ["query_resolver", "policy_explainer", "escalation_handler"],
-  "customer_experience_greeting": ["greeting_personalizer", "rapport_builder"],
+  "customer_experience_greeting": ["greeting_personalizer", "deep_rapport_agent", "rapport_builder"],
   "customer_experience_farewell": ["greeting_personalizer"],
   "customer_experience_support": ["faq_responder", "order_status_checker", "payment_issue_resolver", "delivery_tracker", "return_exchange_handler", "refund_processor"],
   "customer_experience_complaint": ["complaint_listener", "root_cause_finder", "solution_crafter", "satisfaction_restorer"],
@@ -54,41 +56,70 @@ export const CHAINS: Record<string, string[]> = {
   "operations_order_status": ["order_creator", "order_verifier", "invoice_generator", "order_notifier"],
   "operations_payment": ["sslcommerz_initiator", "ipn_validator", "payment_status_checker", "refund_initiator", "fraud_detector"],
   "operations_general": ["order_status_checker", "payment_status_checker"],
-  "psychology_complaint": ["mood_detector", "empathy_expresser", "frustration_calmer", "trust_builder", "complaint_listener", "root_cause_finder"],
-  "psychology_motivation": ["mood_detector", "confidence_booster", "excitement_amplifier", "future_pacing_agent"],
-  "psychology_objection": ["personality_classifier", "comm_style_identifier", "rapport_builder", "reframing_agent", "reciprocity_trigger", "authority_builder", "social_proof_amplifier"],
-  "psychology_general": ["mood_detector", "rapport_builder", "empathy_expresser"],
+  "psychology_complaint": ["mood_detector", "empathy_expresser", "frustration_calmer", "mask_detector", "trust_builder", "complaint_listener", "root_cause_finder"],
+  "psychology_motivation": ["mood_detector", "confidence_booster", "excitement_amplifier", "future_pacing_agent", "deep_rapport_agent"],
+  "psychology_objection": ["personality_classifier", "comm_style_identifier", "mask_detector", "rapport_builder", "reframing_agent", "reciprocity_trigger", "authority_builder", "social_proof_amplifier"],
+  "psychology_general": ["mood_detector", "rapport_builder", "empathy_expresser", "deep_rapport_agent"],
+  "psychology_deep_rapport": ["vulnerability_detector", "trust_meter", "control_need_analyzer", "mask_detector", "deep_rapport_agent", "empathy_expresser"],
+  "psychology_trust_repair": ["trust_meter", "empathy_gap_detector", "manipulation_defense_agent", "trust_builder", "deep_rapport_agent"],
 };
 
 // ══════════════════════════════════════════════════════════════
 // CROSS-DEPARTMENT CHAINS — agents from multiple depts collaborate
 // ══════════════════════════════════════════════════════════════
 export const CROSS_DEPT_CHAINS: Record<string, CrossDeptStep[]> = {
-  // Full customer journey (reduced from 25 to 6 steps)
+  // Full customer journey with deep psychology
   new_customer_full: [
     { department: "customer_experience", agentId: "greeting_personalizer" },
     { department: "psychology", agentId: "mood_detector" },
-    { department: "psychology", agentId: "rapport_builder" },
+    { department: "psychology", agentId: "trust_meter" },
+    { department: "psychology", agentId: "deep_rapport_agent" },
     { department: "sales", agentId: "lead_scanner" },
+    { department: "psychology", agentId: "vulnerability_detector" },
     { department: "sales", agentId: "product_matcher" },
     { department: "sales", agentId: "price_explainer" },
   ],
 
-  // Complaint resolution (reduced from 11 to 5 steps)
+  // Deep complaint resolution with trust repair
   complaint_full: [
     { department: "psychology", agentId: "empathy_expresser" },
+    { department: "psychology", agentId: "mask_detector" },
     { department: "negativity_detection", agentId: "complaint_listener" },
     { department: "negativity_detection", agentId: "root_cause_finder" },
     { department: "negativity_detection", agentId: "solution_crafter" },
+    { department: "psychology", agentId: "trust_meter" },
     { department: "psychology", agentId: "trust_builder" },
+    { department: "psychology", agentId: "deep_rapport_agent" },
   ],
 
-  // New member onboarding (reduced from 8 to 4 steps)
+  // New member onboarding with deep connection
   new_member_onboarding: [
     { department: "member_success", agentId: "registration_guide" },
     { department: "member_success", agentId: "welcome_pack_sender" },
     { department: "member_success", agentId: "first_goal_setter" },
     { department: "psychology", agentId: "community_builder" },
+    { department: "psychology", agentId: "deep_rapport_agent" },
+  ],
+
+  // Deep objection handling with vulnerability detection
+  deep_objection_resolution: [
+    { department: "psychology", agentId: "mood_detector" },
+    { department: "psychology", agentId: "vulnerability_detector" },
+    { department: "psychology", agentId: "fear_pattern_identifier" },
+    { department: "psychology", agentId: "control_need_analyzer" },
+    { department: "sales", agentId: "control_fear_objection_handler" },
+    { department: "sales", agentId: "manipulation_fear_objection_handler" },
+    { department: "sales", agentId: "identity_threat_objection_handler" },
+  ],
+
+  // Trust repair after negativity detected
+  trust_repair: [
+    { department: "negativity_detection", agentId: "trust_betrayal_detector" },
+    { department: "negativity_detection", agentId: "control_feeling_detector" },
+    { department: "psychology", agentId: "empathy_gap_detector" },
+    { department: "psychology", agentId: "manipulation_defense_agent" },
+    { department: "psychology", agentId: "trust_builder" },
+    { department: "psychology", agentId: "deep_rapport_agent" },
   ],
 };
 
@@ -97,6 +128,8 @@ const CROSS_DEPT_TRIGGERS: Record<string, (intent: Intent, ctx: MessageCtx) => b
   new_customer_full: (intent) => ["product_inquiry", "price_inquiry", "purchase", "greeting", "general"].includes(intent),
   complaint_full: (intent) => intent === "complaint",
   new_member_onboarding: (intent) => intent === "registration",
+  deep_objection_resolution: (intent) => intent === "price_inquiry" || intent === "general",
+  trust_repair: (intent) => intent === "complaint" || intent === "support" || intent === "feedback",
 };
 
 const DEPT_INTENT_PROMPTS: Record<DepartmentId, string> = {
@@ -336,6 +369,24 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
           if (db) {
             setMemory(db, ctx.phone, agent.id, `last_${agent.id}`, output.text.slice(0, 500), "agent_output", 1, 1440).catch(() => {});
           }
+        }
+      } catch {}
+    }
+    // ── Deep negativity scan (mask cracks, manipulation attempts) ──
+    const deepNegIds = NEGATIVITY_CHAINS.negativity_deep_scan;
+    for (const agentId of deepNegIds) {
+      if (disabledAgents[agentId]) continue;
+      const agentData = findAgent(agentId);
+      if (!agentData) continue;
+      const agent = agentData.agent;
+      try {
+        const contextVars = buildContext(ctx, intent, chainContext, userMemories);
+        const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
+        const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
+        const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
+        if (output.text && !output.text.includes("[Service temporarily unavailable")) {
+          negativityFindings += `\n[${agent.name}]: ${output.text}`;
+          agentsUsed.push(agent.id);
         }
       } catch {}
     }
