@@ -1062,6 +1062,32 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
 
+    // ─── Psychology Reports Snapshots ───
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS psychology_snapshots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      snapshot_date TEXT NOT NULL UNIQUE,
+      total_profiles INTEGER DEFAULT 0,
+      avg_trust REAL DEFAULT 0,
+      trust_high INTEGER DEFAULT 0,
+      trust_medium INTEGER DEFAULT 0,
+      trust_low INTEGER DEFAULT 0,
+      trust_critical INTEGER DEFAULT 0,
+      fear_financial INTEGER DEFAULT 0,
+      fear_social INTEGER DEFAULT 0,
+      fear_deceived INTEGER DEFAULT 0,
+      fear_autonomy INTEGER DEFAULT 0,
+      fear_unknown INTEGER DEFAULT 0,
+      control_low INTEGER DEFAULT 0,
+      control_medium INTEGER DEFAULT 0,
+      control_high INTEGER DEFAULT 0,
+      manip_low INTEGER DEFAULT 0,
+      manip_medium INTEGER DEFAULT 0,
+      manip_high INTEGER DEFAULT 0,
+      high_lead_count INTEGER DEFAULT 0,
+      churn_risk_count INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
     g[DONE_FLAG] = true;
     g[DONE_LOCK] = false;
 

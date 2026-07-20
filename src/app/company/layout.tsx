@@ -35,6 +35,7 @@ const sidebarGroups: SidebarGroup[] = [
     links: [
       { href: "/company", en: "Dashboard", bn: "ড্যাশবোর্ড", icon: "📊", desc: "কম্পানি ড্যাশবোর্ড — সার্বিক পরিসংখ্যান ও প্রেডিকশন" },
       { href: "/company/analytics", en: "Analytics", bn: "অ্যানালিটিক্স", icon: "📊", desc: "বিস্তারিত বিশ্লেষণ — ইউজার, সেশন, ইভেন্ট ও সেগমেন্ট" },
+      { href: "/company/psychology-reports", en: "Psych Reports", bn: "সাইকোলজি রিপোর্ট", icon: "📊", desc: "মনস্তাত্ত্বিক বিশ্লেষণ রিপোর্ট, ট্রেন্ড এবং পূর্বাভাস" },
       { href: "/company/funnel", en: "Funnel", bn: "ফানেল", icon: "🔄", desc: "গ্রাহক ফানেল — ভিজিট→সাইনআপ→অর্ডার→পুনরায় ক্রয়" },
       { href: "/company/events", en: "Events", bn: "ইভেন্ট", icon: "📋", desc: "সকল ইভেন্ট লগ — পেজ ভিজিট, ক্লিক, সার্চ ইত্যাদি" },
       { href: "/company/sessions", en: "Sessions", bn: "সেশন", icon: "🕒", desc: "সেশন টাইমলাইন — লগইন থেকে লগআউট পর্যন্ত কার্যকলাপ" },
@@ -141,7 +142,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     const path = pathname;
-    if (path === "/company" || path.startsWith("/company/analytics") || path.startsWith("/company/funnel") || path.startsWith("/company/funnel-psychology") || path.startsWith("/company/events") || path.startsWith("/company/sessions")) {
+    if (path === "/company" || path.startsWith("/company/analytics") || path.startsWith("/company/psychology-reports") || path.startsWith("/company/funnel") || path.startsWith("/company/funnel-psychology") || path.startsWith("/company/events") || path.startsWith("/company/sessions")) {
       setExpandedGroups(["overview"]);
     } else if (path.startsWith("/company/members") || path.startsWith("/company/customers") || path.startsWith("/company/users") || path.startsWith("/company/notifications")) {
       setExpandedGroups(["people"]);
