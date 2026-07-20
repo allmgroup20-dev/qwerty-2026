@@ -1,14 +1,22 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { useLanguageStore } from "@/lib/store";
 import type { Agent, AgentTreeNode, AgentReport, AgentSubmission, AgentLog, AgentStats, GlobalAgentConfig } from "@/lib/ai/agents";
 import { Skeleton } from "@/components/ui/Skeleton";
+import ConversationsTab from "@/components/ai/ConversationsTab";
+import TrainingTab from "@/components/ai/TrainingTab";
+import SentimentTab from "@/components/ai/SentimentTab";
+import AutomationTab from "@/components/ai/AutomationTab";
 
-type TabId = "dashboard" | "settings" | "brain" | "employees" | "insights" | "skills";
+type TabId = "dashboard" | "settings" | "brain" | "employees" | "insights" | "skills" | "conversations" | "training" | "sentiment" | "automation";
 
 const TABS: { id: TabId; icon: string; en: string; bn: string }[] = [
   { id: "dashboard", icon: "📊", en: "Dashboard", bn: "ড্যাশবোর্ড" },
+  { id: "conversations", icon: "💬", en: "Conversations", bn: "কথোপকথন" },
+  { id: "training", icon: "📚", en: "Training", bn: "প্রশিক্ষণ" },
+  { id: "sentiment", icon: "📈", en: "Sentiment", bn: "সেন্টিমেন্ট" },
+  { id: "automation", icon: "⚡", en: "Automation", bn: "অটোমেশন" },
   { id: "settings", icon: "⚙️", en: "Settings", bn: "সেটিংস" },
   { id: "brain", icon: "🧬", en: "Brain", bn: "মস্তিষ্ক" },
   { id: "employees", icon: "👥", en: "Employees", bn: "কর্মচারী" },
@@ -733,6 +741,18 @@ export default function AIHubPage() {
           )}
         </div>
       )}
+
+      {/* ════════════════════════ CONVERSATIONS TAB ════════════════════════ */}
+      {activeTab === "conversations" && <ConversationsTab />}
+
+      {/* ════════════════════════ TRAINING TAB ════════════════════════ */}
+      {activeTab === "training" && <TrainingTab />}
+
+      {/* ════════════════════════ SENTIMENT TAB ════════════════════════ */}
+      {activeTab === "sentiment" && <SentimentTab />}
+
+      {/* ════════════════════════ AUTOMATION TAB ════════════════════════ */}
+      {activeTab === "automation" && <AutomationTab />}
 
       {/* ════════════════════════ SETTINGS TAB ════════════════════════ */}
       {activeTab === "settings" && (
