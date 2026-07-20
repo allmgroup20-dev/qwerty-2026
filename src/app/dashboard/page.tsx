@@ -254,12 +254,13 @@ export default function WorkerDashboard() {
             <h1 className="text-2xl font-bold text-primary flex items-center gap-3">
               {lang === "bn" ? "স্বাগতম" : "Welcome"}, {worker.name}
               {worker.membershipStatus === "premium" ? (
-                <span className="text-xs bg-amber-100 text-amber-700 font-bold px-2.5 py-1 rounded-full">⭐ PREMIUM</span>
+                <span className="text-xs bg-gradient-to-r from-secondary to-secondary-light text-primary-dark font-bold px-3 py-1 rounded-full shadow-sm">⭐ PREMIUM</span>
               ) : (
-                <span className="text-xs bg-gray-100 text-gray-500 font-medium px-2.5 py-1 rounded-full">{lang === "bn" ? "সাধারণ" : "General"}</span>
+                <span className="text-xs bg-primary/5 text-text-secondary font-medium px-3 py-1 rounded-full border border-border/60">{lang === "bn" ? "সাধারণ" : "General"}</span>
               )}
             </h1>
-            <p className="text-sm text-text-secondary mt-1">
+            <p className="text-sm text-text-secondary mt-1 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent" />
               {lang === "bn" ? "সদস্য আইডি" : "Member ID"}: {worker.workerId}
             </p>
           </div>
@@ -279,25 +280,25 @@ export default function WorkerDashboard() {
 
         {/* Resource Income */}
         {typeof worker.resourceIncome === "number" && (
-          <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200">
+          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-accent/5 to-success/5 border border-accent/20">
             <div className="flex items-center gap-3">
               <span className="text-2xl">💰</span>
               <div className="flex-1">
-                <p className="text-sm font-bold text-blue-800">
+                <p className="text-sm font-bold text-accent-dark">
                   {lang === "bn" ? "রিসোর্স আয়" : "Resource Income"}
                 </p>
-                <p className="text-xs text-blue-600 mt-0.5">
+                <p className="text-xs text-accent/70 mt-0.5">
                   {lang === "bn"
                     ? `আপনার রিসোর্স আয় দিয়ে প্রতি ৳৯৯ তে একটি প্রিমিয়াম রিসোর্স আনলক করুন। এই আয় উত্তোলন করা যাবে না।`
                     : `Use your resource income to unlock premium resources at ৳99 each. This income cannot be withdrawn.`}
                 </p>
-                <Link href="/courses" className="inline-block mt-2 px-4 py-1.5 text-xs font-bold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all">
+                <Link href="/courses" className="inline-block mt-2 px-4 py-1.5 text-xs font-bold rounded-lg bg-accent text-white hover:bg-accent-light transition-all">
                   {lang === "bn" ? `রিসোর্স আনলক করুন (${Math.floor(worker.resourceIncome / 99)}টি)` : `Unlock Resources (${Math.floor(worker.resourceIncome / 99)})`}
                 </Link>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-blue-800">৳{worker.resourceIncome.toLocaleString()}</p>
-                <p className="text-[10px] text-blue-500">
+                <p className="text-lg font-bold text-accent-dark">৳{worker.resourceIncome.toLocaleString()}</p>
+                <p className="text-[10px] text-accent/60">
                   {lang === "bn" ? `আনলক করতে পারবেন ${Math.floor(worker.resourceIncome / 99)}টি রিসোর্স` : `${Math.floor(worker.resourceIncome / 99)} resources unlockable`}
                 </p>
               </div>
@@ -332,8 +333,8 @@ export default function WorkerDashboard() {
         {/* Profile completeness check moved to server redirect above */}
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Link href="/dashboard/tree" className="card hover:shadow-lg hover:-translate-y-1 flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+          <Link href="/dashboard/tree" className="card hover:shadow-lg hover:-translate-y-0.5 hover:border-accent/30 flex items-center gap-4 transition-all duration-200">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center">
               <svg className="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
