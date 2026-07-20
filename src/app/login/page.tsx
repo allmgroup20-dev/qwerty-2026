@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useLanguageStore } from "@/lib/store";
 import { FingerprintIcon } from "@/components/ui/FingerprintIcon";
 import { FaceIcon } from "@/components/ui/FaceIcon";
+import { LoadingDots } from "@/components/ui/LoadingDots";
 
 export default function LoginPage() {
   const { lang } = useLanguageStore();
@@ -14,6 +15,18 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [slowWarning, setSlowWarning] = useState(false);
+  const slowTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (loading) {
+      slowTimerRef.current = setTimeout(() => setSlowWarning(true), 5000);
+    } else {
+      setSlowWarning(false);
+      clearTimeout(slowTimerRef.current);
+    }
+    return () => clearTimeout(slowTimerRef.current);
+  }, [loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,15 +200,33 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-accent to-accent-light text-white font-bold text-base shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading
-              ? (lang === "bn" ? "লগইন হচ্ছে..." : "Logging in...")
-              : (lang === "bn" ? "লগইন করুন" : "Login")}
-          </button>
+          <div className="relative">
+            {loading && (
+              <div className="absolute inset-0 rounded-2xl bg-white/40 backdrop-blur-[1px] z-10" />
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-accent to-accent-light text-white font-bold text-base shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px] relative z-20"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <LoadingDots />
+                  <span className="text-sm font-medium animate-loading-pulse">
+                    {lang === "bn" ? "লগইন হচ্ছে..." : "Logging in..."}
+                  </span>
+                </span>
+              ) : (lang === "bn" ? "লগইন করুন" : "Login")}
+            </button>
+          </div>
+
+          {slowWarning && (
+            <div className="text-center text-xs text-text-secondary animate-loading-pulse py-1">
+              {lang === "bn"
+                ? "একটু ধীর গতি হচ্ছে, দয়া করে অপেক্ষা করুন..."
+                : "Slower than usual, please wait..."}
+            </div>
+          )}
 
           {/* Divider */}
           <div className="relative py-2">

@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useLanguageStore } from "@/lib/store";
+import { CardSkeleton } from "@/components/ui/Skeleton";
 
 const CheckoutModal = dynamic(() => import("@/components/courses/CheckoutModal"), { ssr: false });
 import { useDebounce } from "@/lib/use-debounce";
@@ -391,7 +392,11 @@ export default function CoursesPage() {
 
         {viewMode === "all" ? (
           <>
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-text-secondary font-bold text-lg">কোনো রিসোর্স পাওয়া যায়নি</p>
                 <p className="text-text-secondary/60 text-sm mt-2">অন্য কীওয়ার্ড দিয়ে সার্চ করুন</p>

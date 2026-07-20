@@ -2,13 +2,13 @@
 
 export function Skeleton({ className = "" }: { className?: string }) {
   return (
-    <div className={`animate-pulse bg-gray-200 rounded-xl ${className}`} />
+    <div className={`bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded-xl ${className}`} />
   );
 }
 
 export function CardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-border space-y-4">
+    <div className="bg-white rounded-2xl p-5 border border-border space-y-4 shadow-sm">
       <Skeleton className="h-40 w-full rounded-xl" />
       <Skeleton className="h-5 w-3/4" />
       <Skeleton className="h-4 w-full" />

@@ -198,6 +198,22 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes bounce-dot {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes progress-bar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes loading-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -216,6 +232,9 @@
   background-size: 200% 200%;
   animation: gradientShift 4s ease infinite; 
 }
+.animate-bounce-dot { animation: bounce-dot 1.4s ease-in-out infinite; }
+.animate-progress { animation: progress-bar 2s ease-in-out infinite; }
+.animate-loading-pulse { animation: loading-pulse 2s ease-in-out infinite; }
 
 .is-hidden { opacity: 0; pointer-events: none; }
 

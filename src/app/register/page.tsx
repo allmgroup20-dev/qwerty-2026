@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLanguageStore } from "@/lib/store";
+import { LoadingDots } from "@/components/ui/LoadingDots";
 
 export default function RegisterPage() {
   const { lang } = useLanguageStore();
@@ -153,10 +154,13 @@ export default function RegisterPage() {
           </div>
 
           <button type="submit" disabled={loading}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-accent to-accent-light text-white font-bold text-base shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
-            {loading
-              ? (lang === "bn" ? "নিবন্ধন হচ্ছে..." : "Registering...")
-              : (lang === "bn" ? "নিবন্ধন করুন" : "Register")}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-accent to-accent-light text-white font-bold text-base shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px]">
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <LoadingDots />
+                <span className="text-sm font-medium animate-loading-pulse">{lang === "bn" ? "নিবন্ধন হচ্ছে..." : "Registering..."}</span>
+              </span>
+            ) : (lang === "bn" ? "নিবন্ধন করুন" : "Register")}
           </button>
 
           <div className="relative py-2">
