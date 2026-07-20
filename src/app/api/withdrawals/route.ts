@@ -21,15 +21,22 @@ export async function POST(request: NextRequest) {
     );
     const isAutoMode = paySetting.length > 0 && paySetting[0].setting_value === "0";
 
-    const worker = await query<{ worker_id: string; balance: number; name: string; phone: string; membership_status: string }>(
-      env, "SELECT worker_id, balance, name, phone, membership_status FROM workers WHERE worker_id = ?", [workerId]
+    const worker = await query<{ worker_id: string; balance: number; resource_income: number; name: string; phone: string; membership_status: string }>(
+      env, "SELECT worker_id, balance, name, phone, membership_status, resource_income FROM workers WHERE worker_id = ?", [workerId]
     );
 
     if (!worker || worker.length === 0) {
       return NextResponse.json({ error: "Worker not found" }, { status: 404 });
     }
 
-    if (worker[0].balance < amount) {
+    // Calculate real balance same way as summar API (paid commissions - withdrawn + resource_income)
+    const [paidComm, withdrawnSum] = await Promise.all([
+      query<{ total: number }>(env, "SELECT COALESCE(SUM(total_amount), 0) as total FROM commissions WHERE to_worker_id = ? AND status = 'paid'", [workerId]),
+      query<{ total: number }>(env, "SELECT COALESCE(SUM(final_amount), 0) as total FROM withdrawals WHERE worker_id = ? AND status = 'completed'", [workerId]),
+    ]);
+    const realBalance = Math.max(0, (paidComm[0]?.total || 0) - (withdrawnSum[0]?.total || 0));
+
+    if (realBalance < amount) {
       return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
     }
 

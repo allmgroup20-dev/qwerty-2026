@@ -253,7 +253,7 @@ export default function WorkerDashboard() {
         )}
 
         {/* Resource Income */}
-        {worker.resourceIncome > 0 && (
+        {typeof worker.resourceIncome === "number" && (
           <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200">
             <div className="flex items-center gap-3">
               <span className="text-2xl">💰</span>
