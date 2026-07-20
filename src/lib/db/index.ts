@@ -2,6 +2,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 const DONE_FLAG = "__dbSchemaSetupDone";
 const DONE_LOCK = "__dbSchemaSetupLock";
+const PENDING_FLAG = "__dbSchemaSetupPending";
 
 let dbCache: { DB: D1Database } | null = null;
 
@@ -1328,7 +1329,19 @@ export async function getDB(): Promise<{ DB: D1Database }> {
     if (!db) {
       throw new Error("D1 binding 'DB' is undefined in Cloudflare environment");
     }
-    await ensureSchema({ DB: db });
+
+    const g = globalThis as any;
+    if (!g[DONE_FLAG] && !g[PENDING_FLAG]) {
+      g[PENDING_FLAG] = true;
+      ensureSchema({ DB: db }).then(() => {
+        g[DONE_FLAG] = true;
+        g[PENDING_FLAG] = false;
+      }).catch((e) => {
+        console.error("Background schema init failed:", e);
+        g[PENDING_FLAG] = false;
+      });
+    }
+
     dbCache = { DB: db };
     return dbCache;
   } catch (e) {
