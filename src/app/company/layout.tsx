@@ -8,11 +8,15 @@ import CommandPalette from "@/components/CommandPalette";
 
 interface UserInfo { name: string; username: string; role: string; }
 
-const bottomTabs = [
+const navTabs = [
   { href: "/company", en: "Home", bn: "হোম", icon: "🏠" },
-  { href: "/company/members", en: "People", bn: "সদস্য", icon: "👥" },
-  { href: "/company/products", en: "Products", bn: "পণ্য", icon: "📦" },
+  { href: "/company/courses", en: "Courses", bn: "রিসোর্স", icon: "🎓" },
+  { href: "/company/finance", en: "Finance", bn: "অর্থ", icon: "💰" },
   { href: "/company/ai", en: "AI", bn: "এআই", icon: "🤖" },
+  { href: "/company/analytics", en: "Analytics", bn: "বিশ্লেষণ", icon: "📊" },
+  { href: "/company/psychology", en: "Psychology", bn: "সাইকোলজি", icon: "🧠" },
+  { href: "/company/marketing", en: "Marketing", bn: "মার্কেটিং", icon: "📈" },
+  { href: "/company/members", en: "People", bn: "সদস্য", icon: "👥" },
   { href: "/company/settings", en: "Settings", bn: "সেটিংস", icon: "⚙️" },
 ];
 
@@ -107,16 +111,30 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
         {children}
       </main>
 
+      {/* Desktop Secondary Nav */}
+      <nav className="hidden lg:flex items-center gap-0.5 px-4 py-1.5 bg-white border-b border-border/40 overflow-x-auto scrollbar-none">
+        <button
+          onClick={() => { const e = new KeyboardEvent("keydown", { metaKey: true, key: "k" }); window.dispatchEvent(e); }}
+          className="flex items-center gap-1.5 px-2.5 py-1 mr-2 rounded-lg text-[10px] font-medium text-text-secondary bg-gray-100 hover:bg-gray-200 transition-all shrink-0"
+        >🔍 <kbd className="text-[8px] opacity-60">⌘K</kbd></button>
+        {navTabs.map((tab) => (
+          <Link key={tab.href} href={tab.href}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-all shrink-0 ${
+              isTabActive(tab.href) ? "bg-primary/10 text-primary font-semibold" : "text-text-secondary hover:bg-primary/5 hover:text-text"
+            }`}>
+            <span>{tab.icon}</span>
+            <span>{lang === "bn" ? tab.bn : tab.en}</span>
+          </Link>
+        ))}
+      </nav>
+
       {/* Bottom Tab Bar (mobile) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border/80 flex items-center justify-around h-14 px-1 safe-area-bottom">
-        {bottomTabs.map((tab) => (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-all min-w-[48px] ${
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border/80 flex items-center gap-0.5 h-14 px-1 overflow-x-auto scrollbar-none safe-area-bottom">
+        {navTabs.map((tab) => (
+          <Link key={tab.href} href={tab.href}
+            className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-all min-w-[48px] shrink-0 ${
               isTabActive(tab.href) ? "text-primary" : "text-text-secondary/60 hover:text-text-secondary"
-            }`}
-          >
+            }`}>
             <span className="text-lg">{tab.icon}</span>
             <span className={`text-[9px] font-medium ${isTabActive(tab.href) ? "font-bold" : ""}`}>
               {lang === "bn" ? tab.bn : tab.en}
@@ -124,11 +142,8 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
           </Link>
         ))}
         <button
-          onClick={() => {
-            const event = new KeyboardEvent("keydown", { metaKey: true, key: "k" });
-            window.dispatchEvent(event);
-          }}
-          className="flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-all min-w-[48px] text-text-secondary/60 hover:text-text-secondary"
+          onClick={() => { const e = new KeyboardEvent("keydown", { metaKey: true, key: "k" }); window.dispatchEvent(e); }}
+          className="flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-all min-w-[48px] shrink-0 text-text-secondary/60 hover:text-text-secondary"
         >
           <span className="text-lg">🔍</span>
           <span className="text-[9px] font-medium">Search</span>
