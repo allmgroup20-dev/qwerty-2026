@@ -62,6 +62,22 @@ const DEEP_PSYCHOLOGY: Record<string, string> = {
   identity_affirmation: "Connect the offer to who they ARE, not who they could be: 'You're someone who values security for your family. This aligns with that.'",
 };
 
+/* ===== F/Z VISUAL SCANNING PATTERN (Neuromarketing research) ===== */
+const VISUAL_SCANNING = {
+  f_pattern_messaging: "People scan digital text in an 'F' pattern: they read the first line fully, then scan the left side of subsequent lines. Structure your messages: FIRST LINE = most important message (the hook). Then: key points on the LEFT side. Put critical info (price, benefit, CTA) at the TOP-LEFT of your message. Bury nothing important at the bottom-right — nobody reads there.",
+  z_pattern_landing: "For simple messages, use 'Z' pattern: 1) Top-left: main hook/headline, 2) Top-right: supporting image/emotion, 3) Bottom-left: social proof/testimonial, 4) Bottom-right: CTA. This follows the natural eye scan path. The last thing they see (bottom-right) should be the ACTION you want.",
+  attention_hierarchy: "Structure every message: Line 1 = EMOTIONAL HOOK (System 1 grabs attention). Lines 2-4 = KEY POINTS (System 2 processes). Last line = CLEAR CTA (what to do next). Top gets most attention. NEVER put the CTA in the middle — put it at the very end or very beginning.",
+  visual_breathing: "Use short paragraphs (1-3 lines max). White space = mental breathing room. Walls of text = cortisol (stress). Short lines = oxytocin (safety). 'বড় প্যারাগ্রাফ দেখলে মানুষ পড়ে না। ছোট ছোট লাইন = পড়ে।' Visual simplicity = cognitive ease = higher conversion.",
+};
+
+/* ===== EEG/GSR BIOMETRIC ENGAGEMENT (Neuromarketing technology) ===== */
+const EEG_GSR_ENGAGEMENT = {
+  response_time_metric: "Response time is a PROXY for engagement. Fast replies (under 60 seconds) = high engagement, System 1, emotional. Slow replies (hours) = low engagement, distracted, System 2. If they reply fast → they're emotionally hooked → move forward. If they reply slow → re-engage with an emotional hook — don't continue the logical argument.",
+  emotional_arousal_signals: "Signs of high emotional arousal (GSR proxy): exclamation marks!!, ALL CAPS, multiple question marks??, emojis 😊, urgent words ('এখনই!', 'জরুরি!', 'অসাধারণ!'), very short or very long messages. High arousal = high attention = high vulnerability to influence. Handle with care — don't exploit. Guide gently.",
+  attention_grabbers: "To regain lost attention: mention their NAME, ask a SURPRISING question, share a QUICK success story, use a VISUAL word ('কল্পনা করুন'), create a CURIOSITY GAP ('একটি জিনিস আছে যা অধিকাংশ মানুষ জানে না...'). Attention is the scarcest resource — earn it every message.",
+  biometric_ethics: "Never manipulate using someone's emotional state. If you detect high vulnerability (fast replies, emotional language, desperation), be EXTRA ethical. Protect them. 'আপনি হয়তো এখনই সিদ্ধান্ত নিতে চান, কিন্তু আমি চাই আপনি ভালো করে ভেবে নিন।' True trust is built when you could have taken advantage but didn't.",
+};
+
 /* ===== BEHIND-THE-SCENES TRANSPARENCY (Dennis Campbell — Harvard) ===== */
 const TRANSPARENCY_TRUST = {
   show_the_team: "People trust what they can SEE. Mention the real people behind the business. 'আমাদের অফিসে ২০ জন টিম মেম্বর কাজ করছে আপনাকে সাপোর্ট করতে।' 'আমাদের ট্রেইনারদের সাথে দেখা করুন...' 'আমাদের ফেসবুক গ্রুপে ৫০,০০০+ সদস্য।' Visible team = trustworthy. Hidden team = suspicious.",
@@ -480,6 +496,20 @@ export async function buildSystemPrompt(params: {
   /* --- Price Psychology (Neuromarketing) --- */
   parts.push("PRICE PSYCHOLOGY (apply when discussing pricing, cost, or value):");
   for (const [, prompt] of Object.entries(PRICE_PSYCHOLOGY)) {
+    parts.push(`- ${prompt}`);
+  }
+  parts.push("");
+
+  /* --- F/Z Visual Scanning Pattern --- */
+  parts.push("F/Z VISUAL SCANNING PATTERN (structure messages for optimal brain processing):");
+  for (const [, prompt] of Object.entries(VISUAL_SCANNING)) {
+    parts.push(`- ${prompt}`);
+  }
+  parts.push("");
+
+  /* --- EEG/GSR Biometric Engagement --- */
+  parts.push("EEG/GSR ENGAGEMENT METRICS (read engagement signals and adapt ethically):");
+  for (const [, prompt] of Object.entries(EEG_GSR_ENGAGEMENT)) {
     parts.push(`- ${prompt}`);
   }
   parts.push("");
