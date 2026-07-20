@@ -87,6 +87,7 @@ const sidebarGroups: SidebarGroup[] = [
       { href: "/company/ai-distribution", en: "AI Distribution", bn: "এআই বিতরণ", icon: "📚", desc: "AI জ্ঞান বিতরণ — কোন এজেন্ট/কর্মচারীর কি জ্ঞান আছে ট্র্যাক করুন" },
       { href: "/company/ai-conversations", en: "Conversations", bn: "কথোপকথন", icon: "💬", desc: "এআই কনভার্সেশন — ইউজারদের সাথে এআই-এর কথোপকথনের লগ" },
       { href: "/company/psychology-insights", en: "Psychology Insights", bn: "সাইকোলজি ইনসাইটস", icon: "🧠", desc: "গ্রাহক মনস্তাত্ত্বিক প্রোফাইল ড্যাশবোর্ড — বিশ্বাস, ভয়, মাস্ক স্ট্যাটাস" },
+      { href: "/company/psychology-profiles", en: "Psych Profiles", bn: "সাইকোলজি প্রোফাইল", icon: "🔍", desc: "গ্রাহক সাইকোলজি প্রোফাইল কনসোল — সার্চ, প্রোফাইল, কৌশল ও প্রশিক্ষণ" },
       { href: "/company/ai-training", en: "AI Training", bn: "এআই প্রশিক্ষণ", icon: "📚", desc: "AI প্রশিক্ষণ মডিউল — সাইকোলজিক্যাল ট্রেনিং ও নলেজ রিপোজিটরি" },
       { href: "/company/courses/ai-pricing", en: "AI Pricing", bn: "এআই প্রাইসিং", icon: "💰", desc: "এআই-ভিত্তিক রিসোর্স প্রাইসিং — অটোমেটিক প্রাইস ও প্রিমিয়াম সাজেশন" },
     ],
@@ -148,7 +149,7 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
       setExpandedGroups(["people"]);
     } else if (path.startsWith("/company/products") || path.startsWith("/company/courses") || path.startsWith("/company/orders") || path.startsWith("/company/reviews") || path.startsWith("/company/levels") || path.startsWith("/company/finance") || path.startsWith("/company/withdrawals") || path.startsWith("/company/currencies") || path.startsWith("/company/payment-gateway") || path.startsWith("/company/trainers") || path.startsWith("/company/institutions")) {
       setExpandedGroups(["products"]);
-    } else if (path.startsWith("/company/ai") || path.startsWith("/company/automation") || path.startsWith("/company/sentiment") || path.startsWith("/company/skills") || path.startsWith("/company/psychology-insights") || path.startsWith("/company/ai-training")) {
+    } else if (path.startsWith("/company/ai") || path.startsWith("/company/automation") || path.startsWith("/company/sentiment") || path.startsWith("/company/skills") || path.startsWith("/company/psychology-insights") || path.startsWith("/company/psychology-profiles") || path.startsWith("/company/ai-training")) {
       setExpandedGroups(["ai"]);
     } else if (path.startsWith("/dashboard/platforms") || path.startsWith("/company/translations")) {
       setExpandedGroups(["communication"]);
