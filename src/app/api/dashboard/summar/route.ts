@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     const [commissions, accounts, analytics, settingsRows, levelRow, teamCount, withdrawalSum] = await Promise.all([
       queryFirst<any>(db, "SELECT COUNT(*) as totalCommissions, COALESCE(SUM(total_amount), 0) as totalEarned, COALESCE(SUM(CASE WHEN status = 'paid' THEN total_amount ELSE 0 END), 0) as paidAmount FROM commissions WHERE to_worker_id = ?", [workerId]),
-      query<any>(db, "SELECT id, account_type as accountType, account_number as accountNumber, account_name as accountName, is_default as isDefault FROM saved_accounts WHERE worker_id = ? ORDER BY is_default DESC, created_at ASC", [workerId]),
+      query<any>(db, "SELECT id, account_type, account_number, account_name, is_default FROM saved_accounts WHERE worker_id = ? ORDER BY is_default DESC, created_at ASC", [workerId]),
       queryFirst<any>(db, "SELECT COUNT(*) as totalViews, COUNT(DISTINCT session_id) as totalSessions FROM user_events WHERE worker_id = ? AND event_type = 'page_view'", [workerId]),
       query<{ setting_key: string; setting_value: string }>(db, "SELECT setting_key, setting_value FROM company_settings"),
       queryFirst<any>(db, "SELECT level_name as levelName, level_name_bn as levelNameBn FROM commission_levels WHERE level_number = ?", [profile?.level || 1]),
