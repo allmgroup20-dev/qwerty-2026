@@ -588,7 +588,7 @@ function WithdrawalSettingsTab({ lang }: { lang: string }) {
 
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-2">
-              {lang === "bn" ? "পেমেন্ট Interval (দিন)" : "Payment Interval (Days)"}
+              {lang === "bn" ? "পেমেন্ট অন্তর (দিন)" : "Payment Interval (Days)"}
             </label>
             <select
               value={intervalDays}

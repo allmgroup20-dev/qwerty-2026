@@ -151,7 +151,7 @@ export default function CompanyProductsPage() {
             </div>
 
             <div className="border-t border-border pt-4 mb-4">
-              <h4 className="font-semibold text-sm text-primary mb-2">{lang === "bn" ? "AI দরদাম প্রাইসিং" : "AI Bargaining Price"}</h4>
+              <h4 className="font-semibold text-sm text-primary mb-2">{lang === "bn" ? "এআই দরদাম প্রাইসিং" : "AI Bargaining Price"}</h4>
               <div className="grid sm:grid-cols-3 gap-3 mb-2">
                 <div>
                   <label className="text-xs text-text-secondary block mb-1">{lang === "bn" ? "সর্বনিম্ন দাম" : "Min Price"} (৳)</label>
@@ -164,12 +164,12 @@ export default function CompanyProductsPage() {
                 <div className="flex items-end">
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input type="checkbox" checked={form.aiPriceEnabled === 1} onChange={(e) => setForm({ ...form, aiPriceEnabled: e.target.checked ? 1 : 0 })} className="w-4 h-4 accent-primary" />
-                    <span className="text-sm text-text-secondary">{lang === "bn" ? "AI দরদাম সক্রিয়" : "AI Pricing Active"}</span>
+                    <span className="text-sm text-text-secondary">{lang === "bn" ? "এআই দরদাম সক্রিয়" : "AI Pricing Active"}</span>
                   </label>
                 </div>
               </div>
               <p className="text-xs text-text-secondary">
-                {lang === "bn" ? "AI গ্রাহকের প্রোফাইল অনুযায়ী min-max-এর মধ্যে দাম নির্ধারণ করবে। কখনো min-এর নিচে যাবে না।" : "AI will set price between min and max based on customer profile. Never goes below min."}
+                {lang === "bn" ? "এআই ক্রেতার প্রোফাইল অনুযায়ী ন্যূনতম-সর্বোচ্চের মধ্যে দাম নির্ধারণ করবে। কখনো ন্যূনতমের নিচে যাবে না।" : "AI will set price between min and max based on customer profile. Never goes below min."}
               </p>
             </div>
 

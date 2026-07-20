@@ -709,7 +709,7 @@ export default function WorkerDashboard() {
                         placeholder={lang === "bn" ? "অ্যাকাউন্ট নাম্বার" : "Account Number"}
                         className="input-field w-full text-sm" />
                       <input type="text" value={newAccName} onChange={e => setNewAccName(e.target.value)}
-                        placeholder={lang === "bn" ? "অ্যাকাউন্টের নাম (optional)" : "Account Label (optional)"}
+                        placeholder={lang === "bn" ? "অ্যাকাউন্টের নাম (ঐচ্ছিক)" : "Account Label (optional)"}
                         className="input-field w-full text-sm" />
                       <div className="flex gap-2">
                         <button onClick={() => {
