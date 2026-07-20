@@ -1,22 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_Bengali, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import ClientLayout from "./client-layout";
 
-const notoSansBengali = Noto_Sans_Bengali({
-  subsets: ["bengali", "latin"],
-  weight: ["400", "500", "600", "700"],
+const solaimanLipi = localFont({
+  src: [
+    { path: "./fonts/SolaimanLipi-Regular.woff", weight: "400", style: "normal" },
+    { path: "./fonts/SolaimanLipi-Bold.woff", weight: "700", style: "normal" },
+  ],
   display: "swap",
   preload: true,
   variable: "--font-bengali",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  display: "swap",
-  preload: true,
-  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
@@ -48,12 +42,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="bn" className={`${notoSansBengali.variable} ${inter.variable}`}>
+    <html lang="bn" className={`${solaimanLipi.variable}`}>
       <head>
-        <link rel="dns-prefetch" href="https://career.jobayergroup.com" />
         <link rel="preload" href="/favicon.svg" as="image" />
       </head>
-      <body className="min-h-screen bg-bg font-sans antialiased">
+      <body className="min-h-screen bg-bg font-bengali antialiased">
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

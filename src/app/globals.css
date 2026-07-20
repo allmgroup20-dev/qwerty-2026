@@ -22,8 +22,8 @@
   --color-warning: #F59E0B;
   --color-info: #3B82F6;
   --color-success: #10B981;
-  --font-sans: var(--font-sans, 'Inter', system-ui, -apple-system, sans-serif);
-  --font-bengali: var(--font-bengali, 'Noto Sans Bengali', 'Inter', system-ui, sans-serif);
+  --font-sans: system-ui, -apple-system, sans-serif;
+  --font-bengali: var(--font-bengali, 'SolaimanLipi', system-ui, sans-serif);
 }
 
 @layer base {
