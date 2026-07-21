@@ -826,21 +826,6 @@ export const knowledgeAccumulation = sqliteTable("knowledge_accumulation", {
   createdAt: text("created_at").default("datetime('now')"),
 });
 
-// ── AI Knowledge Distribution (tracks what knowledge each agent/employee has & where it came from) ──
-export const strategyCanvas = sqliteTable("strategy_canvas", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  factorName: text("factor_name").notNull(),
-  factorNameBn: text("factor_name_bn"),
-  ourScore: integer("our_score").notNull().default(5),
-  competitorScore: integer("competitor_score").default(5),
-  competitorName: text("competitor_name"),
-  category: text("category").default("core"),
-  sortOrder: integer("sort_order").default(0),
-  isActive: integer("is_active").default(1),
-  createdAt: text("created_at").default("datetime('now')"),
-  updatedAt: text("updated_at"),
-});
-
 export const aiKnowledgeDistribution = sqliteTable("ai_knowledge_distribution", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   sourceType: text("source_type").notNull(), // 'book' | 'training' | 'agent' | 'system' | 'manual'
