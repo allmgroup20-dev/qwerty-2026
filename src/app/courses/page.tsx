@@ -19,6 +19,7 @@ interface Course {
   trainerId?: number | null; institutionId?: number | null;
   trainerName?: string | null; trainerNameBn?: string | null;
   trainerImageUrl?: string | null;
+  imageUrl?: string | null;
   institutionName?: string | null; institutionNameBn?: string | null;
   institutionLogoUrl?: string | null;
 }
@@ -34,9 +35,10 @@ interface Institution {
   logo_url: string | null; sort_order: number;
 }
 
-function getCourseImage(img: string | null | undefined, logo: string | null | undefined): { src: string; alt: string } | null {
-  if (img) return { src: img, alt: "" };
-  if (logo) return { src: logo, alt: "" };
+function getCourseImage(course: Course): { src: string; alt: string } | null {
+  if (course.imageUrl) return { src: course.imageUrl, alt: "" };
+  if (course.trainerImageUrl) return { src: course.trainerImageUrl, alt: "" };
+  if (course.institutionLogoUrl) return { src: course.institutionLogoUrl, alt: "" };
   return null;
 }
 
@@ -216,7 +218,7 @@ export default function CoursesPage() {
   const statusText = !isLoggedIn ? `লগইন করে ${count}টি প্রিমিয়াম রিসোর্স আনলক করুন` : isPremium ? `প্রিমিয়াম সদস্য হিসাবে ${count}টি রিসোর্স এক্সেস করুন` : `${count}টি প্রিমিয়াম রিসোর্স — লিমিট অনুযায়ী আনলক করুন`;
 
   const courseCard = (item: Course, isRelated = false) => {
-    const img = getCourseImage(item.trainerImageUrl, item.institutionLogoUrl);
+    const img = getCourseImage(item);
     const access = canAccess(item);
     const firstCatId = (item.categoryIds || [])[0];
     const catDisplay = firstCatId ? (item.categoryNamesBn?.[0] || item.categoryNames?.[0] || "") : "";
@@ -231,11 +233,13 @@ export default function CoursesPage() {
               : "border-border/60 opacity-75"
           }`}>
           <div className="flex items-start gap-3.5">
-            {img && (
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 flex items-center justify-center shrink-0 transition-transform overflow-hidden group-hover:scale-110 group-hover:rotate-3">
-                <img src={img.src} alt={img.alt} className="w-full h-full object-cover" />
-              </div>
-            )}
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 flex items-center justify-center shrink-0 transition-transform overflow-hidden group-hover:scale-110 group-hover:rotate-3">
+              {img ? (
+                <img src={img.src} alt={img.alt} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.classList.add('fallback'); }} />
+              ) : (
+                <span className="text-lg font-black text-purple-500/40">{(item.titleBn || item.title || "?").charAt(0)}</span>
+              )}
+            </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary/60">{catDisplay}</span>

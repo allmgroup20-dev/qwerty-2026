@@ -92,10 +92,12 @@ export default function MyCoursesPage() {
             ) : bookmarks.map((b: any) => (
               <a key={b.id} href={`/courses/${b.courseId}`}
                 className="flex items-center gap-3 bg-white rounded-2xl border border-border p-4 hover:shadow-md transition-all">
-                <span className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
-                  {b.trainerImageUrl || b.institutionLogoUrl ? (
-                    <img src={b.trainerImageUrl || b.institutionLogoUrl} alt="" className="w-full h-full object-cover" />
-                  ) : null}
+                <span className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 bg-gradient-to-br from-purple-500/10 to-purple-600/5">
+                  {(b.imageUrl || b.trainerImageUrl || b.institutionLogoUrl) ? (
+                    <img src={b.imageUrl || b.trainerImageUrl || b.institutionLogoUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  ) : (
+                    <span className="text-sm font-bold text-purple-500/40">{(b.titleBn || b.title || "?").charAt(0)}</span>
+                  )}
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-text truncate">{b.titleBn || b.title}</p>

@@ -1265,6 +1265,8 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     env.DB.prepare(`UPDATE workers SET membership_status = 'general' WHERE membership_status = 'active'`).run().catch(() => {});
     env.DB.prepare(`UPDATE workers SET membership_status = 'premium' WHERE membership_status = 'vip'`).run().catch(() => {});
 
+    await addCol("courses", "image_url", "TEXT");
+
     // Course performance indexes
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_course_files_course ON course_files(course_id)`).run().catch(() => {});
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_courses_is_new ON courses(is_new)`).run().catch(() => {});
