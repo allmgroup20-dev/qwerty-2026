@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { query, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 import { getSystemTimezone, isScheduledTime } from "@/lib/timezone";
+import { setCached } from "@/lib/cache";
 
 const TABLES = [
   "user_events", "user_sessions", "user_searches", "notifications",
@@ -12,6 +13,19 @@ const TABLES = [
 export async function GET() {
   try {
     const db = await getDB();
+
+    // Auto-backfill worker credentials into KV for instant login
+    try {
+      const workers = await query<{ worker_id: string; name: string; password: string; phone: string }>(
+        db, "SELECT worker_id, name, password, phone FROM workers WHERE created_at > datetime('now', '-1 day')"
+      );
+      for (const w of workers) {
+        const phoneHash = Array.from(new Uint8Array(
+          await crypto.subtle.digest("SHA-256", new TextEncoder().encode(w.phone))
+        )).map(b => b.toString(16).padStart(2, "0")).join("");
+        setCached(`auth:worker:${phoneHash}`, { worker_id: w.worker_id, name: w.name, password: w.password }).catch(() => {});
+      }
+    } catch {}
 
     const settings = await query<{ setting_key: string; setting_value: string }>(
       db,

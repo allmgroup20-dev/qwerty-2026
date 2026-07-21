@@ -5,7 +5,8 @@ import { verifyWorkerPassword, generateToken, getJwtSecret } from "@/lib/auth";
 import { getCached, setCached } from "@/lib/cache";
 
 const MEMO = "__workerAuthMemo";
-const D1_TIMEOUT_MS = 5000;
+const D1_TIMEOUT_MS = 8000;
+const HANDLER_TIMEOUT_MS = 15000;
 
 function getMemo(): Map<string, { worker_id: string; name: string; password: string }> {
   const g = globalThis as any;
@@ -14,6 +15,18 @@ function getMemo(): Map<string, { worker_id: string; name: string; password: str
 }
 
 export async function POST(request: NextRequest) {
+  return await Promise.race([
+    handleLogin(request),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Handler timed out")), HANDLER_TIMEOUT_MS)
+    ),
+  ]).catch((err) => {
+    console.error("Login handler error:", err);
+    return NextResponse.json({ error: "Server timeout, please refresh and try again" }, { status: 503 });
+  });
+}
+
+async function handleLogin(request: NextRequest): Promise<NextResponse> {
   try {
     const { phone, password } = await request.json() as { phone: string; password: string };
     if (!phone || !password) {
