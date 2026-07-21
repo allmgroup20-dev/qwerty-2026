@@ -9,7 +9,6 @@ import { LoadingDots } from "@/components/ui/LoadingDots";
 
 export default function LoginPage() {
   const { lang } = useLanguageStore();
-  const [activeTab, setActiveTab] = useState<"worker" | "company">("worker");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,20 +32,19 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      const endpoint = activeTab === "worker" ? "/api/auth/worker-login" : "/api/auth/company-login";
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/auth/worker-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(activeTab === "worker" ? { phone, password } : { username: phone, password }),
+        body: JSON.stringify({ phone, password }),
       });
       const data = await res.json() as { error?: string; token?: string; workerId?: string; name?: string };
       if (!res.ok) throw new Error(data.error || "Login failed");
-      if (activeTab === "worker" && data.token) {
+      if (data.token) {
         localStorage.setItem("worker_token", data.token);
         localStorage.setItem("worker_id", data.workerId || "");
         localStorage.setItem("worker_name", data.name || "");
       }
-      window.location.href = activeTab === "worker" ? "/dashboard" : "/company";
+      window.location.href = "/dashboard";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -131,25 +129,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex bg-white rounded-2xl p-1.5 shadow-sm border border-border/80 mb-6">
-          {(["worker", "company"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-                activeTab === tab
-                  ? "bg-gradient-to-r from-primary to-primary-light text-white shadow-md"
-                  : "text-text-secondary hover:text-primary"
-              }`}
-            >
-              {tab === "worker"
-                ? (lang === "bn" ? "মেম্বর" : "Member")
-                : (lang === "bn" ? "কোম্পানি" : "Company")}
-            </button>
-          ))}
-        </div>
-
         {/* Error */}
         {error && (
           <div className="mb-4 p-3 rounded-xl bg-danger/5 border border-danger/20 text-sm text-danger font-medium flex items-center gap-2">
@@ -161,18 +140,16 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-border/80 space-y-4">
           <div>
             <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
-              {activeTab === "worker"
-                ? (lang === "bn" ? "ফোন নম্বর" : "Phone Number")
-                : (lang === "bn" ? "ইউজারনেম" : "Username")}
+              {lang === "bn" ? "ফোন নম্বর" : "Phone Number"}
             </label>
             <input
-              type={activeTab === "worker" ? "tel" : "text"}
+              type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder={activeTab === "worker" ? "০১XXX-XXXXXX" : "company@email.com"}
+              placeholder="০১XXX-XXXXXX"
               className="input-field"
               required
-              autoComplete={activeTab === "worker" ? "tel" : "username"}
+              autoComplete="tel"
             />
           </div>
 
@@ -282,17 +259,15 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {activeTab === "worker" && (
-            <button
-              type="button"
-              onClick={handleBiometric}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-accent/30 text-sm font-bold text-accent hover:bg-accent/5 transition-all disabled:opacity-50"
-            >
-              <FingerprintIcon className="w-5 h-5" />
-              {lang === "bn" ? "ফিঙ্গারপ্রিন্ট / ফেস আইডি" : "Fingerprint / Face ID"}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleBiometric}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-accent/30 text-sm font-bold text-accent hover:bg-accent/5 transition-all disabled:opacity-50"
+          >
+            <FingerprintIcon className="w-5 h-5" />
+            {lang === "bn" ? "ফিঙ্গারপ্রিন্ট / ফেস আইডি" : "Fingerprint / Face ID"}
+          </button>
         </form>
 
         {/* Register link */}
