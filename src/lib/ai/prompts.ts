@@ -1,4 +1,4 @@
-import { getKnowledgeContext } from "./knowledge";
+import { retrieveKnowledge } from "./knowledge-brain";
 import { getHistory } from "./history";
 import { getSimilarUserContext } from "./cross-user-learning";
 import type { Persona } from "./persona";
@@ -474,9 +474,14 @@ export async function buildSystemPrompt(params: {
   }
 
   /* --- Knowledge Base --- */
-  const knowledge = await getKnowledgeContext();
+  const knowledge = await retrieveKnowledge({
+    intent: "",
+    department: params.role === "worker" ? "motivation" : "sales",
+    language: params.language || "bn",
+    limit: 10,
+  });
   if (knowledge) {
-    parts.push("COMPANY KNOWLEDGE BASE:");
+    parts.push("RELEVANT KNOWLEDGE:");
     parts.push(knowledge);
     parts.push("");
   }

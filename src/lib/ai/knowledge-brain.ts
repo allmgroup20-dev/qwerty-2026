@@ -82,19 +82,40 @@ export async function getKnowledgeByCategory(category: string, limit = 50): Prom
   );
 }
 
+/**
+ * retrieveKnowledge — unified entry point for all agent knowledge retrieval.
+ * Replaces both getContextualKnowledge() and getKnowledgeContext().
+ */
+export async function retrieveKnowledge(params: {
+  intent: string;
+  department: string;
+  language: string;
+  agentType?: string;
+  limit?: number;
+  minConfidence?: number;
+}): Promise<string> {
+  const db = await ensureDB();
+  const limit = params.limit ?? 15;
+  const minConf = params.minConfidence ?? 0.3;
+
+  const relevant = await query<{ category: string; title: string; content: string; confidence: number }>(
+    { DB: db },
+    `SELECT category, title, content, confidence FROM knowledge_entries
+     WHERE is_active = 1 AND confidence >= ? AND (category = ? OR category = 'general' OR tags LIKE ?)
+     ORDER BY confidence DESC, created_at DESC LIMIT ?`,
+    [minConf, params.department, `%${params.intent}%`, limit]
+  );
+  if (!relevant.length) return "";
+  return relevant.map((r) => `[${r.category}] ${r.title} (confidence: ${(r.confidence * 100).toFixed(0)}%)\n${r.content}`).join("\n\n");
+}
+
+/** @deprecated Use retrieveKnowledge() instead */
 export async function getContextualKnowledge(
   intent: string,
   department: string,
   language: string
 ): Promise<string> {
-  const db = await ensureDB();
-  const relevant = await query<{ category: string; title: string; content: string; confidence: number }>(
-    { DB: db },
-    `SELECT category, title, content, confidence FROM knowledge_entries WHERE is_active = 1 AND confidence >= 0.4 AND (category = ? OR category = 'general' OR tags LIKE ?) ORDER BY confidence DESC LIMIT 15`,
-    [department, `%${intent}%`]
-  );
-  if (!relevant.length) return "";
-  return relevant.map((r) => `[${r.category}] ${r.title} (confidence: ${(r.confidence * 100).toFixed(0)}%)\n${r.content}`).join("\n\n");
+  return retrieveKnowledge({ intent, department, language });
 }
 
 export async function logConversationLearning(learning: {

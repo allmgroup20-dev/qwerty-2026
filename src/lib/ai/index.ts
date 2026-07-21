@@ -5,7 +5,6 @@ export { analyzePainPoints, analyzeInterests, detectLanguage, detectMood, detect
 export { getOrCreateProfile, updateProfileScore, updateProfileFromChat, updateProfileTrust, updateProfileCommunication } from "./profiler";
 export { findSkill, saveSkill } from "./skills";
 export { getHistory, saveMessage } from "./history";
-export { getKnowledgeContext } from "./knowledge";
 export { isWorkerPhone, getWorkerByPhone, getWorkerPremiumStatus } from "./worker-detection";
 export { getOrCreateLead, updateLeadStatus, getLeads, getLeadStats } from "./leads";
 export { consolidateSkills } from "./skill-consolidation";
