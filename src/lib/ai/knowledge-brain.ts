@@ -15,6 +15,24 @@ interface KnowledgeEntry {
   createdAt: string;
 }
 
+/** Ensure knowledge_entries tables exist (ensureSchema fast-check skips Phase 10) */
+async function ensureKnowledgeTables(db: D1Database): Promise<void> {
+  const g = globalThis as any;
+  if (g.__knowledgeTablesReady) return;
+  await db.prepare(`CREATE TABLE IF NOT EXISTS knowledge_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL, subcategory TEXT, title TEXT NOT NULL,
+    content TEXT NOT NULL, source_type TEXT, source_name TEXT, source_url TEXT,
+    confidence REAL DEFAULT 0.5, tags TEXT, version INTEGER DEFAULT 1,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+  )`).run();
+  try { await db.prepare("CREATE INDEX IF NOT EXISTS idx_knowledge_entries_category ON knowledge_entries(category, confidence)").run(); } catch {}
+  try { await db.prepare("CREATE INDEX IF NOT EXISTS idx_knowledge_entries_tags ON knowledge_entries(tags)").run(); } catch {}
+  g.__knowledgeTablesReady = true;
+}
+
 export async function addKnowledgeEntry(entry: {
   category: string;
   subcategory?: string;
@@ -27,6 +45,7 @@ export async function addKnowledgeEntry(entry: {
   tags?: string[];
 }): Promise<number> {
   const db = await ensureDB();
+  await ensureKnowledgeTables(db);
   const res = await execute(
     { DB: db },
     `INSERT INTO knowledge_entries (category, subcategory, title, content, source_type, source_name, source_url, confidence, tags, version) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
@@ -54,6 +73,7 @@ export async function searchKnowledge(
   }
 ): Promise<KnowledgeEntry[]> {
   const db = await ensureDB();
+  await ensureKnowledgeTables(db);
   const limit = options?.limit ?? 20;
   const minConf = options?.minConfidence ?? 0.3;
   const conditions: string[] = ["is_active = 1", "confidence >= ?"];
@@ -75,6 +95,7 @@ export async function searchKnowledge(
 
 export async function getKnowledgeByCategory(category: string, limit = 50): Promise<KnowledgeEntry[]> {
   const db = await ensureDB();
+  await ensureKnowledgeTables(db);
   return query<KnowledgeEntry>(
     { DB: db },
     "SELECT id, category, subcategory, title, content, source_type, source_name, confidence, tags, version, created_at FROM knowledge_entries WHERE is_active = 1 AND category = ? ORDER BY confidence DESC, created_at DESC LIMIT ?",
@@ -95,6 +116,7 @@ export async function retrieveKnowledge(params: {
   minConfidence?: number;
 }): Promise<string> {
   const db = await ensureDB();
+  await ensureKnowledgeTables(db);
   const limit = params.limit ?? 15;
   const minConf = params.minConfidence ?? 0.3;
 
@@ -170,6 +192,7 @@ export async function getKnowledgeStats(): Promise<{
   totalFeedback: number;
 }> {
   const db = await ensureDB();
+  await ensureKnowledgeTables(db);
   const total = await query<{ c: number }>({ DB: db }, "SELECT COUNT(*) as c FROM knowledge_entries WHERE is_active = 1");
   const byCat = await query<{ category: string; c: number }>({ DB: db }, "SELECT category, COUNT(*) as c FROM knowledge_entries WHERE is_active = 1 GROUP BY category ORDER BY c DESC");
   const avg = await query<{ a: number }>({ DB: db }, "SELECT COALESCE(AVG(confidence), 0) as a FROM knowledge_entries WHERE is_active = 1");
