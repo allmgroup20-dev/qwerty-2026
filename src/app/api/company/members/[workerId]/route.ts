@@ -92,7 +92,7 @@ export async function DELETE(
     const db = await getDB();
 
     const admin = await queryFirst<{ password: string }>(
-      db, "SELECT password FROM company_users WHERE LOWER(username) = LOWER(?)",
+      db, "SELECT password FROM company_users WHERE username = ? COLLATE NOCASE",
       [username]
     );
     if (!admin) {

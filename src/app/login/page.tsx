@@ -9,6 +9,7 @@ import { LoadingDots } from "@/components/ui/LoadingDots";
 
 export default function LoginPage() {
   const { lang } = useLanguageStore();
+  const [activeTab, setActiveTab] = useState<"member" | "company">("member");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +17,11 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [slowWarning, setSlowWarning] = useState(false);
   const slowTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Company login fields
+  const [companyUsername, setCompanyUsername] = useState("");
+  const [companyPassword, setCompanyPassword] = useState("");
+  const [showCompanyPassword, setShowCompanyPassword] = useState(false);
 
   useEffect(() => {
     if (loading) {
@@ -45,6 +51,30 @@ export default function LoginPage() {
         localStorage.setItem("worker_name", data.name || "");
       }
       window.location.href = "/dashboard";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompanySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/company-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: companyUsername, password: companyPassword }),
+      });
+      const data = await res.json() as { error?: string; token?: string; name?: string };
+      if (!res.ok) throw new Error(data.error || "Login failed");
+      if (data.token) {
+        localStorage.setItem("company_token", data.token);
+        localStorage.setItem("company_name", data.name || "");
+      }
+      window.location.href = "/company";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -119,14 +149,42 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-2xl mx-auto mb-4 shadow-xl shadow-primary/20">
-            🚀
+            {activeTab === "member" ? "\uD83D\uDE80" : "\uD83C\uDFE2"}
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-primary">
-            {lang === "bn" ? "স্বাগতম" : "Welcome Back"}
+            {activeTab === "member"
+              ? (lang === "bn" ? "স্বাগতম" : "Welcome Back")
+              : (lang === "bn" ? "কোম্পানি লগইন" : "Company Login")}
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            {lang === "bn" ? "আপনার অ্যাকাউন্টে লগইন করুন" : "Login to your account"}
+            {activeTab === "member"
+              ? (lang === "bn" ? "আপনার অ্যাকাউন্টে লগইন করুন" : "Login to your account")
+              : (lang === "bn" ? "আপনার কোম্পানি অ্যাকাউন্টে লগইন করুন" : "Login to your company account")}
           </p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex bg-white rounded-2xl p-1 shadow-sm border border-border/80 mb-4">
+          <button
+            onClick={() => { setActiveTab("member"); setError(""); }}
+            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+              activeTab === "member"
+                ? "bg-gradient-to-r from-accent to-accent-light text-white shadow-lg shadow-accent/25"
+                : "text-text-secondary hover:text-primary"
+            }`}
+          >
+            {lang === "bn" ? "সদস্য লগইন" : "Member Login"}
+          </button>
+          <button
+            onClick={() => { setActiveTab("company"); setError(""); }}
+            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+              activeTab === "company"
+                ? "bg-gradient-to-r from-accent to-accent-light text-white shadow-lg shadow-accent/25"
+                : "text-text-secondary hover:text-primary"
+            }`}
+          >
+            {lang === "bn" ? "কোম্পানি লগইন" : "Company Login"}
+          </button>
         </div>
 
         {/* Error */}
@@ -136,152 +194,213 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-border/80 space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
-              {lang === "bn" ? "ফোন নম্বর" : "Phone Number"}
-            </label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="০১XXX-XXXXXX"
-              className="input-field"
-              required
-              autoComplete="tel"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
-              {lang === "bn" ? "পাসওয়ার্ড" : "Password"}
-            </label>
-            <div className="relative">
+        {/* Member Login Form */}
+        {activeTab === "member" && (
+          <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-border/80 space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
+                {lang === "bn" ? "ফোন নম্বর" : "Phone Number"}
+              </label>
               <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="input-field pr-10"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="০১XXX-XXXXXX"
+                className="input-field"
                 required
-                autoComplete="current-password"
+                autoComplete="tel"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
+                {lang === "bn" ? "পাসওয়ার্ড" : "Password"}
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="input-field pr-10"
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary transition-colors"
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+
+            <div className="relative">
+              {loading && (
+                <div className="absolute inset-0 rounded-2xl bg-white/40 backdrop-blur-[1px] z-10" />
+              )}
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary transition-colors"
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-accent to-accent-light text-white font-bold text-base shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px] relative z-20"
               >
-                {showPassword ? "🙈" : "👁️"}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <LoadingDots />
+                    <span className="text-sm font-medium animate-loading-pulse">
+                      {lang === "bn" ? "লগইন হচ্ছে..." : "Logging in..."}
+                    </span>
+                  </span>
+                ) : (lang === "bn" ? "লগইন করুন" : "Login")}
               </button>
             </div>
-          </div>
 
-          <div className="relative">
-            {loading && (
-              <div className="absolute inset-0 rounded-2xl bg-white/40 backdrop-blur-[1px] z-10" />
+            {slowWarning && (
+              <div className="text-center text-xs text-text-secondary animate-loading-pulse py-1">
+                {lang === "bn"
+                  ? "একটু ধীর গতি হচ্ছে, দয়া করে অপেক্ষা করুন..."
+                  : "Slower than usual, please wait..."}
+              </div>
             )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-accent to-accent-light text-white font-bold text-base shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px] relative z-20"
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <LoadingDots />
-                  <span className="text-sm font-medium animate-loading-pulse">
-                    {lang === "bn" ? "লগইন হচ্ছে..." : "Logging in..."}
-                  </span>
+
+            {/* Divider */}
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border/60" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="px-3 text-xs font-bold text-text-secondary bg-white">
+                  {lang === "bn" ? "অথবা" : "OR"}
                 </span>
-              ) : (lang === "bn" ? "লগইন করুন" : "Login")}
-            </button>
-          </div>
-
-          {slowWarning && (
-            <div className="text-center text-xs text-text-secondary animate-loading-pulse py-1">
-              {lang === "bn"
-                ? "একটু ধীর গতি হচ্ছে, দয়া করে অপেক্ষা করুন..."
-                : "Slower than usual, please wait..."}
+              </div>
             </div>
-          )}
 
-          {/* Divider */}
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border/60" />
+            {/* Social & Biometric */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const email = prompt(lang === "bn" ? "গুগল ইমেইল দিন:" : "Enter Google email:");
+                  if (email) {
+                    fetch("/api/auth/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) })
+                      .then(r => r.json() as Promise<Record<string, unknown>>).then((d) => {
+                        if (d.token) {
+                          localStorage.setItem("worker_token", d.token as string);
+                          localStorage.setItem("worker_name", (d.name as string) || "");
+                          window.location.href = "/dashboard";
+                        }
+                      }).catch(() => setError("Google login failed"));
+                  }
+                }}
+                className="flex items-center justify-center gap-2 py-3 rounded-xl border border-border/80 text-sm font-bold text-text-secondary hover:bg-primary/5 hover:border-primary/30 transition-all"
+              >
+                <span>🔵</span> Google
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const email = prompt(lang === "bn" ? "ফেসবুক ইমেইল দিন:" : "Enter Facebook email:");
+                  if (email) {
+                    fetch("/api/auth/facebook", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) })
+                      .then(r => r.json() as Promise<Record<string, unknown>>).then((d) => {
+                        if (d.token) {
+                          localStorage.setItem("worker_token", d.token as string);
+                          localStorage.setItem("worker_name", (d.name as string) || "");
+                          window.location.href = "/dashboard";
+                        }
+                      }).catch(() => setError("Facebook login failed"));
+                  }
+                }}
+                className="flex items-center justify-center gap-2 py-3 rounded-xl border border-border/80 text-sm font-bold text-text-secondary hover:bg-primary/5 hover:border-primary/30 transition-all"
+              >
+                <span>🔷</span> Facebook
+              </button>
             </div>
-            <div className="relative flex justify-center">
-              <span className="px-3 text-xs font-bold text-text-secondary bg-white">
-                {lang === "bn" ? "অথবা" : "OR"}
-              </span>
-            </div>
-          </div>
 
-          {/* Social & Biometric */}
-          <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => {
-                const email = prompt(lang === "bn" ? "গুগল ইমেইল দিন:" : "Enter Google email:");
-                if (email) {
-                  fetch("/api/auth/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) })
-                    .then(r => r.json() as Promise<Record<string, unknown>>).then((d) => {
-                      if (d.token) {
-                        localStorage.setItem("worker_token", d.token as string);
-                        localStorage.setItem("worker_name", (d.name as string) || "");
-                        window.location.href = "/dashboard";
-                      }
-                    }).catch(() => setError("Google login failed"));
-                }
-              }}
-              className="flex items-center justify-center gap-2 py-3 rounded-xl border border-border/80 text-sm font-bold text-text-secondary hover:bg-primary/5 hover:border-primary/30 transition-all"
+              onClick={handleBiometric}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-accent/30 text-sm font-bold text-accent hover:bg-accent/5 transition-all disabled:opacity-50"
             >
-              <span>🔵</span> Google
+              <FingerprintIcon className="w-5 h-5" />
+              {lang === "bn" ? "ফিঙ্গারপ্রিন্ট / ফেস আইডি" : "Fingerprint / Face ID"}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                const email = prompt(lang === "bn" ? "ফেসবুক ইমেইল দিন:" : "Enter Facebook email:");
-                if (email) {
-                  fetch("/api/auth/facebook", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) })
-                    .then(r => r.json() as Promise<Record<string, unknown>>).then((d) => {
-                      if (d.token) {
-                        localStorage.setItem("worker_token", d.token as string);
-                        localStorage.setItem("worker_name", (d.name as string) || "");
-                        window.location.href = "/dashboard";
-                      }
-                    }).catch(() => setError("Facebook login failed"));
-                }
-              }}
-              className="flex items-center justify-center gap-2 py-3 rounded-xl border border-border/80 text-sm font-bold text-text-secondary hover:bg-primary/5 hover:border-primary/30 transition-all"
-            >
-              <span>🔷</span> Facebook
-            </button>
-          </div>
 
-          <button
-            type="button"
-            onClick={handleBiometric}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-accent/30 text-sm font-bold text-accent hover:bg-accent/5 transition-all disabled:opacity-50"
-          >
-            <FingerprintIcon className="w-5 h-5" />
-            {lang === "bn" ? "ফিঙ্গারপ্রিন্ট / ফেস আইডি" : "Fingerprint / Face ID"}
-          </button>
-        </form>
+            {/* Register link */}
+            <p className="text-center text-sm text-text-secondary pt-2">
+              {lang === "bn" ? "কোনো অ্যাকাউন্ট নেই?" : "Don't have an account?"}{" "}
+              <Link href="/register" className="font-bold text-accent hover:text-accent-light transition-colors">
+                {lang === "bn" ? "রেজিস্টার করুন" : "Register"}
+              </Link>
+            </p>
+          </form>
+        )}
 
-        {/* Register link */}
-        <p className="text-center text-sm text-text-secondary mt-6">
-          {lang === "bn" ? "কোনো অ্যাকাউন্ট নেই?" : "Don't have an account?"}{" "}
-          <Link href="/register" className="font-bold text-accent hover:text-accent-light transition-colors">
-            {lang === "bn" ? "রেজিস্টার করুন" : "Register"}
-          </Link>
-        </p>
-        <p className="text-center text-sm text-text-secondary mt-3">
-          <Link href="/company/login" className="font-bold text-primary hover:text-primary/80 transition-colors">
-            {lang === "bn" ? "🏢 কোম্পানি লগইন" : "🏢 Company Login"}
-          </Link>
-        </p>
+        {/* Company Login Form */}
+        {activeTab === "company" && (
+          <form onSubmit={handleCompanySubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-border/80 space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
+                {lang === "bn" ? "ইউজারনেম" : "Username"}
+              </label>
+              <input
+                type="text"
+                value={companyUsername}
+                onChange={(e) => setCompanyUsername(e.target.value)}
+                placeholder={lang === "bn" ? "আপনার ইউজারনেম লিখুন" : "Enter your username"}
+                className="input-field"
+                required
+                autoComplete="username"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
+                {lang === "bn" ? "পাসওয়ার্ড" : "Password"}
+              </label>
+              <div className="relative">
+                <input
+                  type={showCompanyPassword ? "text" : "password"}
+                  value={companyPassword}
+                  onChange={(e) => setCompanyPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="input-field pr-10"
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCompanyPassword(!showCompanyPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary transition-colors"
+                >
+                  {showCompanyPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+
+            <div className="relative">
+              {loading && (
+                <div className="absolute inset-0 rounded-2xl bg-white/40 backdrop-blur-[1px] z-10" />
+              )}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-accent to-accent-light text-white font-bold text-base shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px] relative z-20"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <LoadingDots />
+                    <span className="text-sm font-medium animate-loading-pulse">
+                      {lang === "bn" ? "লগইন হচ্ছে..." : "Logging in..."}
+                    </span>
+                  </span>
+                ) : (lang === "bn" ? "লগইন করুন" : "Login")}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

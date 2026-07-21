@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const env = await getDB();
 
     const existing = await queryFirst<{ worker_id: string }>(
-      env, "SELECT worker_id FROM workers WHERE REPLACE(REPLACE(phone, ' ', ''), '+', '') = ?", [cleanPhone]
+      env, "SELECT worker_id FROM workers WHERE phone = ?", [cleanPhone]
     );
     if (existing) {
       return NextResponse.json({ error: "Phone number already registered" }, { status: 409 });

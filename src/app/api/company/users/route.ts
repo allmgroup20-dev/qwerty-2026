@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     const existing = await queryFirst<{ id: number }>(
       await getDB(),
-      "SELECT id FROM company_users WHERE LOWER(username) = LOWER(?)",
+      "SELECT id FROM company_users WHERE username = ? COLLATE NOCASE",
       [username]
     );
     if (existing) {
@@ -81,7 +81,7 @@ export async function DELETE(request: NextRequest) {
 
     const admin = await queryFirst<{ username: string; password: string }>(
       await getDB(),
-      "SELECT username, password FROM company_users WHERE LOWER(username) = LOWER(?)",
+      "SELECT username, password FROM company_users WHERE username = ? COLLATE NOCASE",
       [auth.sub]
     );
     if (!admin) {
