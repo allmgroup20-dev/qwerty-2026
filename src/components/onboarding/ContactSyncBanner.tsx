@@ -53,7 +53,7 @@ export default function ContactSyncBanner({ workerId, onComplete }: Props) {
 
       if (!res.ok) throw new Error("Sync failed");
 
-      const data = await res.json();
+      const data = await res.json() as { matchedCount?: number; bonusAmount?: number };
       setMatchedCount(data.matchedCount || 0);
       setBonusAmount(data.bonusAmount || 0);
       localStorage.setItem("contact_sync_done", "1");
@@ -96,7 +96,7 @@ export default function ContactSyncBanner({ workerId, onComplete }: Props) {
       });
 
       if (!res.ok) throw new Error("Sync failed");
-      const data = await res.json();
+      const data = await res.json() as { matchedCount?: number; bonusAmount?: number };
       setMatchedCount(data.matchedCount || 0);
       setBonusAmount(data.bonusAmount || 0);
       localStorage.setItem("contact_sync_done", "1");
