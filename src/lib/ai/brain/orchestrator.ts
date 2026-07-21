@@ -7,6 +7,7 @@ import { getMemory, setMemory, buildMemoryContext } from "./memory";
 import { getDB } from "@/lib/db";
 import { query, execute } from "@/lib/db/queries";
 import { getActivePromptOverride } from "./agent-tuning";
+import { loadStrategyContext } from "./strategy-context";
 
 // ── Intent → Department routing ──
 const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
@@ -328,6 +329,9 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
     for (const r of disabledRows) disabledAgents[r.agent_id] = true;
   } catch {}
 
+  const strategyCtx = await loadStrategyContext().catch(() => null);
+  const strategyInject = strategyCtx ? { strategySummary: strategyCtx.summary, strategyCanvas: JSON.stringify(strategyCtx.canvas), strategyERRC: JSON.stringify(strategyCtx.errc) } : { strategySummary: "", strategyCanvas: "[]", strategyERRC: "[]" };
+
   const { intent, department } = await detectIntent(ctx.text, ctx, fallbackDept);
 
   // ── Greeting shortcut ──
@@ -369,7 +373,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
       }
       const agent = agentData.agent;
       try {
-        const contextVars = buildContext(ctx, intent, chainContext, userMemories);
+        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories), ...strategyInject };
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -405,7 +409,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         continue;
       }
       try {
-        const contextVars = buildContext(ctx, intent, chainContext, userMemories);
+        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories), ...strategyInject };
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -475,7 +479,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         if (!agentData) continue;
         const agent = agentData.agent;
         try {
-          const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, userMemories), previousOutput: chainContext, negativityFindings };
+          const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, userMemories), ...strategyInject, previousOutput: chainContext, negativityFindings };
           const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
           const agentPrompt = buildAgentPrompt(agent, ctxWithFindings, promptOverride || undefined);
           const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -536,7 +540,7 @@ Primary department: ${finalDept?.name} (${finalDept?.nameBn})
 Chain type: ${isCrossDept ? "cross-department collaboration" : "single-department"}
 
 ## Context
-${Object.entries(buildContext(ctx, intent)).map(([k, v]) => `${k}: ${v}`).join("\n")}
+${Object.entries({ ...buildContext(ctx, intent), ...strategyInject }).map(([k, v]) => `${k}: ${v}`).join("\n")}
 
 ## Agent Chain Output
 ${chainContext}
