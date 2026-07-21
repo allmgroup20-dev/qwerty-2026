@@ -799,9 +799,12 @@ export const maintenanceLog = sqliteTable("maintenance_log", {
 // ── Target System ──
 export const aiTargets = sqliteTable("ai_targets", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  period: text("period").notNull(), // daily / weekly / monthly
+  type: text("type").default("fixed"), // "fixed" | "geometric"
+  period: text("period").notNull(), // minutes / hours / days / weeks / months
   targetSales: integer("target_sales").notNull(),
   targetRevenue: real("target_revenue").default(0),
+  baseAmount: real("base_amount"), // geometric: starting amount
+  currentDay: integer("current_day").default(1), // geometric: current day (1-indexed)
   currentSales: integer("current_sales").default(0),
   currentRevenue: real("current_revenue").default(0),
   startDate: text("start_date").notNull(),

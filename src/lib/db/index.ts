@@ -984,9 +984,12 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     // ─── Target System ───
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_targets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT DEFAULT 'fixed',
       period TEXT NOT NULL,
       target_sales INTEGER NOT NULL,
       target_revenue REAL DEFAULT 0,
+      base_amount REAL,
+      current_day INTEGER DEFAULT 1,
       current_sales INTEGER DEFAULT 0,
       current_revenue REAL DEFAULT 0,
       start_date TEXT NOT NULL,
@@ -997,6 +1000,9 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT
     )`).run();
+    await env.DB.prepare(`ALTER TABLE ai_targets ADD COLUMN type TEXT DEFAULT 'fixed'`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE ai_targets ADD COLUMN base_amount REAL`).run().catch(() => {});
+    await env.DB.prepare(`ALTER TABLE ai_targets ADD COLUMN current_day INTEGER DEFAULT 1`).run().catch(() => {});
 
     // ─── Seed Talking with Psychopaths book knowledge ───
     const psychopathsSeed = [

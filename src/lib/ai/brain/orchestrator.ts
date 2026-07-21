@@ -241,7 +241,7 @@ function cleanJsonResponse(text: string): string {
   return jsonMatch ? jsonMatch[0] : text;
 }
 
-function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, userMemories?: any[], knowledgeCtx?: string): Record<string, any> {
+function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, userMemories?: any[], knowledgeCtx?: string, topTarget?: string): Record<string, any> {
   const memoryStr = userMemories ? buildMemoryContext(userMemories) : "";
   return {
     language: ctx.language === "bn" ? "Bengali" : ctx.language === "en" ? "English" : "Bengali with English mix",
@@ -257,7 +257,8 @@ function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, use
     interests: ctx.interests?.join(", ") || "not identified",
     userMemory: memoryStr,
     knowledgeContext: knowledgeCtx || "",
-    context: `Chats: ${ctx.totalChats}. Mood: ${ctx.mood}.` + (ctx.dialect ? ` Dialect: ${ctx.dialect}.` : "") + (ctx.religion ? ` Religion: ${ctx.religion}.` : "") + memoryStr,
+    topTarget: topTarget || "",
+    context: `Chats: ${ctx.totalChats}. Mood: ${ctx.mood}.` + (ctx.dialect ? ` Dialect: ${ctx.dialect}.` : "") + (ctx.religion ? ` Religion: ${ctx.religion}.` : "") + memoryStr + (topTarget ? ` ${topTarget}` : ""),
     previousOutput: chainOutput || "",
   };
 }
@@ -354,6 +355,24 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
     knowledgeContext = await getContextualKnowledge(intent, department, ctx.language || "bn");
   } catch {}
 
+  // ── Fetch top-priority active target for context ──
+  let topTargetStr = "";
+  try {
+    const targets = await query<any>(
+      { DB: db },
+      "SELECT id, type, target_sales, base_amount, current_day, current_sales, start_date, end_date FROM ai_targets WHERE status = 'active' ORDER BY target_sales DESC LIMIT 1"
+    );
+    if (targets.length > 0) {
+      const t = targets[0];
+      const effectiveTarget = t.type === "geometric" && t.base_amount
+        ? t.base_amount * Math.pow(2, (t.current_day || 1) - 1)
+        : t.target_sales;
+      const progress = effectiveTarget > 0 ? ((t.current_sales || 0) / effectiveTarget * 100).toFixed(1) : "0";
+      const typeLabel = t.type === "geometric" ? `Geometric Day ${t.current_day || 1}` : "Fixed";
+      topTargetStr = `[COMPANY TOP PRIORITY TARGET: Type=${typeLabel}, Target=৳${effectiveTarget}, Achieved=৳${t.current_sales || 0} (${progress}%), Deadline=${t.end_date}. Focus on this target above all others.]`;
+    }
+  } catch {}
+
   // ── Try cross-department chain first ──
   const crossDeptSteps = selectCrossDeptChain(intent, ctx);
   const isCrossDept = crossDeptSteps !== null && crossDeptSteps.length > 0;
@@ -375,7 +394,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
       }
       const agent = agentData.agent;
       try {
-        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories, knowledgeContext), };
+        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories, knowledgeContext, topTargetStr), };
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -411,7 +430,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         continue;
       }
       try {
-        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories, knowledgeContext), };
+        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories, knowledgeContext, topTargetStr), };
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);

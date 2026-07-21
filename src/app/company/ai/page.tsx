@@ -8,8 +8,9 @@ import ConversationsTab from "@/components/ai/ConversationsTab";
 import TrainingTab from "@/components/ai/TrainingTab";
 import SentimentTab from "@/components/ai/SentimentTab";
 import AutomationTab from "@/components/ai/AutomationTab";
+import TargetsTab from "@/components/ai/TargetsTab";
 
-type TabId = "dashboard" | "settings" | "brain" | "employees" | "insights" | "skills" | "conversations" | "training" | "sentiment" | "automation";
+type TabId = "dashboard" | "settings" | "brain" | "employees" | "insights" | "skills" | "conversations" | "training" | "sentiment" | "automation" | "targets";
 
 const TABS: { id: TabId; icon: string; en: string; bn: string }[] = [
   { id: "dashboard", icon: "📊", en: "Dashboard", bn: "ড্যাশবোর্ড" },
@@ -22,6 +23,7 @@ const TABS: { id: TabId; icon: string; en: string; bn: string }[] = [
   { id: "employees", icon: "👥", en: "Employees", bn: "কর্মচারী" },
   { id: "insights", icon: "📊", en: "Insights", bn: "ইনসাইটস" },
   { id: "skills", icon: "📈", en: "Skills", bn: "দক্ষতা" },
+  { id: "targets", icon: "🎯", en: "Targets", bn: "টার্গেট" },
 ];
 
 // ─── Interfaces ──────────────────────────────────────────
@@ -1762,6 +1764,9 @@ export default function AIHubPage() {
           )}
         </div>
       )}
+
+      {/* ════════════════════════ TARGETS TAB ════════════════════════ */}
+      {activeTab === "targets" && <TargetsTab lang={lang} />}
     </div>
   );
 }
