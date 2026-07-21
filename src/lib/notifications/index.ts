@@ -27,9 +27,9 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
 }
 
 async function sendInApp(payload: NotificationPayload): Promise<boolean> {
-  const db = await getDB();
+  const env = await getDB();
   await execute(
-    { DB: db },
+    env,
     "INSERT INTO notifications (worker_id, title, message, type, priority, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
     [
       payload.workerId,
@@ -43,19 +43,14 @@ async function sendInApp(payload: NotificationPayload): Promise<boolean> {
 }
 
 async function sendWhatsApp(payload: NotificationPayload): Promise<boolean> {
-  const { generateWhatsAppTemplate } = await import("@/lib/whatsapp");
-  const { sendWhatsAppMessage } = await import("@/lib/whatsapp");
+  const { sendMessage } = await import("@/lib/whatsapp/sender");
 
-  const text = generateWhatsAppTemplate(
-    (payload.data.name as string) || "User",
-    (payload.templateId as any) || "general_welcome"
-  );
-
+  const text = (payload.data.message as string) || (payload.data.title as string) || "Notification";
   const to = (payload.data.phone as string) || payload.workerId;
   if (!to) return false;
 
-  const result = await sendWhatsAppMessage({ to, text });
-  return result;
+  const result = await sendMessage(to, text);
+  return result.success;
 }
 
 async function sendEmail(_payload: NotificationPayload): Promise<boolean> {
