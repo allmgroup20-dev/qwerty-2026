@@ -33,10 +33,15 @@ export async function PUT(request: NextRequest) {
     const body = await request.json() as { id: number; factorName: string; factorNameBn?: string; ourScore?: number; competitorScore?: number; competitorName?: string; category?: string; sortOrder?: number; isActive?: number }
     const { id, factorName, factorNameBn, ourScore, competitorScore, competitorName, category, sortOrder, isActive } = body
     const env = await getDB()
+    const old = await query<any>(env, "SELECT our_score, factor_name FROM strategy_canvas WHERE id = ?", [id])
+    const oldScore = old.length > 0 ? old[0].our_score : null
     await execute(env,
       `UPDATE strategy_canvas SET factor_name = ?, factor_name_bn = ?, our_score = ?, competitor_score = ?, competitor_name = ?, category = ?, sort_order = ?, is_active = ?, updated_at = datetime('now') WHERE id = ?`,
       [factorName, factorNameBn, ourScore, competitorScore, competitorName, category, sortOrder, isActive ?? 1, id]
     )
+    if (ourScore != null && oldScore != null && ourScore !== oldScore) {
+      execute(env, "INSERT INTO canvas_history (factor_name, old_score, new_score) VALUES (?, ?, ?)", [factorName, oldScore, ourScore]).catch(() => {})
+    }
     return NextResponse.json({ success: true })
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

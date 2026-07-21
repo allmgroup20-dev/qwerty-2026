@@ -1311,6 +1311,26 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       }
     }
 
+    // ─── Strategy Scenarios table ───
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS strategy_scenarios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      canvas_scores TEXT DEFAULT '[]',
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
+    // ─── Canvas History table ───
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS canvas_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      factor_name TEXT NOT NULL,
+      old_score INTEGER,
+      new_score INTEGER NOT NULL,
+      action TEXT DEFAULT 'update',
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
     g[DONE_FLAG] = true;
     g[DONE_LOCK] = false;
 
