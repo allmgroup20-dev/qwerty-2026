@@ -40,6 +40,7 @@ export default function KnowledgePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
+  const [seeding, setSeeding] = useState(false);
   const [form, setForm] = useState({
     category: "psychology", subcategory: "", title: "", content: "",
     sourceType: "book", sourceName: "", sourceUrl: "", confidence: 0.85,
@@ -184,6 +185,21 @@ export default function KnowledgePage() {
     });
     setTab("add");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSeed = async () => {
+    if (!confirm(isBn ? "ডিফল্ট বইয়ের এন্ট্রি সিড করবেন? (ডুপ্লিকেট স্কিপ হবে)" : "Seed default book entries? (duplicates will be skipped)")) return;
+    setSeeding(true);
+    try {
+      const res = await fetch("/api/knowledge/seed");
+      const data: any = await res.json();
+      alert(data.message || data.error || "Done");
+      fetchData(filterCategory);
+    } catch {
+      alert("Seed failed");
+    } finally {
+      setSeeding(false);
+    }
   };
 
   const resetForm = () => {
@@ -420,6 +436,10 @@ export default function KnowledgePage() {
             {isBn ? "AI এজেন্টদের জন্য কেন্দ্রীয় জ্ঞান ভান্ডার — বই, প্রশিক্ষণ ও গবেষণা" : "Central knowledge repository for AI agents — books, training & research"}
           </p>
         </div>
+        <button onClick={handleSeed} disabled={seeding}
+          className="px-4 py-2 bg-amber-50 text-amber-700 border border-amber-200 text-sm font-bold rounded-xl hover:bg-amber-100 transition-colors shrink-0 disabled:opacity-50">
+          {seeding ? (isBn ? "⏳ সিড হচ্ছে..." : "⏳ Seeding...") : (isBn ? "📚 বই সিড করুন" : "📚 Seed Books")}
+        </button>
       </div>
 
       <div className="flex gap-2 mb-6 border-b border-border pb-3">
