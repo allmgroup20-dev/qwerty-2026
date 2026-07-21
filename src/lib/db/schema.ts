@@ -828,11 +828,11 @@ export const knowledgeAccumulation = sqliteTable("knowledge_accumulation", {
 
 export const aiKnowledgeDistribution = sqliteTable("ai_knowledge_distribution", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  sourceType: text("source_type").notNull(), // 'book' | 'training' | 'agent' | 'system' | 'manual'
-  sourceId: text("source_id").notNull(), // e.g. 'talking_with_psychopaths', 'training_module_1'
-  sourceName: text("source_name"), // e.g. "Talking with Psychopaths and Savages"
-  targetType: text("target_type").notNull(), // 'agent' | 'employee' | 'department' | 'all'
-  targetId: text("target_id").notNull(), // agent_id, employee_id, department_id, or 'all'
+  sourceType: text("source_type").notNull(),
+  sourceId: text("source_id").notNull(),
+  sourceName: text("source_name"),
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id").notNull(),
   targetName: text("target_name"),
   knowledgeTitle: text("knowledge_title").notNull(),
   knowledgeContent: text("knowledge_content").notNull(),
@@ -840,5 +840,42 @@ export const aiKnowledgeDistribution = sqliteTable("ai_knowledge_distribution", 
   origin: text("origin").default("system"),
   confidence: real("confidence").default(1.0),
   createdAt: text("created_at").default("datetime('now')"),
-  updatedAt: text("updated_at"),
+  updatedAt: text("updated_at").default("datetime('now')"),
+});
+
+// ── Phase 10: Knowledge Brain — Structured Knowledge Base ──
+export const knowledgeEntries = sqliteTable("knowledge_entries", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  category: text("category").notNull(),
+  subcategory: text("subcategory"),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  sourceType: text("source_type"),
+  sourceName: text("source_name"),
+  sourceUrl: text("source_url"),
+  confidence: real("confidence").default(0.5),
+  tags: text("tags"),
+  version: integer("version").default(1),
+  isActive: integer("is_active").default(1),
+  createdAt: text("created_at").default("datetime('now')"),
+  updatedAt: text("updated_at").default("datetime('now')"),
+});
+
+export const knowledgeRelationships = sqliteTable("knowledge_relationships", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  sourceId: integer("source_id").notNull(),
+  targetId: integer("target_id").notNull(),
+  relationshipType: text("relationship_type").notNull(),
+  createdAt: text("created_at").default("datetime('now')"),
+});
+
+export const conversationLearnings = sqliteTable("conversation_learnings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  conversationId: text("conversation_id"),
+  agentType: text("agent_type"),
+  learningType: text("learning_type").notNull(),
+  context: text("context"),
+  insight: text("insight").notNull(),
+  applied: integer("applied").default(0),
+  createdAt: text("created_at").default("datetime('now')"),
 });

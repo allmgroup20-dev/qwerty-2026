@@ -1060,6 +1060,41 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       updated_at TEXT
     )`).run();
 
+    // ── Phase 10: Knowledge Brain Tables ──
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS knowledge_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT NOT NULL,
+      subcategory TEXT,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      source_type TEXT,
+      source_name TEXT,
+      source_url TEXT,
+      confidence REAL DEFAULT 0.5,
+      tags TEXT,
+      version INTEGER DEFAULT 1,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS knowledge_relationships (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_id INTEGER NOT NULL,
+      target_id INTEGER NOT NULL,
+      relationship_type TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS conversation_learnings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      conversation_id TEXT,
+      agent_type TEXT,
+      learning_type TEXT NOT NULL,
+      context TEXT,
+      insight TEXT NOT NULL,
+      applied INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
     // ─── System monitoring tables (Phase 1: Error Tracking) ───
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS system_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1304,6 +1339,10 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       `CREATE INDEX IF NOT EXISTS idx_response_cache_lookup ON ai_response_cache(query_hash, agent_id)`,
       `CREATE INDEX IF NOT EXISTS idx_withdrawals_worker_status ON withdrawals(worker_id, status)`,
       `CREATE INDEX IF NOT EXISTS idx_commissions_to_worker_status ON commissions(to_worker_id, status)`,
+      `CREATE INDEX IF NOT EXISTS idx_knowledge_entries_category ON knowledge_entries(category, confidence)`,
+      `CREATE INDEX IF NOT EXISTS idx_knowledge_entries_tags ON knowledge_entries(tags)`,
+      `CREATE INDEX IF NOT EXISTS idx_conversation_learnings_type ON conversation_learnings(learning_type, applied)`,
+      `CREATE INDEX IF NOT EXISTS idx_knowledge_relationships_source ON knowledge_relationships(source_id)`,
     ].map(sql => env.DB.prepare(sql));
     env.DB.batch(indexStmts).catch(() => {});
 

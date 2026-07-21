@@ -7,6 +7,7 @@ import { getMemory, setMemory, buildMemoryContext } from "./memory";
 import { getDB } from "@/lib/db";
 import { query, execute } from "@/lib/db/queries";
 import { getActivePromptOverride } from "./agent-tuning";
+import { getContextualKnowledge, logConversationLearning, submitFeedback } from "@/lib/ai/knowledge-brain";
 // ── Intent → Department routing ──
 const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
   { intent: "greeting", department: "customer_experience" },
@@ -240,7 +241,7 @@ function cleanJsonResponse(text: string): string {
   return jsonMatch ? jsonMatch[0] : text;
 }
 
-function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, userMemories?: any[]): Record<string, any> {
+function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, userMemories?: any[], knowledgeCtx?: string): Record<string, any> {
   const memoryStr = userMemories ? buildMemoryContext(userMemories) : "";
   return {
     language: ctx.language === "bn" ? "Bengali" : ctx.language === "en" ? "English" : "Bengali with English mix",
@@ -255,6 +256,7 @@ function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, use
     painPoints: ctx.painPoints?.join(", ") || "not identified",
     interests: ctx.interests?.join(", ") || "not identified",
     userMemory: memoryStr,
+    knowledgeContext: knowledgeCtx || "",
     context: `Chats: ${ctx.totalChats}. Mood: ${ctx.mood}.` + (ctx.dialect ? ` Dialect: ${ctx.dialect}.` : "") + (ctx.religion ? ` Religion: ${ctx.religion}.` : "") + memoryStr,
     previousOutput: chainOutput || "",
   };
@@ -346,6 +348,12 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
     userMemories = await getMemory(db, ctx.phone);
   } catch {}
 
+  // ── Phase 10: Retrieve contextual knowledge from Knowledge Brain ──
+  let knowledgeContext = "";
+  try {
+    knowledgeContext = await getContextualKnowledge(intent, department, ctx.language || "bn");
+  } catch {}
+
   // ── Try cross-department chain first ──
   const crossDeptSteps = selectCrossDeptChain(intent, ctx);
   const isCrossDept = crossDeptSteps !== null && crossDeptSteps.length > 0;
@@ -367,7 +375,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
       }
       const agent = agentData.agent;
       try {
-        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories), };
+        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories, knowledgeContext), };
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -403,7 +411,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         continue;
       }
       try {
-        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories), };
+        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories, knowledgeContext), };
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -473,7 +481,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         if (!agentData) continue;
         const agent = agentData.agent;
         try {
-          const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, userMemories), previousOutput: chainContext, negativityFindings };
+          const ctxWithFindings = { ...buildContext(ctx, intent, chainContext, userMemories, knowledgeContext), previousOutput: chainContext, negativityFindings };
           const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
           const agentPrompt = buildAgentPrompt(agent, ctxWithFindings, promptOverride || undefined);
           const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -534,7 +542,7 @@ Primary department: ${finalDept?.name} (${finalDept?.nameBn})
 Chain type: ${isCrossDept ? "cross-department collaboration" : "single-department"}
 
 ## Context
-${Object.entries({ ...buildContext(ctx, intent), }).map(([k, v]) => `${k}: ${v}`).join("\n")}
+${Object.entries({ ...buildContext(ctx, intent, undefined, undefined, knowledgeContext), }).map(([k, v]) => `${k}: ${v}`).join("\n")}
 
 ## Agent Chain Output
 ${chainContext}
@@ -621,6 +629,24 @@ If complaint → empathetic first. If purchase → guide to next step.`;
     if (ctx.dialect) {
       setMemory(db, ctx.phone, "_meta", "dialect", ctx.dialect, "profile", 3, 43200).catch(() => {});
     }
+  }
+
+  // ── Phase 10b: Log conversation learning insight ──
+  if (seniorReview && seniorReview.quality === "pass") {
+    logConversationLearning({
+      learningType: "success_pattern",
+      agentType: department,
+      context: JSON.stringify({ intent, phone: ctx.phone, mood: ctx.mood }),
+      insight: `Successful ${intent} conversation with ${ctx.language} user. Agents: ${agentsUsed.join(", ")}.`,
+    }).catch(() => {});
+  }
+  if (seniorReview && seniorReview.quality === "needs_rewrite") {
+    logConversationLearning({
+      learningType: "failure_pattern",
+      agentType: department,
+      context: JSON.stringify({ intent, phone: ctx.phone, mood: ctx.mood }),
+      insight: `Needed rewrite for ${intent}. Issues: ${(seniorReview.issues || []).join(", ")}. Feedback: ${seniorReview.feedback}`,
+    }).catch(() => {});
   }
 
   return {
