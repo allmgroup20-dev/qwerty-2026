@@ -5,7 +5,7 @@ import { invalidateCache } from "@/lib/cache";
 
 const ALLOWED_TABLES = [
   "user_events", "user_sessions", "user_searches", "notifications",
-  "communication_history", "ai_log", "ai_conversations",
+  "communication_history", "ai_conversations",
   "wa_logs", "wa_message_queue", "brain_usage", "agent_feedback",
 ];
 

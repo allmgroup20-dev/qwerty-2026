@@ -97,7 +97,6 @@ export const CROSS_DEPT_CHAINS: Record<string, CrossDeptStep[]> = {
     { department: "sales", agentId: "positioning_strategist" },
     { department: "sales", agentId: "pricing_strategist" },
     { department: "sales", agentId: "gain_fear_architect" },
-    { department: "sales", agentId: "value_amplifier" },
     { department: "sales", agentId: "price_explainer" },
     { department: "psychology", agentId: "brand_attachment_analyst" },
     { department: "psychology", agentId: "subtle_influencer" },

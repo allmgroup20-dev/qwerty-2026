@@ -5,7 +5,7 @@ import { getSystemTimezone, isScheduledTime } from "@/lib/timezone";
 
 const TABLES = [
   "user_events", "user_sessions", "user_searches", "notifications",
-  "communication_history", "ai_log", "ai_conversations",
+  "communication_history", "ai_conversations",
   "wa_logs", "brain_usage", "agent_feedback",
 ];
 
