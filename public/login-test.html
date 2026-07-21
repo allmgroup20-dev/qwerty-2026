@@ -26,6 +26,27 @@ async function testLogin() {
   }
 }
 </script>
+<p style="margin-top:20px;color:#666">Also test Dashboard summar directly:</p>
+<button onclick="testSummar()">Test Dashboard Summar API</button>
+<div id="summarResult" style="background:#f4f4f4;padding:10px;margin-top:10px;min-height:50px"></div>
+<script>
+async function testSummar() {
+  const wid = localStorage.getItem('worker_id');
+  if (!wid) { document.getElementById('summarResult').textContent = 'Please login first'; return; }
+  const sr = document.getElementById('summarResult');
+  sr.textContent = 'Loading...';
+  const t0 = Date.now();
+  try {
+    const res = await fetch('/api/dashboard/summar?workerId=' + wid);
+    const t1 = Date.now();
+    const data = await res.json();
+    sr.textContent = `Status: ${res.status}, Time: ${t1-t0}ms` + (data.error ? '\nError: ' + data.error : '\nProfile: ' + (data.profile?.name || 'null'));
+  } catch(e) {
+    sr.textContent = 'Error: ' + e.message;
+  }
+}
+</script>
+
 <p style="margin-top:20px;color:#666">Then test redirect:</p>
 <button onclick="testLoginAndRedirect()">Login + Redirect to Dashboard</button>
 <script>
