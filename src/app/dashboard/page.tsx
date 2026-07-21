@@ -77,7 +77,7 @@ export default function WorkerDashboard() {
       return;
     }
     setWorkerId(wid);
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     if (!workerId) {
