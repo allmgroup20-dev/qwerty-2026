@@ -111,7 +111,7 @@ export default function CompanyLoginPage() {
 
           <div className="text-center pt-2">
             <Link href="/login" className="text-xs font-medium text-text-secondary hover:text-accent transition-colors">
-              ← {lang === "bn" ? "মেম্বর লগইন" : "Member Login"}
+              ← {lang === "bn" ? "সদস্য লগইন" : "Member Login"}
             </Link>
           </div>
         </form>

@@ -8,7 +8,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ work
 
     const db = await ensureDB();
 
-    const [worker, interests, behavior, sessions, events, searches, orders, devices, reviews, comms, attributions] = await Promise.all([
+    const [worker, interests, behavior, sessions, events, searches, orders, devices, reviews, comms, attributions, phonebooks, mlmTree] = await Promise.all([
       db.prepare("SELECT id, worker_id, name, phone, email, avatar_url, sponsor_id, sponsor_name, level, join_date, currency, balance, total_earned, total_spent, total_team_members, membership_status, is_test_account, preferred_language, age_group, occupation, education_level, gender, country, city, goal, preferred_learning_time, referral_source, communication_preference, budget_range, religion, interests_updated_at, created_at, updated_at FROM workers WHERE worker_id = ?").bind(workerId).first() as Promise<any>,
       db.prepare("SELECT category_scores, top_categories, last_calculated_at FROM user_interests WHERE worker_id = ?").bind(workerId).first() as Promise<any>,
       db.prepare("SELECT id, worker_id, lead_score, churn_probability, purchase_intent, rfm_recency, rfm_frequency, rfm_monetary, segment, lifetime_value, last_updated FROM user_behavior_scores WHERE worker_id = ?").bind(workerId).first() as Promise<any>,
@@ -20,6 +20,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ work
       db.prepare("SELECT id, worker_id, product_id, product_type, rating, review_text, is_approved, created_at FROM product_reviews WHERE worker_id = ? ORDER BY created_at DESC LIMIT 20").bind(workerId).all() as Promise<any>,
       db.prepare("SELECT id, worker_id, channel, direction, message, status, reference_id, metadata, sent_at, created_at FROM communication_history WHERE worker_id = ? ORDER BY created_at DESC LIMIT 50").bind(workerId).all() as Promise<any>,
       db.prepare("SELECT id, worker_id, channel, utm_source, utm_medium, utm_campaign, referrer, landing_page, first_visit_at, converted, converted_at, created_at FROM attribution_log WHERE worker_id = ? ORDER BY created_at DESC LIMIT 200").bind(workerId).all() as Promise<any>,
+      db.prepare("SELECT id, worker_id, contact_phone, contact_name, contact_worker_id, has_whatsapp, source, last_checked_at, created_at FROM user_phonebooks WHERE worker_id = ? ORDER BY created_at DESC LIMIT 200").bind(workerId).all() as Promise<any>,
+      db.prepare("SELECT id, worker_id, parent_id, sponsor_id, position, level, total_downline, active_downline, created_at FROM mlm_tree WHERE worker_id = ? LIMIT 1").bind(workerId).first() as Promise<any>,
     ]);
 
     return NextResponse.json({
@@ -34,6 +36,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ work
       reviews: (reviews.results || []).slice(0, 20),
       communications: (comms.results || []).slice(0, 50),
       attributions: (attributions.results || []),
+      phonebooks: (phonebooks.results || []),
+      mlmTree: mlmTree || null,
     });
   } catch (err) {
     console.error("Customer360 error:", err);

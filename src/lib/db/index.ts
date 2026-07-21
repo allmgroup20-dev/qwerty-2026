@@ -995,6 +995,33 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     await env.DB.prepare(`ALTER TABLE ai_targets ADD COLUMN base_amount REAL`).run().catch(() => {});
     await env.DB.prepare(`ALTER TABLE ai_targets ADD COLUMN current_day INTEGER DEFAULT 1`).run().catch(() => {});
 
+    // ─── Legacy knowledge tables (read by existing API routes) ───
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_knowledge_pages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      category TEXT DEFAULT 'general',
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_knowledge_distribution (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_type TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      source_name TEXT,
+      target_type TEXT NOT NULL,
+      target_id TEXT NOT NULL,
+      target_name TEXT,
+      knowledge_title TEXT NOT NULL,
+      knowledge_content TEXT NOT NULL,
+      knowledge_category TEXT DEFAULT 'general',
+      origin TEXT DEFAULT 'system',
+      confidence REAL DEFAULT 1.0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT
+    )`).run();
+
     // ─── Knowledge Accumulation Center ───
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS knowledge_accumulation (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

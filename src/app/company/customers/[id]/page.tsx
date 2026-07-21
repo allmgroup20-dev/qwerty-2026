@@ -19,9 +19,11 @@ interface C360Data {
   reviews: any[];
   communications: any[];
   attributions: any[];
+  phonebooks: any[];
+  mlmTree: any;
 }
 
-const tabs = ["overview", "events", "sessions", "searches", "orders", "devices", "reviews", "comms", "attribution"];
+const tabs = ["overview", "events", "sessions", "searches", "orders", "devices", "reviews", "comms", "attribution", "contacts", "network"];
 
 export default function Customer360Page() {
   const { lang } = useLanguageStore();
@@ -142,6 +144,8 @@ export default function Customer360Page() {
           <TabButton id="reviews" label={t("Reviews", "রিভিউ")} />
           <TabButton id="comms" label={t("Comms", "যোগাযোগ")} />
           <TabButton id="attribution" label={t("Attribution", "অ্যাট্রিবিউশন")} />
+          <TabButton id="contacts" label={t("Contacts", "কন্টাক্ট")} />
+          <TabButton id="network" label={t("Network", "নেটওয়ার্ক")} />
         </div>
 
         {/* Overview Tab */}
@@ -448,6 +452,169 @@ export default function Customer360Page() {
               {data.communications.length === 0 && <p className="text-center py-4 text-text-secondary">{t("No communications", "কোনো যোগাযোগ নেই")}</p>}
             </div>
           </Card>
+        )}
+
+        {/* Contacts Tab — Phonebook Contacts */}
+        {activeTab === "contacts" && (
+          <Card className="!p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-sm text-primary">{t("Phonebook Contacts", "ফোনবুক কন্টাক্ট")} ({data.phonebooks.length})</h3>
+              <span className="text-xs text-text-secondary bg-gray-100 px-2 py-1 rounded-full">
+                {data.phonebooks.filter((p: any) => p.has_whatsapp).length} {t("with WhatsApp", "হোয়াটসঅ্যাপ সহ")}
+              </span>
+            </div>
+            {data.phonebooks.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-left">
+                      <th className="p-2 font-semibold text-text-secondary">{t("Name", "নাম")}</th>
+                      <th className="p-2 font-semibold text-text-secondary">{t("Phone", "ফোন")}</th>
+                      <th className="p-2 font-semibold text-text-secondary">{t("WhatsApp", "হোয়াটসঅ্যাপ")}</th>
+                      <th className="p-2 font-semibold text-text-secondary">{t("Matched Worker", "ম্যাচড ওয়ার্কার")}</th>
+                      <th className="p-2 font-semibold text-text-secondary hidden md:table-cell">{t("Source", "উৎস")}</th>
+                      <th className="p-2 font-semibold text-text-secondary hidden md:table-cell">{t("Synced At", "সিঙ্কের সময়")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.phonebooks.map((pb: any, i: number) => (
+                      <tr key={i} className="border-t border-border hover:bg-gray-50 transition-colors">
+                        <td className="p-2 font-medium text-primary">{pb.contact_name || t("Unknown", "অজানা")}</td>
+                        <td className="p-2 text-text-secondary">{pb.contact_phone}</td>
+                        <td className="p-2">
+                          {pb.has_whatsapp ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                              ✅ {t("Yes", "হ্যাঁ")}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                              ❌ {t("No", "না")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-2">
+                          {pb.contact_worker_id ? (
+                            <a href={`/company/customers/${pb.contact_worker_id}`} className="text-primary hover:underline text-xs">
+                              {pb.contact_worker_id}
+                            </a>
+                          ) : (
+                            <span className="text-text-secondary text-xs">{t("Not registered", "নিবন্ধিত নয়")}</span>
+                          )}
+                        </td>
+                        <td className="p-2 text-text-secondary text-xs hidden md:table-cell">{pb.source || "—"}</td>
+                        <td className="p-2 text-text-secondary text-xs hidden md:table-cell">{formatDate(pb.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-text-secondary">
+                <span className="text-4xl block mb-3">📱</span>
+                <p className="text-sm font-medium">{t("No contacts synced yet", "এখনো কোনো কন্টাক্ট সিঙ্ক হয়নি")}</p>
+                <p className="text-xs mt-1">{t("Contacts will appear here when the user syncs their phonebook", "ইউজার তাদের ফোনবুক সিঙ্ক করলে এখানে কন্টাক্ট দেখাবে")}</p>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Network Tab — MLM Tree */}
+        {activeTab === "network" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* MLM Tree Info */}
+            <Card className="!p-5">
+              <h3 className="font-semibold text-sm text-primary mb-4">{t("MLM Network Info", "এমএলএম নেটওয়ার্ক তথ্য")}</h3>
+              {data.mlmTree ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gray-50 rounded-xl p-3">
+                      <div className="text-xs text-text-secondary">{t("Level", "লেভেল")}</div>
+                      <div className="text-lg font-bold text-primary">{data.mlmTree.level || 1}</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-3">
+                      <div className="text-xs text-text-secondary">{t("Position", "পজিশন")}</div>
+                      <div className="text-lg font-bold text-primary capitalize">{data.mlmTree.position || "—"}</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-3">
+                      <div className="text-xs text-text-secondary">{t("Total Downline", "মোট ডাউনলাইন")}</div>
+                      <div className="text-lg font-bold text-primary">{data.mlmTree.total_downline || 0}</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-3">
+                      <div className="text-xs text-text-secondary">{t("Active Downline", "সক্রিয় ডাউনলাইন")}</div>
+                      <div className="text-lg font-bold text-green-600">{data.mlmTree.active_downline || 0}</div>
+                    </div>
+                  </div>
+                  {data.mlmTree.parent_id && (
+                    <div className="bg-blue-50 rounded-xl p-3 text-sm">
+                      <span className="text-text-secondary">{t("Sponsor / Parent:", "স্পনসর / প্যারেন্ট:")}</span>
+                      <a href={`/company/customers/${data.mlmTree.parent_id}`} className="text-primary font-medium hover:underline ml-1">
+                        {data.mlmTree.parent_id}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-text-secondary">
+                  <span className="text-4xl block mb-3">🌳</span>
+                  <p className="text-sm">{t("No MLM network data yet", "এখনো কোনো এমএলএম নেটওয়ার্ক তথ্য নেই")}</p>
+                  <p className="text-xs mt-1">{t("Network builds when referrals join via this user's link", "এই ইউজারের লিংকের মাধ্যমে রেফারেল যোগ দিলে নেটওয়ার্ক তৈরি হয়")}</p>
+                </div>
+              )}
+            </Card>
+
+            {/* Sponsor Info */}
+            <Card className="!p-5">
+              <h3 className="font-semibold text-sm text-primary mb-4">{t("Sponsor / Referrer", "স্পনসর / রেফারার")}</h3>
+              {data.worker?.sponsor_id ? (
+                <div className="space-y-3">
+                  <div className="bg-amber-50 rounded-xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center text-amber-700 font-bold text-sm">
+                        {data.worker.sponsor_name?.charAt(0)?.toUpperCase() || "?"}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-primary">{data.worker.sponsor_name || data.worker.sponsor_id}</div>
+                        <div className="text-xs text-text-secondary">{t("Sponsor ID:", "স্পনসর আইডি:")} {data.worker.sponsor_id}</div>
+                      </div>
+                      <a href={`/company/customers/${data.worker.sponsor_id}`} className="text-xs text-primary hover:underline shrink-0">
+                        {t("View Profile", "প্রোফাইল দেখুন")} →
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-text-secondary">
+                  <span className="text-4xl block mb-3">🔗</span>
+                  <p className="text-sm">{t("No sponsor assigned", "কোনো স্পনসর নির্ধারিত নেই")}</p>
+                  <p className="text-xs mt-1">{t("This user joined without a referral link", "এই ইউজার রেফারাল লিংক ছাড়া যোগ দিয়েছে")}</p>
+                </div>
+              )}
+              <div className="mt-4 pt-4 border-t border-border">
+                <h4 className="text-xs font-semibold text-text-secondary mb-2">{t("Referral Link", "রেফারাল লিংক")}</h4>
+                <div className="bg-gray-50 rounded-xl p-3 text-xs text-text-secondary break-all">
+                  career.jobayergroup.com/register?ref={data.worker?.worker_id || ""}
+                </div>
+              </div>
+            </Card>
+
+            {/* Quick Stats Summary */}
+            <Card className="!p-5 lg:col-span-2">
+              <h3 className="font-semibold text-sm text-primary mb-4">{t("Network Summary", "নেটওয়ার্ক সারসংক্ষেপ")}</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[
+                  { label: t("Level", "লেভেল"), val: data.worker?.level || 1, color: "text-blue-600" },
+                  { label: t("Team Members", "টিম সদস্য"), val: data.worker?.total_team_members || 0, color: "text-green-600" },
+                  { label: t("Total Earned", "মোট আয়"), val: `${data.worker?.total_earned || 0} ৳`, color: "text-purple-600" },
+                  { label: t("Balance", "ব্যালেন্স"), val: `${data.worker?.balance || 0} ৳`, color: "text-amber-600" },
+                ].map((s, i) => (
+                  <div key={i} className="bg-gray-50 rounded-xl p-4 text-center">
+                    <div className={`text-2xl font-bold ${s.color}`}>{s.val}</div>
+                    <div className="text-xs text-text-secondary mt-1">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
         )}
 
         {/* Attribution Tab */}

@@ -2,10 +2,24 @@
 
 import { useEffect, useRef, useCallback } from "react";
 
+const CONSENT_KEY = "cookie_consent_v2";
+
+function isTrackingConsented(): boolean {
+  try {
+    const saved = localStorage.getItem(CONSENT_KEY);
+    if (!saved) return false;
+    const parsed = JSON.parse(saved);
+    return parsed.analytics === true;
+  } catch {
+    return false;
+  }
+}
+
 let sessionId = "";
 let pageEnterTime = 0;
 let currentPath = "";
 let deviceRegistered = false;
+let consentChecked = false;
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -74,6 +88,7 @@ function getIpHint(): string {
 }
 
 async function registerDevice() {
+  if (!isTrackingConsented()) return;
   if (deviceRegistered) return;
   if (isCompanyLoggedIn()) return;
   const workerId = getWorkerId();
@@ -100,6 +115,7 @@ async function registerDevice() {
 }
 
 async function trackSessionStart() {
+  if (!isTrackingConsented()) return;
   if (isCompanyLoggedIn()) return;
   const workerId = getWorkerId();
   if (!workerId || !sessionId) return;
@@ -129,6 +145,7 @@ async function trackSessionStart() {
 }
 
 async function trackSessionEnd() {
+  if (!isTrackingConsented()) return;
   if (isCompanyLoggedIn()) return;
   const workerId = getWorkerId();
   if (!workerId || !sessionId) return;
@@ -182,6 +199,7 @@ export function trackEvent(
   eventType: string,
   extra?: Record<string, unknown>
 ) {
+  if (!isTrackingConsented()) return;
   if (isCompanyLoggedIn()) return;
   const timeOnPage = pageEnterTime > 0 ? Math.round((Date.now() - pageEnterTime) / 1000) : 0;
   sendEvent({ eventType, timeSpentSeconds: timeOnPage, ...extra });

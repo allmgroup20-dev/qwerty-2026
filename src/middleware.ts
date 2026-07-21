@@ -18,7 +18,11 @@ export function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/company")) {
     const token = request.cookies.get("company_token")?.value;
-    if (!token || !verifyToken(token, process.env.JWT_SECRET || "default-secret")) {
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error("JWT_SECRET is not configured");
+    }
+    if (!token || !verifyToken(token, jwtSecret || "")) {
       const loginUrl = new URL("/company/login", request.url);
       return NextResponse.redirect(loginUrl);
     }

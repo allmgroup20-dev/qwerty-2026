@@ -41,7 +41,7 @@ export async function GET() {
   // 4. Circuit breakers
   try {
     const circuits = getCircuitSummary();
-    const openCount = Object.values(circuits).filter(c => c.open).length;
+    const openCount = Object.values(circuits).filter(c => c.state === 'open').length;
     checks.circuit_breakers = {
       status: openCount > 0 ? "degraded" : "ok",
       detail: `${Object.keys(circuits).length} tracked, ${openCount} open`,

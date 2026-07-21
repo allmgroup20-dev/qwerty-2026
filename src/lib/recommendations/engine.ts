@@ -173,8 +173,14 @@ export function getRecommendedProducts(
     .slice(0, limit);
 }
 
-export function getInterestScoresFromWorker(workerId: string): Record<string, number> {
-  return {};
+export async function getInterestScoresFromWorker(workerId: string): Promise<Record<string, number>> {
+  try {
+    const scores = await getWorkerInterestScores(workerId);
+    return scores || {};
+  } catch (err) {
+    console.error(`Failed to get interest scores for ${workerId}:`, err);
+    return {};
+  }
 }
 
 export async function getWorkerInterestScores(workerId: string): Promise<Record<string, number> | null> {

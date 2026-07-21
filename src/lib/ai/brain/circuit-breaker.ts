@@ -1,58 +1,106 @@
-// ── Circuit breaker for failing agents/models ──
 interface CircuitState {
   failures: number;
-  lastFailure: number;
-  open: boolean;
-  openedAt: number;
+  lastFailureAt: number;
+  state: "closed" | "open" | "half-open";
+  halfOpenRequests: number;
 }
 
 const circuits = new Map<string, CircuitState>();
-const THRESHOLD = 3;         // 3 failures → open circuit
-const RESET_MS = 60_000;     // 1 minute before half-open
-const COOLDOWN_MS = 30_000;  // 30s between state changes
+
+const THRESHOLD = 5;
+const RESET_TIMEOUT = 30000;
+const HALF_MAX = 3;
+
+function getCircuit(name: string): CircuitState {
+  let c = circuits.get(name);
+  if (!c) {
+    c = { failures: 0, lastFailureAt: 0, state: "closed", halfOpenRequests: 0 };
+    circuits.set(name, c);
+  }
+  return c;
+}
+
+export async function callWithCircuitBreaker<T>(
+  circuitName: string,
+  fn: () => Promise<T>,
+  fallback?: () => Promise<T>
+): Promise<T> {
+  const circuit = getCircuit(circuitName);
+  const now = Date.now();
+
+  if (circuit.state === "open") {
+    if (now - circuit.lastFailureAt > RESET_TIMEOUT) {
+      circuit.state = "half-open";
+      circuit.halfOpenRequests = 0;
+    } else {
+      if (fallback) return fallback();
+      throw new Error(`Circuit "${circuitName}" is open`);
+    }
+  }
+
+  if (circuit.state === "half-open") {
+    if (circuit.halfOpenRequests >= HALF_MAX) {
+      if (fallback) return fallback();
+      throw new Error(`Circuit "${circuitName}" is half-open and at capacity`);
+    }
+    circuit.halfOpenRequests++;
+  }
+
+  try {
+    const result = await fn();
+    circuit.failures = 0;
+    circuit.state = "closed";
+    circuit.halfOpenRequests = 0;
+    return result;
+  } catch (err) {
+    circuit.failures++;
+    circuit.lastFailureAt = now;
+    if (circuit.failures >= THRESHOLD) {
+      circuit.state = "open";
+    }
+    if (fallback) return fallback();
+    throw err;
+  }
+}
 
 export function recordFailure(key: string): void {
-  const now = Date.now();
-  const state = circuits.get(key) || { failures: 0, lastFailure: 0, open: false, openedAt: 0 };
-  state.failures++;
-  state.lastFailure = now;
-  if (state.failures >= THRESHOLD && !state.open) {
-    state.open = true;
-    state.openedAt = now;
+  const circuit = getCircuit(key);
+  circuit.failures++;
+  circuit.lastFailureAt = Date.now();
+  if (circuit.failures >= THRESHOLD) {
+    circuit.state = "open";
   }
-  circuits.set(key, state);
 }
 
 export function recordSuccess(key: string): void {
-  const state = circuits.get(key);
-  if (state) {
-    state.failures = 0;
-    state.open = false;
-    state.openedAt = 0;
-  }
+  const circuit = getCircuit(key);
+  circuit.failures = 0;
+  circuit.state = "closed";
+  circuit.halfOpenRequests = 0;
 }
 
 export function isCircuitOpen(key: string): boolean {
-  const state = circuits.get(key);
-  if (!state || !state.open) return false;
-  // Auto-reset after RESET_MS
-  if (Date.now() - state.openedAt > RESET_MS) {
-    state.open = false;
-    state.failures = 0;
-    state.openedAt = 0;
-    return false;
+  const circuit = circuits.get(key);
+  if (!circuit) return false;
+  if (circuit.state === "open") {
+    if (Date.now() - circuit.lastFailureAt > RESET_TIMEOUT) {
+      circuit.state = "half-open";
+      circuit.halfOpenRequests = 0;
+      return false;
+    }
+    return true;
   }
-  return true;
+  return false;
 }
 
-export function getCircuitSummary(): Record<string, { open: boolean; failures: number; lastFailure: string }> {
+export function getCircuitSummary(): Record<string, { state: string; failures: number; lastFailure: string }> {
   const summary: Record<string, any> = {};
-  for (const [key, state] of circuits) {
-    if (state.failures > 0) {
+  for (const [key, c] of circuits) {
+    if (c.failures > 0 || c.state !== "closed") {
       summary[key] = {
-        open: state.open,
-        failures: state.failures,
-        lastFailure: new Date(state.lastFailure).toISOString(),
+        state: c.state,
+        failures: c.failures,
+        lastFailure: c.lastFailureAt ? new Date(c.lastFailureAt).toISOString() : "never",
       };
     }
   }

@@ -38,16 +38,16 @@ export async function POST(request: NextRequest) {
     const { phone, text, name } = body;
 
     // ── Rate limiting ──
-    const rateCheck = checkRateLimit(phone);
+    const rateCheck = await checkRateLimit(phone);
     if (!rateCheck.allowed) {
       return NextResponse.json({
         success: false,
         reply: "You are sending too many requests. Please wait a moment and try again.",
         rateLimited: true,
-        retryAfterMs: rateCheck.resetMs,
+        retryAfterMs: (rateCheck.retryAfter ?? 0) * 1000,
       }, {
         status: 429,
-        headers: { "Retry-After": String(Math.ceil(rateCheck.resetMs / 1000)) },
+        headers: { "Retry-After": String(rateCheck.retryAfter ?? 5) },
       });
     }
 

@@ -64,13 +64,20 @@ export default function WorkerDashboard() {
     products: { id: number; name: string; nameBn: string | null; price: number; imageUrl: string | null; score: number }[];
     topCategories: string[];
   } | null>(null);
+  const [personalizedInsights, setPersonalizedInsights] = useState<{
+    insights: { type: string; title: string; titleBn: string; priority: number; actionUrl: string; emoji: string }[];
+  } | null>(null);
+
+  const router = useRouter();
 
   useEffect(() => {
     const wid = localStorage.getItem("worker_id");
+    if (!wid) {
+      router.replace("/login");
+      return;
+    }
     setWorkerId(wid);
-  }, []);
-
-  const router = useRouter();
+  }, [router]);
 
   useEffect(() => {
     if (!workerId) {
@@ -108,6 +115,13 @@ export default function WorkerDashboard() {
         if (accounts.length) setSelectedAccId(accounts[0].id);
         if (data.analytics) setAnalytics(data.analytics);
         setReferralRedirectPath(s.referral_redirect_path || "/register");
+        // Fetch personalized insights
+        fetch(`/api/personalize/insights?workerId=${workerId}`)
+          .then(r => r.json())
+          .then(insightData => {
+            if (insightData.insights) setPersonalizedInsights(insightData);
+          })
+          .catch(() => {});
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -221,14 +235,19 @@ export default function WorkerDashboard() {
   }
 
   if (!worker) {
-    return (
+    return !workerId ? null : (
       <div className="min-h-screen py-24 px-4">
         <div className="max-w-md mx-auto text-center">
           <Card>
             <h2 className="text-xl font-bold text-primary mb-4">
-              {lang === "bn" ? "লগইন প্রয়োজন" : "Login Required"}
+              {lang === "bn" ? "ডেটা লোড হয়নি" : "Data not loaded"}
             </h2>
-            <Link href="/login"><Button className="w-full">{lang === "bn" ? "লগইন করুন" : "Login"}</Button></Link>
+            <p className="text-sm text-text-secondary mb-4">
+              {lang === "bn" ? "পুনরায় চেষ্টা করুন" : "Please try again"}
+            </p>
+            <Button className="w-full" onClick={() => window.location.reload()}>
+              {lang === "bn" ? "রিফ্রেশ করুন" : "Refresh"}
+            </Button>
           </Card>
         </div>
       </div>
@@ -303,6 +322,40 @@ export default function WorkerDashboard() {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Personalized Insights */}
+        {personalizedInsights?.insights && personalizedInsights.insights.length > 0 && (
+          <div className="mb-6 space-y-2">
+            {personalizedInsights.insights.slice(0, 3).map((insight, i) => (
+              <a key={i} href={insight.actionUrl}
+                className={`block p-4 rounded-xl border transition-all hover:shadow-lg hover:-translate-y-0.5 ${
+                  insight.priority === 1
+                    ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200'
+                    : insight.priority === 2
+                    ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200'
+                    : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{insight.emoji || (insight.priority === 1 ? '🔴' : insight.priority === 2 ? '🟡' : '🟢')}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-primary">{lang === "bn" ? insight.titleBn : insight.title}</p>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      {insight.priority === 1
+                        ? (lang === "bn" ? "⚡ জরুরি সুপারিশ" : "⚡ Urgent Recommendation")
+                        : insight.priority === 2
+                        ? (lang === "bn" ? "📌 আপনার জন্য" : "📌 For You")
+                        : (lang === "bn" ? "💡 টিপস" : "💡 Tips")}
+                    </p>
+                  </div>
+                  <span className="text-sm text-primary font-medium shrink-0">
+                    {lang === "bn" ? "দেখুন" : "View"} →
+                  </span>
+                </div>
+              </a>
+            ))}
           </div>
         )}
 
