@@ -118,9 +118,8 @@ export default function WorkerDashboard() {
         // Fetch personalized insights
         fetch(`/api/personalize/insights?workerId=${workerId}`)
           .then(r => r.json())
-          .then((insightData: unknown) => {
-            const data = insightData as Record<string, unknown>;
-            if (data?.insights) setPersonalizedInsights(data as any);
+          .then((insightData: any) => {
+            if (insightData?.insights) setPersonalizedInsights(insightData);
           })
           .catch(() => {});
         setLoading(false);

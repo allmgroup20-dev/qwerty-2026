@@ -29,7 +29,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
 async function sendInApp(payload: NotificationPayload): Promise<boolean> {
   const env = await getDB();
   await execute(
-    env,
+    env as any,
     "INSERT INTO notifications (worker_id, title, message, type, priority, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))",
     [
       payload.workerId,
