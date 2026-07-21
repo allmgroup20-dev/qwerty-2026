@@ -93,7 +93,7 @@ export function PersonalizedSection() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-primary uppercase tracking-wider">{lang === "bn" ? "প্রস্তাবিত প্রোডাক্ট" : "Recommended Products"}</h3>
-            <Link href="/products" className="text-xs font-semibold text-action hover:underline">{lang === "bn" ? "সব দেখুন" : "See All"} →</Link>
+            <Link href="/product-list" className="text-xs font-semibold text-action hover:underline">{lang === "bn" ? "সব দেখুন" : "See All"} →</Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {data.products.map((p) => (
