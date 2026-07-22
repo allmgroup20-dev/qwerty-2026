@@ -93,8 +93,8 @@ export async function markWebSent(id: number, messageId?: string): Promise<void>
   if (items.length > 0) {
     await execute(
       { DB: db },
-      "UPDATE wa_logs SET status = 'sent', message_id = ? WHERE phone = ? AND message = ? AND direction = 'outbound' ORDER BY created_at DESC LIMIT 1",
-      [messageId || null, items[0].to_phone, items[0].text_content]
+      "UPDATE wa_logs SET status = 'sent' WHERE phone = ? AND message = ? AND direction = 'outbound' ORDER BY created_at DESC LIMIT 1",
+      [items[0].to_phone, items[0].text_content]
     );
   }
 }
