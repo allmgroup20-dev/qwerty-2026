@@ -6,7 +6,7 @@ import { sendMessage } from "@/lib/whatsapp";
 export async function GET(request: NextRequest) {
   try {
     const auth = request.nextUrl.searchParams.get("token");
-    if (auth !== process.env.CRON_SECRET && auth !== "proactive-2024") {
+    if (auth !== process.env.CRON_SECRET) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     // 1) Find leads who have never been contacted proactively
     const newLeads = await query<any>(
       env,
-      `SELECT p.phone, COALESCE(p.name, 'Valued Customer') as name
-       FROM profiles p
+      `SELECT p.phone, COALESCE(p.name_guess, 'Valued Customer') as name
+       FROM ai_phone_profiles p
        LEFT JOIN proactive_followups f ON p.phone = f.phone
        WHERE f.phone IS NULL
          AND p.total_chats <= 1
@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
     // 3) Find stale contacts (no activity in > 48 hours)
     const staleContacts = await query<any>(
       env,
-      `SELECT p.phone, COALESCE(p.name, 'Valued Customer') as name
-       FROM profiles p
+      `SELECT p.phone, COALESCE(p.name_guess, 'Valued Customer') as name
+       FROM ai_phone_profiles p
        LEFT JOIN proactive_followups f ON p.phone = f.phone
        WHERE (f.phone IS NULL OR f.followup_count < 3)
          AND p.total_chats > 1
@@ -71,8 +71,9 @@ export async function GET(request: NextRequest) {
             [lead.phone, text]
           );
         }
-      } catch {
+      } catch (e) {
         errors++;
+        console.error("[Proactive] send error:", (e as Error)?.message);
       }
     }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateContactStatus, createContact } from "@/lib/whatsapp/contacts";
 import { sendMessage, enqueueMessage } from "@/lib/whatsapp";
-import { execute } from "@/lib/db/queries";
+import { query, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 import {
   processMessage,
@@ -103,7 +103,7 @@ async function sendProactiveFollowup(phone: string, env: any): Promise<void> {
   }
 }
 
-function parseIncomingMessage(body: any): { phone: string; text: string; name?: string; mediaId?: string; mediaType?: string; mimeType?: string } | null {
+function parseIncomingMessage(body: any): { phone: string; text: string; name?: string; mediaId?: string; mediaType?: string; mimeType?: string; msgId?: string } | null {
   const entry = body?.entry?.[0];
   const change = entry?.changes?.[0];
   const value = change?.value;
@@ -112,19 +112,20 @@ function parseIncomingMessage(body: any): { phone: string; text: string; name?: 
     const msg = messages[0];
     if (msg.from) {
       const name = value?.contacts?.[0]?.profile?.name;
+      const msgId = msg.id;
       // Voice message
       if (msg.type === "voice" || msg.type === "audio") {
         const id = msg.voice?.id || msg.audio?.id;
-        if (id) return { phone: msg.from, text: "[Voice Message]", name, mediaId: id, mediaType: "voice", mimeType: msg.voice?.mime_type || msg.audio?.mime_type || "audio/ogg" };
+        if (id) return { phone: msg.from, text: "[Voice Message]", name, mediaId: id, mediaType: "voice", mimeType: msg.voice?.mime_type || msg.audio?.mime_type || "audio/ogg", msgId };
       }
       // Image message
       if (msg.type === "image") {
         const id = msg.image?.id;
-        if (id) return { phone: msg.from, text: "[Image]", name, mediaId: id, mediaType: "image", mimeType: msg.image?.mime_type || "image/jpeg" };
+        if (id) return { phone: msg.from, text: "[Image]", name, mediaId: id, mediaType: "image", mimeType: msg.image?.mime_type || "image/jpeg", msgId };
       }
       // Text message
       if (msg.type === "text" && msg.text?.body) {
-        return { phone: msg.from, text: msg.text.body, name };
+        return { phone: msg.from, text: msg.text.body, name, msgId };
       }
     }
   }
@@ -135,6 +136,8 @@ function parseIncomingMessage(body: any): { phone: string; text: string; name?: 
   }
   return null;
 }
+
+const WEBHOOK_TIMEOUT = 25000;
 
 export async function POST(request: NextRequest) {
   try {
@@ -152,7 +155,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: false });
     }
 
-    let { phone, text, name, mediaId, mediaType, mimeType } = parsed;
+    let { phone, text, name, mediaId, mediaType, mimeType, msgId } = parsed;
+
+    // Deduplication: skip duplicate webhook deliveries within last 30s
+    if (msgId) {
+      try {
+        const existing = await query<any>(env,
+          "SELECT id FROM wa_logs WHERE phone = ? AND message = ? AND direction = 'inbound' AND created_at > datetime('now', '-30 seconds') LIMIT 1",
+          [phone, text]
+        );
+        if (existing.length > 0) {
+          return NextResponse.json({ received: true, deduplicated: true });
+        }
+      } catch {}
+    }
 
     // ── Process media (voice/image) if present ──
     let mediaDescription = "";
@@ -254,7 +270,17 @@ export async function POST(request: NextRequest) {
       isPremium,
     };
 
-    const brainResult = await processMessage(brainCtx);
+    const brainResult = await Promise.race([
+      processMessage(brainCtx),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Brain processing timed out")), WEBHOOK_TIMEOUT)
+      ),
+    ]).catch(async () => {
+      const fallbackText = lang === "en"
+        ? `Thank you for your message! I'll make sure to get back to you with the information you need. In the meantime, feel free to check out our programs at career.jobayergroup.com`
+        : `আপনার মেসেজের জন্য ধন্যবাদ! আমি আপনার প্রয়োজনীয় তথ্য নিয়ে শীঘ্রই ফিরে আসব। ইতিমধ্যে, career.jobayergroup.com-এ আমাদের প্রোগ্রামগুলো দেখে নিতে পারেন।`;
+      return { text: fallbackText, model: "timeout-fallback" as const, tokens: 0, agentsUsed: [], departmentsUsed: [], department: "customer_experience" as any, intent: "general" as any, ms: WEBHOOK_TIMEOUT };
+    });
     let reply = brainResult.text;
 
     if (isWorker && brainResult.agentsUsed.length > 0) {

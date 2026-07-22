@@ -103,7 +103,7 @@ export async function updateProfileFromChat(
   const isMale = GENDER_KEYWORDS_MALE.some((re) => re.test(text));
   const isFemale = GENDER_KEYWORDS_FEMALE.some((re) => re.test(text));
 
-  const updates: string[] = ["total_chats = total_chats + 1", "updated_at = datetime('now')", "last_chat_at = datetime('now')"];
+  const updates: string[] = ["total_chats = total_chats + 1", "last_chat_at = datetime('now')"];
   const params: unknown[] = [];
 
   if (lang !== "en") {
@@ -129,7 +129,7 @@ export async function updateProfileFromChat(
 
   updates.push("updated_at = datetime('now')");
 
-  if (params.length > 0) {
+  if (updates.length > 0) {
     params.push(phone);
     await execute(
       { DB: db },

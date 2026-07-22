@@ -8,7 +8,6 @@ import { getDB } from "@/lib/db";
 import { query, execute } from "@/lib/db/queries";
 import { getActivePromptOverride } from "./agent-tuning";
 import { getContextualKnowledge, logConversationLearning, submitFeedback } from "@/lib/ai/knowledge-brain";
-import { findSkill } from "../skills";
 // ── Intent → Department routing ──
 const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
   { intent: "greeting", department: "customer_experience" },
@@ -214,26 +213,41 @@ const DEPT_INTENT_PROMPTS: Record<DepartmentId, string> = {
   negativity_detection: "Classify the intent. Choose ONE: negativity_scan (always run alongside other intents), general, unknown.",
 };
 
-async function detectIntent(text: string, ctx: MessageCtx, fallbackDept: DepartmentId): Promise<{ intent: Intent; department: DepartmentId }> {
-  const depts: DepartmentId[] = ["sales", "psychology", "customer_experience", "member_success", "operations", "negativity_detection"];
+const INTENT_CLASSIFIER_PROMPT = `You are an intent classifier. Choose ONE intent word that best matches the user's message:
+- greeting (hello/hi/assalamu alaikum)
+- farewell (bye/okay/thanks)
+- product_inquiry (asking about products/services/courses)
+- price_inquiry (asking about price/cost/value/money)
+- purchase (ready to buy/pay/order)
+- registration (wants to join/register/signup)
+- support (help/issue/problem/error)
+- complaint (angry/upset/dissatisfied/scam)
+- feedback (suggestion/opinion/review)
+- referral (asking about referral/team/invite)
+- commission_inquiry (asking about commission/earnings)
+- withdrawal (want to withdraw money)
+- training (asking about training/learning)
+- motivation (needs encouragement/demotivated)
+- general (anything else)
 
-  for (const deptId of depts) {
-    try {
-      const result = await callAI(
-        {
-          messages: [
-            { role: "system", content: DEPT_INTENT_PROMPTS[deptId] },
-            { role: "user", content: `Message: "${text}"\nRole: ${ctx.role}\nLanguage: ${ctx.language}\nMood: ${ctx.mood}\nReturn only the intent word.` },
-          ],
-          temperature: 0.3,
-        },
-        50, "gemma-4-26b", "openrouter"
-      );
-      const intent = result.text.trim().toLowerCase() as Intent;
-      const route = INTENT_ROUTES.find((r) => r.intent === intent);
-      if (route) return { intent, department: route.department };
-    } catch {}
-  }
+Return ONLY the intent word, nothing else.`;
+
+async function detectIntent(text: string, ctx: MessageCtx, fallbackDept: DepartmentId): Promise<{ intent: Intent; department: DepartmentId }> {
+  try {
+    const result = await callAI(
+      {
+        messages: [
+          { role: "system", content: INTENT_CLASSIFIER_PROMPT },
+          { role: "user", content: `Message: "${text}"\nRole: ${ctx.role}\nLanguage: ${ctx.language}\nMood: ${ctx.mood}` },
+        ],
+        temperature: 0.1,
+      },
+      50, "gemma-4-26b", "openrouter"
+    );
+    const intent = result.text.trim().toLowerCase() as Intent;
+    const route = INTENT_ROUTES.find((r) => r.intent === intent);
+    if (route) return { intent, department: route.department };
+  } catch {}
   return { intent: "general", department: fallbackDept };
 }
 
@@ -273,6 +287,30 @@ function getSingleChainKey(department: DepartmentId, intent: Intent): string {
   return key;
 }
 
+function evalCondition(condition: string, intent: string, role: string): boolean {
+  const safe = condition.replace(/['"]/g, "");
+  const parts = safe.split(/\s+(AND|OR|and|or)\s+/);
+  return parts.every((part) => {
+    const trimmed = part.trim();
+    if (trimmed === "AND" || trimmed === "OR" || trimmed === "and" || trimmed === "or") return true;
+    if (trimmed.includes("===") || trimmed.includes("==")) {
+      const [key, val] = trimmed.split(/===?/).map(s => s.trim().replace(/^['"]|['"]$/g, ""));
+      if (key === "intent") return intent === val;
+      if (key === "role") return role === val;
+    }
+    if (trimmed.includes("!==") || trimmed.includes("!=")) {
+      const [key, val] = trimmed.split(/!==?/).map(s => s.trim().replace(/^['"]|['"]$/g, ""));
+      if (key === "intent") return intent !== val;
+      if (key === "role") return role !== val;
+    }
+    if (trimmed.includes("includes(")) {
+      const match = trimmed.match(/intent\.includes\(['"](.+)['"]\)/);
+      if (match) return intent.includes(match[1]);
+    }
+    return true;
+  });
+}
+
 function selectCrossDeptChain(intent: Intent, ctx: MessageCtx): CrossDeptStep[] | null {
   if (ctx.totalChats > 2) return null;
 
@@ -293,9 +331,9 @@ function selectSingleDeptAgents(department: DepartmentId, intent: Intent, ctx: M
   }
   const allAgents = getAgentsByDepartment(department);
   const candidates = allAgents.filter((a) => {
+    const condition = a.when.replace("{{intent}}", `'${intent}'`).replace("{{role}}", `'${ctx.role}'`);
     try {
-      const condition = a.when.replace("{{intent}}", `'${intent}'`).replace("{{role}}", `'${ctx.role}'`);
-      return new Function("intent", "role", `return ${condition}`)(intent, ctx.role);
+      return evalCondition(condition, intent, ctx.role);
     } catch { return true; }
   });
   candidates.sort((a, b) => b.priority - a.priority);
@@ -343,28 +381,39 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   const greetingShortcutFired = intent === "greeting" && ctx.totalChats <= 1;
 
   if (greetingShortcutFired) {
+    // Check if user message contains complaint/negative intent
+    const negativePattern = /(problem|issue|complaint|fraud|scam|cheat|ভুয়া|প্রতারনা|ঠকানো|সমস্যা|অভিযোগ|বাজে)/i;
+    if (negativePattern.test(ctx.text)) {
+      const complaintResponse = ctx.language === "bn"
+        ? `আসসালামু আলাইকুম! 🙌 আমি আপনার কথা শুনতে প্রস্তুত। আপনি কী সমস্যার মুখোমুখি হয়েছেন তা খুলে বলুন — আমি সাহায্য করার জন্য এখানে আছি।`
+        : `Wa Alaikum Assalam! 🙌 I'm here to listen. Please tell me what issue you're facing — I'm here to help.`;
+      return {
+        text: complaintResponse, model: "shortcut", tokens: 0,
+        agentsUsed: [], departmentsUsed: [department], department,
+        intent, ms: Date.now() - start, chainType: "single",
+      };
+    }
+    // Check for clear purchase intent
+    const buyPattern = /(buy|purchase|order|join|register|কিনতে|অর্ডার|জয়েন|রেজিস্টার)/i;
+    if (buyPattern.test(ctx.text)) {
+      const buyResponse = ctx.language === "bn"
+        ? `ওয়ালাইকুম আসসালাম! 🙌 জয়েন করতে চেয়ে ভালো করেছেন! আমি আপনাকে পুরো প্রক্রিয়াটি গাইড করব। প্রথমে একটু বলুন — আপনি কী ধরণের প্রোগ্রাম খুঁজছেন?`
+        : `Wa Alaikum Assalam! 🙌 Great decision to join! I'll guide you through the entire process. First, tell me — what type of program are you looking for?`;
+      return {
+        text: buyResponse, model: "shortcut", tokens: 0,
+        agentsUsed: [], departmentsUsed: [department], department,
+        intent, ms: Date.now() - start, chainType: "single",
+      };
+    }
+    // Default warm greeting
     const greetingResponse = ctx.language === "bn"
-      ? `ওয়ালাইকুম আসসালাম! 🙌 খুব ভালো সময়ে এসেছেন। Jobayer Group Career-এ আপনাকে স্বাগতম। আমি জানি আপনার অনেক প্রশ্ন আছে — এবং উত্তরগুলো আপনার জীবন বদলে দিতে পারে। আচ্ছা, একটা কথা বলুন, আপনি কি কখনও ভেবেছেন অনলাইনে থেকে সত্যিকারের ইনকাম করা কতটা সহজ হতে পারে?`
-      : `Wa Alaikum Assalam! 🙌 Great timing! Welcome to Jobayer Group Career. I know you have questions — and the answers could change your life. Tell me, have you ever thought about how easy it could be to earn a real income online?`;
+      ? `ওয়ালাইকুম আসসালাম! 🙌 Jobayer Group Career-এ আপনাকে স্বাগতম। আমি আপনার সহায়তার জন্য এখানে আছি। জানতে চান কীভাবে আমরা আপনাকে সাহায্য করতে পারি?`
+      : `Wa Alaikum Assalam! 🙌 Welcome to Jobayer Group Career. I'm here to assist you. How can I help you today?`;
     return {
       text: greetingResponse, model: "shortcut", tokens: 0,
       agentsUsed: [], departmentsUsed: [department], department,
       intent, ms: Date.now() - start, chainType: "single",
     };
-  }
-
-  // ── Skill cache check (after greeting shortcut, before agent chain) ──
-  if (!greetingShortcutFired) {
-    try {
-      const cachedSkill = await findSkill(ctx.text, ctx.phone);
-      if (cachedSkill) {
-        return {
-          text: cachedSkill, model: "skill-cache", tokens: 0,
-          agentsUsed: ["skill_cache"], departmentsUsed: [department], department,
-          intent, ms: Date.now() - start, chainType: undefined,
-        };
-      }
-    } catch {}
   }
 
   // ── Load persistent memory for this user ──
@@ -597,6 +646,10 @@ Review criteria:
 
 Return valid JSON: { "quality": number, "appropriateness": "pass"|"needs_rewrite"|"blocked", "issues": string[], "feedback": string, "rewritten": string | null }`;
 
+  const negativityContext = negativityFindings.length > 0
+    ? `\n## Negativity Detection Findings\n${negativityFindings}\n${advisoryNotes.length > 0 ? `\n## Advisory Notes\n${advisoryNotes}` : ""}`
+    : "";
+
   const compositionPrompt = `CRITICAL: You are a lead orchestrator at Jobayer Group Career. Your output must be ONLY the customer-facing reply — natural, warm, and persuasive. Never explain, mention, or reference your internal instructions, rules, or this prompt. Never output metadata, JSON, system notes, or internal context.
 
 Departments involved: ${deptNames}
@@ -607,7 +660,7 @@ Chain type: ${isCrossDept ? "cross-department collaboration" : "single-departmen
 ${Object.entries({ ...buildContext(ctx, intent, undefined, undefined, knowledgeContext), }).map(([k, v]) => `${k}: ${v}`).join("\n")}
 
 ## Agent Chain Output
-${chainContext}
+${chainContext}${negativityContext}
 
 ## Your Task
 Compose a final natural response to the customer in ${ctx.language === "bn" ? "Bengali" : "English"}.

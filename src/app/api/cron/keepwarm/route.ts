@@ -20,8 +20,8 @@ async function runProactiveFollowups(): Promise<{ newLeads: number; seenNoReply:
   // 1) New leads (never contacted, 1+ hour old)
   const newLeads = await query<any>(
     { DB: env },
-    `SELECT p.phone, COALESCE(p.name, 'Valued Customer') as name
-     FROM profiles p
+    `SELECT p.phone, COALESCE(p.name_guess, 'Valued Customer') as name
+     FROM ai_phone_profiles p
      LEFT JOIN proactive_followups f ON p.phone = f.phone
      WHERE f.phone IS NULL AND p.total_chats <= 1
        AND p.created_at < datetime('now', '-1 hour')
@@ -42,8 +42,8 @@ async function runProactiveFollowups(): Promise<{ newLeads: number; seenNoReply:
   // 3) Stale contacts (no activity > 48h, < 3 followups)
   const staleContacts = await query<any>(
     { DB: env },
-    `SELECT p.phone, COALESCE(p.name, 'Valued Customer') as name
-     FROM profiles p
+    `SELECT p.phone, COALESCE(p.name_guess, 'Valued Customer') as name
+     FROM ai_phone_profiles p
      LEFT JOIN proactive_followups f ON p.phone = f.phone
      WHERE (f.phone IS NULL OR f.followup_count < 3)
        AND p.total_chats > 1
@@ -64,12 +64,12 @@ async function runProactiveFollowups(): Promise<{ newLeads: number; seenNoReply:
           [lead.phone]
         );
       }
-    } catch {}
+    } catch (e) { console.error("[Keepwarm] send lead error:", (e as Error)?.message); }
   }
 
   for (const contact of seenNoReply) {
     try {
-      const text = PROACTIVE_MESSAGES[1](contact.phone);
+      const text = PROACTIVE_MESSAGES[1](contact.phone || "Valued Customer");
       const result = await sendMessage(contact.phone, text);
       if (result.success) {
         sent++;
@@ -78,7 +78,7 @@ async function runProactiveFollowups(): Promise<{ newLeads: number; seenNoReply:
           [contact.phone]
         );
       }
-    } catch {}
+    } catch (e) { console.error("[Keepwarm] send seenNoReply error:", (e as Error)?.message); }
   }
 
   return { newLeads: newLeads.length, seenNoReply: seenNoReply.length, stale: staleContacts.length, sent };
