@@ -11,7 +11,7 @@ export interface MessageQueueItem {
   to: string;
   text: string;
   priority: MessagePriority;
-  status: "queued" | "sending" | "sent" | "failed";
+  status: "queued" | "sending" | "sent" | "failed" | "pending_web";
   accountId?: string;
   campaignId?: string;
   messageType: string;

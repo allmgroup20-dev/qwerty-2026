@@ -44,7 +44,7 @@ export async function createContact(
     [phone, data?.name || null, data?.source || "manual", data?.notes || null]
   );
 
-  syncPhonebookContact(phone, data?.name, data?.source).catch(() => {});
+  syncPhonebookContact(phone, data?.name, data?.source).catch((e: unknown) => console.error("[Contacts] syncPhonebookContact failed:", (e as Error)?.message));
 }
 
 export async function updateContactStatus(

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateContactStatus, createContact } from "@/lib/whatsapp/contacts";
-import { sendMessage } from "@/lib/whatsapp/sender";
+import { sendMessage, enqueueMessage } from "@/lib/whatsapp";
 import { execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 import {
@@ -143,10 +143,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Ensure reply is never empty — fallback if brain returns nothing
     if (!reply || reply.trim().length === 0) {
       console.warn(`[WhatsApp Webhook] Brain returned empty reply for ${phone} — using fallback`);
-      reply = "ধন্যবাদ আপনার মেসেজের জন্য। আমি আপনার সহায়তার জন্য প্রস্তুত আছি। বিস্তারিত জানাতে পারেন?";
+      reply = lang === "en"
+        ? "Thank you for your message. I'm here to help you. Could you share more details?"
+        : "ধন্যবাদ আপনার মেসেজের জন্য। আমি আপনার সহায়তার জন্য প্রস্তুত আছি। বিস্তারিত জানাতে পারেন?";
     }
 
     // Enforce conversation rules — keep replies short (15-40 words, max 2 sentences)
@@ -196,6 +197,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // fromBrowser = relay (Baileys) mode → also enqueue as pending_web for reliability
+    await enqueueMessage(phone, reply, 2, {
+      accountId: "web_main",
+      messageType: "reply",
+      viaRelay: true,
+    });
     await updateContactStatus(phone, "replied", reply);
     return NextResponse.json({
       received: true,

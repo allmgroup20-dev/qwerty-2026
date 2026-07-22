@@ -7,18 +7,21 @@ export async function enqueueMessage(
   to: string,
   text: string,
   priority: MessagePriority = 0,
-  context?: { campaignId?: string; accountId?: string; messageType?: string }
+  context?: { campaignId?: string; accountId?: string; messageType?: string; viaRelay?: boolean }
 ): Promise<void> {
   const db = await ensureDB();
+  const useRelay = context?.viaRelay !== false;
+  const status = useRelay ? "pending_web" : "queued";
   await execute(
     { DB: db },
     `INSERT INTO wa_message_queue (to_phone, text_content, priority, status, account_id, campaign_id, message_type, created_at)
-     VALUES (?, ?, ?, 'queued', ?, ?, ?, datetime('now'))`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
     [
       to,
       text,
       priority,
-      context?.accountId || null,
+      status,
+      context?.accountId || (useRelay ? "web_main" : null),
       context?.campaignId || null,
       context?.messageType || "outreach",
     ]
@@ -75,17 +78,24 @@ export async function getPendingWebMessages(accountId: string, limit = 10): Prom
 
 export async function markWebSent(id: number, messageId?: string): Promise<void> {
   const db = await ensureDB();
+  // First get the queue item to know what we're updating
+  const items = await query<{ to_phone: string; text_content: string }>(
+    { DB: db },
+    "SELECT to_phone, text_content FROM wa_message_queue WHERE id = ?",
+    [id]
+  );
   await execute(
     { DB: db },
     "UPDATE wa_message_queue SET status = 'sent', sent_at = datetime('now') WHERE id = ?",
     [id]
   );
-  // Also update wa_logs for this message
-  await execute(
-    { DB: db },
-    "UPDATE wa_logs SET status = 'sent' WHERE id = (SELECT id FROM wa_logs WHERE message = (SELECT text_content FROM wa_message_queue WHERE id = ?) AND direction = 'outbound' ORDER BY created_at DESC LIMIT 1)",
-    [id]
-  );
+  if (items.length > 0) {
+    await execute(
+      { DB: db },
+      "UPDATE wa_logs SET status = 'sent', message_id = ? WHERE phone = ? AND message = ? AND direction = 'outbound' ORDER BY created_at DESC LIMIT 1",
+      [messageId || null, items[0].to_phone, items[0].text_content]
+    );
+  }
 }
 
 export async function getQueueStats() {
