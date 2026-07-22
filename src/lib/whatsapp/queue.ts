@@ -8,11 +8,11 @@ export async function enqueueMessage(
   text: string,
   priority: MessagePriority = 0,
   context?: { campaignId?: string; accountId?: string; messageType?: string; viaRelay?: boolean }
-): Promise<void> {
+): Promise<number | null> {
   const db = await ensureDB();
   const useRelay = context?.viaRelay !== false;
   const status = useRelay ? "pending_web" : "queued";
-  await execute(
+  const result = await execute(
     { DB: db },
     `INSERT INTO wa_message_queue (to_phone, text_content, priority, status, account_id, campaign_id, message_type, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
@@ -26,6 +26,7 @@ export async function enqueueMessage(
       context?.messageType || "outreach",
     ]
   );
+  return result?.meta?.last_row_id ?? null;
 }
 
 export async function processQueue(batchSize = 3): Promise<number> {

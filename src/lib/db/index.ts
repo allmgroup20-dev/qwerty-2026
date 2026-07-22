@@ -730,6 +730,38 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       updated_at TEXT DEFAULT (datetime('now'))
     )`).run();
 
+    // WhatsApp outreach campaigns table
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS wa_outreach_campaigns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      status TEXT DEFAULT 'draft',
+      target_status TEXT,
+      target_min_priority INTEGER DEFAULT 0,
+      target_days_since_contact INTEGER DEFAULT 7,
+      message_template TEXT,
+      ai_generated INTEGER DEFAULT 1,
+      total_targets INTEGER DEFAULT 0,
+      sent_count INTEGER DEFAULT 0,
+      reply_count INTEGER DEFAULT 0,
+      scheduled_at TEXT,
+      started_at TEXT,
+      completed_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS wa_outreach_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaign_id INTEGER,
+      phone TEXT NOT NULL,
+      message TEXT NOT NULL,
+      status TEXT DEFAULT 'queued',
+      message_id INTEGER,
+      replied INTEGER DEFAULT 0,
+      error TEXT,
+      sent_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+
     // AI Leads table
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ai_leads (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
