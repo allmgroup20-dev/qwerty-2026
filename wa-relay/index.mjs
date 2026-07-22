@@ -15,8 +15,23 @@ const PORT = parseInt(process.env.PORT || "8080", 10);
 const APP_URL = (process.env.APP_URL || "https://career.jobayergroup.com").replace(/\/+$/, "");
 const AUTH_DIR = process.env.AUTH_DIR || path.join(process.cwd(), "data", "auth");
 const ACCOUNT_ID = process.env.WA_ACCOUNT_ID || "web_main";
+const AUTH_TOKEN = process.env.AUTH_TOKEN || "";
 
-if (!fs.existsSync(AUTH_DIR)) fs.mkdirSync(AUTH_DIR, { recursive: true });
+if (!fs.existsSync(AUTH_DIR)) {
+  fs.mkdirSync(AUTH_DIR, { recursive: true });
+  const authBackup = process.env.AUTH_BASE64;
+  if (authBackup) {
+    try {
+      const files = JSON.parse(Buffer.from(authBackup, "base64").toString());
+      for (const [name, data] of Object.entries(files)) {
+        fs.writeFileSync(path.join(AUTH_DIR, name), Buffer.from(data, "base64"));
+      }
+      logInfo(`Auth restored from AUTH_BASE64 (${Object.keys(files).length} files)`);
+    } catch (e) {
+      logError(`Failed to restore auth from AUTH_BASE64: ${e.message}`);
+    }
+  }
+}
 
 let sock = null;
 let qrCode = null;
@@ -245,6 +260,12 @@ function jsonResponse(res, data, status = 200) {
   res.end(JSON.stringify(data));
 }
 
+function requireAuth(req) {
+  if (!AUTH_TOKEN) return true;
+  const provided = req.headers["x-auth-token"] || "";
+  return provided === AUTH_TOKEN;
+}
+
 function serveDashboard(req, res) {
   const elapsed = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
   const uptimeStr = elapsed > 86400
@@ -344,7 +365,33 @@ function startServer() {
       } else if (path === "/logs") {
         const limit = Math.min(parseInt(url.searchParams.get("limit") || "100"), 500);
         jsonResponse(res, logs.slice(0, limit));
+      } else if (path === "/start" && req.method === "POST") {
+        if (!requireAuth(req)) { jsonResponse(res, { error: "Unauthorized" }, 401); return; }
+        startConnection();
+        jsonResponse(res, { ok: true });
+      } else if (path === "/stop" && req.method === "POST") {
+        if (!requireAuth(req)) { jsonResponse(res, { error: "Unauthorized" }, 401); return; }
+        stopConnection();
+        jsonResponse(res, { ok: true });
+      } else if (path === "/reset" && req.method === "POST") {
+        if (!requireAuth(req)) { jsonResponse(res, { error: "Unauthorized" }, 401); return; }
+        stopConnection();
+        try { fs.rmSync(AUTH_DIR, { recursive: true, force: true }); } catch {}
+        fs.mkdirSync(AUTH_DIR, { recursive: true });
+        startConnection();
+        jsonResponse(res, { ok: true });
+      } else if (path === "/backup-auth" && req.method === "POST") {
+        if (!requireAuth(req)) { jsonResponse(res, { error: "Unauthorized" }, 401); return; }
+        if (!fs.existsSync(AUTH_DIR) || !fs.readdirSync(AUTH_DIR).length) {
+          jsonResponse(res, { error: "No auth data" }, 400); return;
+        }
+        const backup = {};
+        for (const f of fs.readdirSync(AUTH_DIR)) {
+          backup[f] = fs.readFileSync(path.join(AUTH_DIR, f), "base64");
+        }
+        jsonResponse(res, { backup: JSON.stringify(backup), hint: "Set as AUTH_BASE64 env var" });
       } else if (path === "/diag") {
+        // diag is public (informational only, no destructive ops)
         (async () => {
           const result = { node: process.version, tests: [] };
           const hosts = ["web.whatsapp.com", "w1.web.whatsapp.com", "w2.web.whatsapp.com", "v1.web.whatsapp.com"];
@@ -377,7 +424,6 @@ function startServer() {
               result.tests.push({ host, error: e.message });
             }
           }
-          // Test actual WebSocket connection
           try {
             const wsResult = await new Promise((r) => {
               const ws = new WebSocket("wss://web.whatsapp.com/ws/chat", {
@@ -396,18 +442,6 @@ function startServer() {
           }
           jsonResponse(res, result);
         })();
-      } else if (path === "/start" && req.method === "POST") {
-        startConnection();
-        jsonResponse(res, { ok: true });
-      } else if (path === "/stop" && req.method === "POST") {
-        stopConnection();
-        jsonResponse(res, { ok: true });
-      } else if (path === "/reset" && req.method === "POST") {
-        stopConnection();
-        try { fs.rmSync(AUTH_DIR, { recursive: true, force: true }); } catch {}
-        fs.mkdirSync(AUTH_DIR, { recursive: true });
-        startConnection();
-        jsonResponse(res, { ok: true });
       } else {
         jsonResponse(res, { error: "Not found" }, 404);
       }
