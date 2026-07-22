@@ -556,9 +556,11 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       icon TEXT DEFAULT '📌',
       price REAL DEFAULT 0,
       is_premium INTEGER DEFAULT 1,
+      image_url TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     )`).run();
+    await env.DB.prepare(`ALTER TABLE courses ADD COLUMN image_url TEXT`).run().catch(() => {});
     await env.DB.prepare(`UPDATE courses SET is_premium = 1 WHERE is_premium = 0`).run().catch(() => {});
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS course_files (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
