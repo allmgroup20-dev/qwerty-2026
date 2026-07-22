@@ -76,17 +76,17 @@ export async function GET() {
 }
 
 const NOTIFICATION_TITLES: Record<string, string> = {
-  browse_abandon: "Items waiting for you!",
-  inactive_14d: "We miss you!",
-  inactive_30d: "Come back!",
-  churn_risk: "Special offer just for you",
+  browse_abandon: "আপনার জন্য পণ্য অপেক্ষা করছে!",
+  inactive_14d: "আমরা আপনাকে মিস করি!",
+  inactive_30d: "ফিরে আসুন!",
+  churn_risk: "শুধু আপনার জন্য বিশেষ অফার",
 };
 
 const NOTIFICATION_BODIES: Record<string, string> = {
-  browse_abandon: "You have items in your cart. Complete your order today!",
-  inactive_14d: "It's been a while since you visited. Check out what's new!",
-  inactive_30d: "We haven't seen you in a while. Here's a special welcome back!",
-  churn_risk: "Enjoy exclusive discounts available only for our valued members.",
+  browse_abandon: "আপনার কার্টে পণ্য রয়েছে। আজই অর্ডার সম্পন্ন করুন!",
+  inactive_14d: "আপনাকে দেখে অনেক দিন হলো। নতুন কি আছে দেখুন!",
+  inactive_30d: "আপনাকে অনেক দিন দেখা যায়নি। আপনার জন্য বিশেষ স্বাগতম অফার!",
+  churn_risk: "আমাদের মূল্যবান সদস্যদের জন্য একচেটিয়া ডিসকাউন্ট উপভোগ করুন।",
 };
 
 export async function POST(request: NextRequest) {

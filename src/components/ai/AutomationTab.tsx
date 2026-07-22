@@ -88,7 +88,7 @@ export default function AutomationTab() {
                 <button onClick={() => handleAction(key, "whatsapp")}
                   disabled={sending === `${key}-whatsapp` || (byType[key] || 0) === 0}
                   className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-                  {sending === `${key}-whatsapp` ? "..." : "WhatsApp"}
+                  {sending === `${key}-whatsapp` ? "..." : lang === "bn" ? "হোয়াটসঅ্যাপ" : "WhatsApp"}
                 </button>
               </div>
             </div>

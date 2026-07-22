@@ -2,24 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { ensureDB } from "@/lib/db";
 
 const GOAL_MESSAGES: Record<string, { title: string; message: string }> = {
-  career: { title: "Career Tips", message: "Check our career-building courses designed for professionals like you." },
-  freelancing: { title: "Freelancing Guide", message: "Ready to start freelancing? Explore our freelancing courses today." },
-  business: { title: "Business Growth", message: "Grow your business with our expert-led business courses." },
-  skill: { title: "Skill Development", message: "New skill development content is available based on your interests." },
-  job: { title: "Job Preparation", message: "Prepare for your dream job with our job-oriented training programs." },
+  career: { title: "ক্যারিয়ার টিপস", message: "আপনার মতো পেশাদারদের জন্য ডিজাইন করা ক্যারিয়ার-বিল্ডিং কোর্স দেখুন।" },
+  freelancing: { title: "ফ্রিল্যান্সিং গাইড", message: "ফ্রিল্যান্সিং শুরু করতে প্রস্তুত? আজই আমাদের ফ্রিল্যান্সিং কোর্স দেখুন।" },
+  business: { title: "ব্যবসা বৃদ্ধি", message: "আমাদের বিশেষজ্ঞ-পরিচালিত ব্যবসায়িক কোর্সের মাধ্যমে আপনার ব্যবসা বাড়ান।" },
+  skill: { title: "স্কিল ডেভেলপমেন্ট", message: "আপনার আগ্রহ অনুযায়ী নতুন স্কিল ডেভেলপমেন্ট কন্টেন্ট উপলব্ধ।" },
+  job: { title: "চাকরির প্রস্তুতি", message: "আমাদের জব-ওরিয়েন্টেড ট্রেনিং প্রোগ্রামের মাধ্যমে আপনার স্বপ্নের চাকরির জন্য প্রস্তুত হন।" },
 };
 
 const INTEREST_COURSE_MAP: Record<string, string> = {
-  "Web Development": "Web development skills are in high demand. Check our latest course!",
-  "Programming": "Programming courses updated with new content just for you.",
-  "Graphics Design": "New graphic design techniques — learn and create better designs.",
-  "Digital Marketing": "Digital marketing is evolving fast. Stay ahead with our courses.",
-  "Video Editing": "Video editing tips and tricks — new module added!",
-  "Freelancing": "Freelancing marketplace tips to help you earn more.",
-  "English Learning": "English communication skills — practice with our guided lessons.",
-  "Cyber Security": "Cyber security awareness course now available.",
-  "AI & ChatGPT": "AI & ChatGPT advanced techniques — learn the future today.",
-  "Business": "Business strategy and management tips for entrepreneurs.",
+  "Web Development": "ওয়েব ডেভেলপমেন্ট স্কিলের চাহিদা অনেক বেশি। আমাদের লেটেস্ট কোর্স দেখুন!",
+  "Programming": "প্রোগ্রামিং কোর্স আপনার জন্য নতুন কন্টেন্ট দিয়ে আপডেট করা হয়েছে।",
+  "Graphics Design": "নতুন গ্রাফিক ডিজাইন টেকনিক — শিখুন এবং আরও ভাল ডিজাইন তৈরি করুন।",
+  "Digital Marketing": "ডিজিটাল মার্কেটিং দ্রুত পরিবর্তন হচ্ছে। আমাদের কোর্সের সাথে এগিয়ে থাকুন।",
+  "Video Editing": "ভিডিও এডিটিং টিপস ও ট্রিকস — নতুন মডিউল যুক্ত হয়েছে!",
+  "Freelancing": "ফ্রিল্যান্সিং মার্কেটপ্লেস টিপস যা আপনাকে আরও আয় করতে সাহায্য করবে।",
+  "English Learning": "ইংরেজি কমিউনিকেশন স্কিল — আমাদের গাইডেড লেসনের সাথে অনুশীলন করুন।",
+  "Cyber Security": "সাইবার সিকিউরিটি সচেতনতা কোর্স এখন উপলব্ধ।",
+  "AI & ChatGPT": "এআই ও চ্যাটজিপিটি অ্যাডভান্সড টেকনিক — আজই ভবিষ্যৎ শিখুন।",
+  "Business": "উদ্যোক্তাদের জন্য ব্যবসায়িক কৌশল ও ম্যানেজমেন্ট টিপস।",
 };
 
 export async function POST(request: NextRequest) {
@@ -55,18 +55,18 @@ export async function POST(request: NextRequest) {
       if (INTEREST_COURSE_MAP[kw]) {
         await db.prepare(
           "INSERT INTO notifications (worker_id, title, message, type) VALUES (?, ?, ?, 'personalized')"
-        ).bind(worker.worker_id, `Based on your interest in ${kw}`, INTEREST_COURSE_MAP[kw]).run();
+        ).bind(worker.worker_id, `"${kw}"-এ আপনার আগ্রহের ভিত্তিতে`, INTEREST_COURSE_MAP[kw]).run();
         sent++;
       }
     }
 
     // 3. Preferred learning time reminder
     if (worker.preferred_learning_time) {
-      const timeLabels: Record<string, string> = { morning: "Morning", afternoon: "Afternoon", evening: "Evening", night: "Night" };
+      const timeLabels: Record<string, string> = { morning: "সকাল", afternoon: "দুপুর", evening: "সন্ধ্যা", night: "রাত" };
       const label = timeLabels[worker.preferred_learning_time] || worker.preferred_learning_time;
       await db.prepare(
         "INSERT INTO notifications (worker_id, title, message, type) VALUES (?, ?, ?, 'reminder')"
-      ).bind(worker.worker_id, "Learning Time", `Your preferred ${label} time — time to learn! Check your courses.`).run();
+      ).bind(worker.worker_id, "শেখার সময়", `আপনার পছন্দের ${label} সময় — শেখার সময়! আপনার কোর্স দেখুন।`).run();
       sent++;
     }
 
