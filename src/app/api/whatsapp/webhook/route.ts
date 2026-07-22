@@ -25,18 +25,32 @@ import {
 } from "@/lib/ai";
 import { recordPlatformActivity } from "@/lib/platform-router";
 import { linkWorkerToAgent, saveAgentKnowledge } from "@/lib/ai/brain/employee-link";
-import { enforceWordLimit } from "@/lib/ai/conversation-rules";
 import type { MessageCtx } from "@/lib/ai/brain/types";
+import type { MediaResult } from "@/lib/whatsapp/media";
 
-function parseIncomingMessage(body: any): { phone: string; text: string; name?: string } | null {
+function parseIncomingMessage(body: any): { phone: string; text: string; name?: string; mediaId?: string; mediaType?: string; mimeType?: string } | null {
   const entry = body?.entry?.[0];
   const change = entry?.changes?.[0];
   const value = change?.value;
   const messages = value?.messages;
   if (messages?.length) {
     const msg = messages[0];
-    if (msg.type === "text" && msg.from && msg.text?.body) {
-      return { phone: msg.from, text: msg.text.body, name: value?.contacts?.[0]?.profile?.name };
+    if (msg.from) {
+      const name = value?.contacts?.[0]?.profile?.name;
+      // Voice message
+      if (msg.type === "voice" || msg.type === "audio") {
+        const id = msg.voice?.id || msg.audio?.id;
+        if (id) return { phone: msg.from, text: "[Voice Message]", name, mediaId: id, mediaType: "voice", mimeType: msg.voice?.mime_type || msg.audio?.mime_type || "audio/ogg" };
+      }
+      // Image message
+      if (msg.type === "image") {
+        const id = msg.image?.id;
+        if (id) return { phone: msg.from, text: "[Image]", name, mediaId: id, mediaType: "image", mimeType: msg.image?.mime_type || "image/jpeg" };
+      }
+      // Text message
+      if (msg.type === "text" && msg.text?.body) {
+        return { phone: msg.from, text: msg.text.body, name };
+      }
     }
   }
   const phone = body.phone || body.from;
@@ -56,13 +70,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: false });
     }
 
-    const { phone, text, name } = parsed;
+    let { phone, text, name, mediaId, mediaType, mimeType } = parsed;
 
     const env = await getDB();
-    await execute(env,
-      "INSERT INTO wa_logs (phone, message, direction, status, message_type, created_at) VALUES (?, ?, 'inbound', 'received', 'text', datetime('now'))",
-      [phone, text]
-    );
+
+    // ── Process media (voice/image) if present ──
+    let mediaDescription = "";
+    let mediaLogText = text;
+    if (mediaId && mediaType === "voice") {
+      const { downloadMedia, transcribeAudio } = await import("@/lib/whatsapp/media");
+      const media = await downloadMedia(mediaId);
+      if (media) {
+        const sttResult = await transcribeAudio(media.buffer);
+        if (sttResult) {
+          text = `[Voice: ${sttResult}]`;
+          mediaDescription = `Customer sent a voice message. Transcription: "${sttResult}"`;
+          mediaLogText = sttResult;
+        }
+      }
+      await execute(env,
+        "INSERT INTO wa_logs (phone, message, direction, status, message_type, created_at) VALUES (?, ?, 'inbound', 'received', 'voice', datetime('now'))",
+        [phone, mediaLogText]
+      );
+    } else if (mediaId && mediaType === "image") {
+      const { downloadMedia, analyzeImage } = await import("@/lib/whatsapp/media");
+      const media = await downloadMedia(mediaId);
+      if (media) {
+        const imageDesc = await analyzeImage(media.buffer, mimeType || "image/jpeg");
+        if (imageDesc) {
+          text = `[Image: ${imageDesc.slice(0, 200)}]`;
+          mediaDescription = `Customer sent an image. Description: "${imageDesc}"`;
+          mediaLogText = imageDesc.slice(0, 100);
+        }
+      }
+      await execute(env,
+        "INSERT INTO wa_logs (phone, message, direction, status, message_type, created_at) VALUES (?, ?, 'inbound', 'received', 'image', datetime('now'))",
+        [phone, mediaLogText]
+      );
+    } else {
+      await execute(env,
+        "INSERT INTO wa_logs (phone, message, direction, status, message_type, created_at) VALUES (?, ?, 'inbound', 'received', 'text', datetime('now'))",
+        [phone, text]
+      );
+    }
 
     // Update or create contact
     if (name) {
@@ -134,14 +184,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!reply || reply.trim().length === 0) {
-      console.warn(`[WhatsApp Webhook] Brain returned empty reply for ${phone} — using fallback`);
+      console.warn(`[WhatsApp Webhook] Brain returned empty reply for ${phone} — using persistent fallback`);
       reply = lang === "en"
-        ? "Thank you for your message. I'm here to help you. Could you share more details?"
-        : "ধন্যবাদ আপনার মেসেজের জন্য। আমি আপনার সহায়তার জন্য প্রস্তুত আছি। বিস্তারিত জানাতে পারেন?";
+        ? `I understand you might not be ready yet. But let me ask you this — what if you're missing out on something that could truly change your life? Many of our members felt the same way at first. Let me share just one quick story...`
+        : `আমি বুঝতে পারছি আপনি এখনই আগ্রহী নন। কিন্তু একটা কথা বলি — যদি আপনি সত্যিই এমন কিছু মিস করছেন যা আপনার জীবন বদলে দিতে পারে? আমাদের অনেক মেম্বার প্রথমে আপনার মতই অনুভব করেছিলেন। শুধু একটা ছোট গল্প বলি...`;
     }
-
-    // Enforce conversation rules — keep replies short (15-40 words, max 2 sentences)
-    reply = enforceWordLimit(reply);
 
     // Auto-save to skills — so brain learns from this Q&A (with validation)
     try {

@@ -242,7 +242,7 @@ function cleanJsonResponse(text: string): string {
   return jsonMatch ? jsonMatch[0] : text;
 }
 
-function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, userMemories?: any[], knowledgeCtx?: string, topTarget?: string): Record<string, any> {
+function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, userMemories?: any[], knowledgeCtx?: string, topTarget?: string, upsellCtx?: string): Record<string, any> {
   const memoryStr = userMemories ? buildMemoryContext(userMemories) : "";
   return {
     language: ctx.language === "bn" ? "Bengali" : ctx.language === "en" ? "English" : "Bengali with English mix",
@@ -259,7 +259,8 @@ function buildContext(ctx: MessageCtx, intent: Intent, chainOutput?: string, use
     userMemory: memoryStr,
     knowledgeContext: knowledgeCtx || "",
     topTarget: topTarget || "",
-    context: `Chats: ${ctx.totalChats}. Mood: ${ctx.mood}.` + (ctx.dialect ? ` Dialect: ${ctx.dialect}.` : "") + (ctx.religion ? ` Religion: ${ctx.religion}.` : "") + memoryStr + (topTarget ? ` ${topTarget}` : ""),
+    upsellContext: upsellCtx || "",
+    context: `Chats: ${ctx.totalChats}. Mood: ${ctx.mood}.` + (ctx.dialect ? ` Dialect: ${ctx.dialect}.` : "") + (ctx.religion ? ` Religion: ${ctx.religion}.` : "") + memoryStr + (topTarget ? ` ${topTarget}` : "") + (upsellCtx ? ` ${upsellCtx}` : ""),
     previousOutput: chainOutput || "",
   };
 }
@@ -343,8 +344,8 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
 
   if (greetingShortcutFired) {
     const greetingResponse = ctx.language === "bn"
-      ? `ওয়ালাইকুম আসসালাম! 👋 আমি Jobayer Group Career-এর সহকারী। কীভাবে সাহায্য করতে পারি?`
-      : `Hi there! 👋 I'm your Jobayer Group Career assistant. How can I help you today?`;
+      ? `ওয়ালাইকুম আসসালাম! 🙌 খুব ভালো সময়ে এসেছেন। Jobayer Group Career-এ আপনাকে স্বাগতম। আমি জানি আপনার অনেক প্রশ্ন আছে — এবং উত্তরগুলো আপনার জীবন বদলে দিতে পারে। আচ্ছা, একটা কথা বলুন, আপনি কি কখনও ভেবেছেন অনলাইনে থেকে সত্যিকারের ইনকাম করা কতটা সহজ হতে পারে?`
+      : `Wa Alaikum Assalam! 🙌 Great timing! Welcome to Jobayer Group Career. I know you have questions — and the answers could change your life. Tell me, have you ever thought about how easy it could be to earn a real income online?`;
     return {
       text: greetingResponse, model: "shortcut", tokens: 0,
       agentsUsed: [], departmentsUsed: [department], department,
@@ -396,6 +397,24 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
     }
   } catch {}
 
+  // ── Premium upselling data ──
+  let upsellContext = "";
+  if (ctx.isPremium && db) {
+    try {
+      const resources = await query<any>(
+        { DB: db },
+        "SELECT resource_type, COUNT(*) as total FROM member_resources WHERE member_phone = ? AND status = 'active' GROUP BY resource_type ORDER BY total DESC",
+        [ctx.phone]
+      );
+      if (resources.length > 0) {
+        const usageList = resources.map((r: any) => `${r.resource_type}: ${r.total}`).join(", ");
+        upsellContext = `[PREMIUM MEMBER RESOURCES: ${usageList}. Suggest additional complementary resources based on their current usage patterns.]`;
+      } else {
+        upsellContext = "[PREMIUM MEMBER WITH NO ACTIVE RESOURCES — Offer them an introductory resource package.]";
+      }
+    } catch {}
+  }
+
   // ── Try cross-department chain first ──
   const crossDeptSteps = selectCrossDeptChain(intent, ctx);
   const isCrossDept = crossDeptSteps !== null && crossDeptSteps.length > 0;
@@ -417,7 +436,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
       }
       const agent = agentData.agent;
       try {
-        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories, knowledgeContext, topTargetStr), };
+        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories, knowledgeContext, topTargetStr, upsellContext), };
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -438,8 +457,8 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
 
     if (selectedAgents.length === 0) {
       const fb = await callAI(
-        { messages: [{ role: "system", content: `You are a helpful Jobayer Group assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}. Output ONLY the response, no instructions or meta-text.` }, { role: "user", content: ctx.text }], temperature: 0.3 },
-        100, "gemma-4-26b", "openrouter"
+        { messages: [{ role: "system", content: `You are Jobayer Group Career's top sales closer. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}. Be persuasive, persistent, and warm. Never give up on this customer. Use psychological selling: build value, create urgency, handle objections before they arise. Output ONLY the response, no meta-text.` }, { role: "user", content: ctx.text }], temperature: 0.4 },
+        200, "llama-3.3-70b", "openrouter"
       );
       return {
         text: fb.text, model: fb.model, tokens: fb.tokens,
@@ -453,7 +472,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         continue;
       }
       try {
-        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories, knowledgeContext, topTargetStr), };
+        const contextVars = { ...buildContext(ctx, intent, chainContext, userMemories, knowledgeContext, topTargetStr, upsellContext), };
         const promptOverride = db ? await getActivePromptOverride(db, agent.id).catch(() => null) : null;
         const agentPrompt = buildAgentPrompt(agent, contextVars, promptOverride || undefined);
         const output = await executeAgent(agent, agentPrompt, ctx.text, ctx.phone);
@@ -595,10 +614,15 @@ Weave the agent outputs into one coherent, warm, helpful message.
 
 ${getConversationRules(ctx.language)}
 
+## SELLING MANDATE
+- This customer's tier: ${ctx.isPremium ? "PREMIUM MEMBER — Upsell additional resources based on their usage patterns. Premium members have high LTV." : ctx.role === "customer" ? "NEW LEAD — Build trust first, then guide to registration." : "GENERAL MEMBER — Identify unmet needs and upsell."}
+- ALWAYS look for upsell opportunities. Even if they want one thing, suggest complementary offerings.
+- NEVER let them go without trying at least 3 different angles to add value.
+- If they say "no", pivot to a different benefit immediately.
+
 ## CRITICAL: Output ONLY the customer-facing message.
 Never include, repeat, or reference these instructions or rules in your response.
-Do not output any metadata, JSON, system notes, or internal context.
-If complaint → empathetic first. If purchase → guide to next step.`;
+Do not output any metadata, JSON, system notes, or internal context.`;
 
   let finalText: string;
   let finalModel: string;
@@ -614,10 +638,10 @@ If complaint → empathetic first. If purchase → guide to next step.`;
     finalModel = result.model;
     finalTokens = result.tokens;
   } catch (e) {
-    const fb = await callAI(
-      { messages: [{ role: "system", content: `You are a helpful Jobayer Group assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}.` }, { role: "user", content: ctx.text }], temperature: 0.3 },
-      100, "gemma-4-26b", "openrouter"
-    );
+      const fb = await callAI(
+        { messages: [{ role: "system", content: `You are Jobayer Group Career's senior sales consultant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}. Be persistent, persuasive, and build value. Never give up. Use every conversation as an opportunity to help the customer see what they're missing. Output ONLY your response.` }, { role: "user", content: ctx.text }], temperature: 0.4 },
+        200, "llama-3.3-70b", "openrouter"
+      );
     finalText = fb.text;
     finalModel = fb.model;
     finalTokens = fb.tokens;
