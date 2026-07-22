@@ -7,8 +7,11 @@ export async function GET(request: NextRequest) {
   try {
     const accountId = request.nextUrl.searchParams.get("account_id");
     if (accountId) {
-      const pending = await getPendingWebMessages(accountId);
-      return NextResponse.json({ pending });
+      const [pending, relay] = await Promise.all([
+        getPendingWebMessages(accountId),
+        getQueuedForRelay(accountId),
+      ]);
+      return NextResponse.json({ pending: [...pending, ...relay] });
     }
     const stats = await getQueueStats();
     return NextResponse.json(stats);
@@ -17,6 +20,17 @@ export async function GET(request: NextRequest) {
       error: error instanceof Error ? error.message : "Failed to load queue"
     }, { status: 500 });
   }
+}
+
+async function getQueuedForRelay(accountId: string, limit = 10) {
+  const { ensureDB } = await import("@/lib/db");
+  const db = await ensureDB();
+  return query<import("@/lib/whatsapp/types").MessageQueueItem>(
+    { DB: db },
+    `SELECT id, to_phone AS to, text_content AS text, priority, status, account_id, campaign_id, message_type, attempts, error, scheduled_at, sent_at, created_at FROM wa_message_queue WHERE status = 'queued' AND account_id = ?
+     ORDER BY priority DESC, created_at ASC LIMIT ?`,
+    [accountId, limit]
+  );
 }
 
 export async function POST(request: NextRequest) {
