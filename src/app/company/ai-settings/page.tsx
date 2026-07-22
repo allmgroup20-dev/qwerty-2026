@@ -45,7 +45,7 @@ export default function AISettingsPage() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [newKeyValue, setNewKeyValue] = useState("");
-  const [newKeyProvider, setNewKeyProvider] = useState<"openrouter" | "opencode">("openrouter");
+  const [newKeyProvider, setNewKeyProvider] = useState<"openrouter" | "opencode" | "huggingface">("openrouter");
   const [msg, setMsg] = useState("");
   const [aiSystemActive, setAiSystemActive] = useState(true);
   const [disabledAgents, setDisabledAgents] = useState<Record<string, boolean>>({});
@@ -243,6 +243,7 @@ export default function AISettingsPage() {
   const opencodeModels = models.filter((m) => m.provider === "opencode");
   const orKeys = keys.filter((k) => k.provider === "openrouter");
   const ocKeys = keys.filter((k) => k.provider === "opencode");
+  const hfKeys = keys.filter((k) => k.provider === "huggingface");
 
   return (
     <div className="py-24 px-4 max-w-6xl mx-auto">
@@ -305,6 +306,12 @@ export default function AISettingsPage() {
               <div>{lang === "bn" ? "ওপেনকোড কী" : "OpenCode Keys"}</div>
               <div className="text-xs">{lang === "bn" ? "সর্বমোট" : "Total"}: {ocKeys.length}</div>
             </div>
+            <div className="w-px h-8 bg-border" />
+            <div className="text-2xl font-bold text-yellow-600">{hfKeys.filter(k=>k.is_active).length}</div>
+            <div className="text-sm text-text-secondary">
+              <div>HuggingFace</div>
+              <div className="text-xs">{lang === "bn" ? "সর্বমোট" : "Total"}: {hfKeys.length}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -326,11 +333,12 @@ export default function AISettingsPage() {
         <div className="flex gap-2">
           <select
             value={newKeyProvider}
-            onChange={(e) => setNewKeyProvider(e.target.value as "openrouter" | "opencode")}
+            onChange={(e) => setNewKeyProvider(e.target.value as "openrouter" | "opencode" | "huggingface")}
             className="px-3 py-2 rounded-xl border border-border bg-white text-sm text-primary"
           >
             <option value="openrouter">OpenRouter</option>
             <option value="opencode">OpenCode</option>
+            <option value="huggingface">HuggingFace</option>
           </select>
           <input
             type="text"
@@ -344,7 +352,7 @@ export default function AISettingsPage() {
           </button>
         </div>
         <p className="text-xs text-text-secondary mt-2">
-          {lang === "bn" ? "যত ইচ্ছা তত এপিআই কী যোগ করতে পারেন। ওপেনরাউটার প্রথমে চেষ্টা করবে, সব শেষ হয়ে গেলে ওপেনকোড চেষ্টা করবে।" : "Add unlimited API keys. OpenRouter is tried first; OpenCode acts as fallback when all OpenRouter models are exhausted."}
+          {lang === "bn" ? "যত ইচ্ছা তত এপিআই কী যোগ করতে পারেন। ওপেনরাউটার প্রথমে চেষ্টা করবে, সব শেষ হয়ে গেলে ওপেনকোড চেষ্টা করবে। HuggingFace কী ভয়েস ট্রান্সক্রিপশনের জন্য ব্যবহৃত হয়।" : "Add unlimited API keys. OpenRouter is tried first; OpenCode acts as fallback. HuggingFace keys are used for voice transcription."}
         </p>
       </div>
 
@@ -389,6 +397,30 @@ export default function AISettingsPage() {
                   <button
                     onClick={() => toggleKey(key.id)}
                     className={`w-9 h-5 rounded-full relative transition-colors ${key.is_active ? "bg-purple-500" : "bg-gray-300"}`}
+                    title={key.is_active ? (lang === "bn" ? "সক্রিয়" : "Active") : (lang === "bn" ? "নিষ্ক্রিয়" : "Inactive")}
+                  >
+                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${key.is_active ? "translate-x-4" : "translate-x-0.5"}`} />
+                  </button>
+                  <button
+                    onClick={() => deleteKey(key.id)}
+                    className="px-2 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    {lang === "bn" ? "মুছুন" : "Delete"}
+                  </button>
+                </div>
+              </div>
+            ))}
+            {hfKeys.map((key) => (
+              <div key={key.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-xl">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className="text-base">&#x1F916;</span>
+                  <code className="text-sm font-mono text-primary truncate">{key.key_value}</code>
+                  <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-50 text-yellow-700 shrink-0">HuggingFace</span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  <button
+                    onClick={() => toggleKey(key.id)}
+                    className={`w-9 h-5 rounded-full relative transition-colors ${key.is_active ? "bg-yellow-500" : "bg-gray-300"}`}
                     title={key.is_active ? (lang === "bn" ? "সক্রিয়" : "Active") : (lang === "bn" ? "নিষ্ক্রিয়" : "Inactive")}
                   >
                     <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${key.is_active ? "translate-x-4" : "translate-x-0.5"}`} />

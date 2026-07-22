@@ -1,3 +1,33 @@
+async function getHuggingFaceKey(db?: any): Promise<string | null> {
+  if (process.env.HUGGINGFACE_API_KEY) return process.env.HUGGINGFACE_API_KEY;
+  if (!db) return null;
+  try {
+    const { queryFirst } = await import("@/lib/db/queries");
+    const row = await queryFirst<{ key_value: string }>(
+      { DB: db },
+      "SELECT key_value FROM ai_api_keys WHERE provider = 'huggingface' AND is_active = 1 ORDER BY id DESC LIMIT 1"
+    );
+    return row?.key_value || null;
+  } catch {
+    return null;
+  }
+}
+
+async function getOpenRouterKey(db?: any): Promise<string | null> {
+  if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY;
+  if (!db) return null;
+  try {
+    const { queryFirst } = await import("@/lib/db/queries");
+    const row = await queryFirst<{ key_value: string }>(
+      { DB: db },
+      "SELECT key_value FROM ai_api_keys WHERE provider = 'openrouter' AND is_active = 1 ORDER BY id ASC LIMIT 1"
+    );
+    return row?.key_value || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function downloadMedia(mediaId: string): Promise<{ buffer: ArrayBuffer; mimeType: string } | null> {
   const token = process.env.WHATSAPP_API_KEY || process.env.WHATSAPP_META_TOKEN;
   if (!token) return null;
@@ -22,21 +52,17 @@ export async function downloadMedia(mediaId: string): Promise<{ buffer: ArrayBuf
   }
 }
 
-export async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string | null> {
-  const hfKey = process.env.HUGGINGFACE_API_KEY;
+export async function transcribeAudio(audioBuffer: ArrayBuffer, db?: any): Promise<string | null> {
+  const hfKey = await getHuggingFaceKey(db);
   if (!hfKey) return null;
 
   try {
-    const blob = new Blob([audioBuffer], { type: "audio/ogg" });
-    const formData = new FormData();
-    formData.append("audio", blob, "audio.ogg");
-
     const res = await fetch(
       "https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo",
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${hfKey}` },
-        body: blob,
+        headers: { Authorization: `Bearer ${hfKey}`, "Content-Type": "audio/ogg" },
+        body: audioBuffer,
       }
     );
     if (!res.ok) return null;
@@ -47,8 +73,8 @@ export async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string 
   }
 }
 
-export async function analyzeImage(imageBuffer: ArrayBuffer, mimeType: string): Promise<string | null> {
-  const token = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY;
+export async function analyzeImage(imageBuffer: ArrayBuffer, mimeType: string, db?: any): Promise<string | null> {
+  const token = await getOpenRouterKey(db);
   if (!token) return null;
 
   try {
@@ -59,7 +85,7 @@ export async function analyzeImage(imageBuffer: ArrayBuffer, mimeType: string): 
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY || ""}`,
+        Authorization: `Bearer ${token}`,
         "HTTP-Referer": "https://career.jobayergroup.com",
       },
       body: JSON.stringify({

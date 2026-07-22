@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       const { downloadMedia, transcribeAudio } = await import("@/lib/whatsapp/media");
       const media = await downloadMedia(mediaId);
       if (media) {
-        const sttResult = await transcribeAudio(media.buffer);
+        const sttResult = await transcribeAudio(media.buffer, env);
         if (sttResult) {
           text = `[Voice: ${sttResult}]`;
           mediaDescription = `Customer sent a voice message. Transcription: "${sttResult}"`;
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       const { downloadMedia, analyzeImage } = await import("@/lib/whatsapp/media");
       const media = await downloadMedia(mediaId);
       if (media) {
-        const imageDesc = await analyzeImage(media.buffer, mimeType || "image/jpeg");
+        const imageDesc = await analyzeImage(media.buffer, mimeType || "image/jpeg", env);
         if (imageDesc) {
           text = `[Image: ${imageDesc.slice(0, 200)}]`;
           mediaDescription = `Customer sent an image. Description: "${imageDesc}"`;
