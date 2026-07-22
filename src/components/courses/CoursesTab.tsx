@@ -5,6 +5,7 @@ import { useLanguageStore } from "@/lib/store";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useSWRFetch } from "@/lib/use-swr-fetch";
+import ImageUpload from "@/components/ui/ImageUpload";
 
 interface CourseCategory {
   id: number;
@@ -36,6 +37,7 @@ interface Course {
   isVisible: number;
   price: number;
   isPremium: number;
+  imageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   trainerId?: number | null;
@@ -55,7 +57,7 @@ interface CourseFile {
 const emptyForm = () => ({
   title: "", titleBn: "", description: "", descriptionBn: "",
   categoryIds: [] as number[], isNew: 1, isVisible: 1, price: "", isPremium: 0,
-  trainerId: 0, institutionId: 0,
+  imageUrl: "", trainerId: 0, institutionId: 0,
 });
 
 export default function CoursesTab() {
@@ -124,7 +126,7 @@ export default function CoursesTab() {
       categoryIds: c.categoryIds || [],
       isNew: c.isNew, isVisible: c.isVisible,
       price: String(c.price || 0), isPremium: c.isPremium,
-      trainerId: c.trainerId || 0, institutionId: c.institutionId || 0,
+      imageUrl: c.imageUrl || "", trainerId: c.trainerId || 0, institutionId: c.institutionId || 0,
     });
     setEditingId(c.id);
     setShowAdd(true);
@@ -144,6 +146,7 @@ export default function CoursesTab() {
         categoryIds: form.categoryIds,
         isNew: form.isNew, isVisible: form.isVisible,
         price: parseFloat(form.price) || 0, isPremium: form.isPremium,
+        imageUrl: form.imageUrl || null,
         trainerId: form.trainerId || null, institutionId: form.institutionId || null,
       };
 
@@ -247,6 +250,10 @@ export default function CoursesTab() {
                 {institutions.map(i => <option key={i.id} value={i.id}>{lang === "bn" && i.name_bn ? i.name_bn : i.name}</option>)}
               </select>
             </div>
+          </div>
+
+          <div className="border-t border-border pt-4 mb-4">
+            <ImageUpload value={form.imageUrl} onChange={v => setForm(p => ({...p, imageUrl: v}))} label={lang === "bn" ? "রিসোর্স ছবি" : "Resource Image"} />
           </div>
 
           <div className="border-t border-border pt-4 mb-4">

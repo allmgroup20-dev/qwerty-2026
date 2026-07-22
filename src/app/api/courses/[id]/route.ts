@@ -17,7 +17,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       `SELECT c.id, c.title, c.title_bn as titleBn, c.description, c.description_bn as descriptionBn,
               c.is_new as isNew, c.is_visible as isVisible, c.price, c.is_premium as isPremium,
               c.created_at as createdAt, c.updated_at as updatedAt,
-              c.trainer_id as trainerId, c.institution_id as institutionId,
+              c.trainer_id as trainerId, c.institution_id as institutionId, c.image_url as imageUrl,
               t.name as trainerName, t.name_bn as trainerNameBn, t.image_url as trainerImageUrl,
               i.name as institutionName, i.name_bn as institutionNameBn, i.logo_url as institutionLogoUrl,
               COALESCE((SELECT json_group_array(m.category_id) FROM course_category_map m WHERE m.course_id = c.id), '[]') as categoryIds,
@@ -61,7 +61,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json() as {
       title?: string; titleBn?: string; description?: string; descriptionBn?: string;
       categoryIds?: number[]; isNew?: number; isVisible?: number;
-      price?: number; isPremium?: number;
+      price?: number; isPremium?: number; imageUrl?: string;
       trainerId?: number | null; institutionId?: number | null;
     };
     const db = await getDB();
@@ -76,13 +76,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
        is_new=COALESCE(?,is_new),
        is_visible=COALESCE(?,is_visible),
        price=COALESCE(?,price), is_premium=COALESCE(?,is_premium),
+       image_url=COALESCE(?,image_url),
        trainer_id=COALESCE(?,trainer_id), institution_id=COALESCE(?,institution_id),
        updated_at=datetime('now')
        WHERE id=?`,
       [
         body.title ?? null, body.titleBn ?? null, body.description ?? null, body.descriptionBn ?? null,
         body.isNew ?? null, body.isVisible ?? null,
-        body.price ?? null, body.isPremium ?? null,
+        body.price ?? null, body.isPremium ?? null, body.imageUrl ?? null,
         body.trainerId ?? null, body.institutionId ?? null, parseInt(id)
       ]
     );
