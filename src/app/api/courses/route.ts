@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     if (isNew === "0" || isNew === "1") { sql += " AND c.is_new = ?"; params.push(parseInt(isNew)); }
     if (visibleOnly === "1") { sql += " AND c.is_visible = 1"; }
 
-    sql += " ORDER BY c.is_new DESC, c.created_at DESC LIMIT 500";
+    sql += " ORDER BY c.is_new DESC, c.created_at DESC";
 
     const rows = await querySafe<any>(await getDB(), sql, params, 10000);
     const courses = rows.map((r: any) => ({
