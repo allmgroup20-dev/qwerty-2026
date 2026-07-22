@@ -28,6 +28,81 @@ import { linkWorkerToAgent, saveAgentKnowledge } from "@/lib/ai/brain/employee-l
 import type { MessageCtx } from "@/lib/ai/brain/types";
 import type { MediaResult } from "@/lib/whatsapp/media";
 
+// ── In-memory follow-up tracker (persisted via DB) ──
+const SEEN_FOLLOWUP_DELAY_MS = 120_000; // 2 min after "read" without reply
+const PROACTIVE_INTERVAL_MS = 300_000;  // 5 min between proactive messages
+
+async function handleStatusUpdate(body: any, env: any): Promise<boolean> {
+  try {
+    const entry = body?.entry?.[0];
+    const change = entry?.changes?.[0];
+    const value = change?.value;
+    const statuses = value?.statuses;
+    if (!statuses?.length) return false;
+
+    const status = statuses[0];
+    const msgId = status.id;
+    const phone = status.recipient_id;
+    const statusType = status.status; // "sent" | "delivered" | "read"
+    const timestamp = status.timestamp;
+
+    // Log status in wa_logs
+    await execute(env,
+      "INSERT INTO wa_logs (phone, message, direction, status, message_type, created_at) VALUES (?, ?, 'status', ?, 'status', datetime('now'))",
+      [phone, `status=${statusType} msgId=${msgId}`, statusType]
+    );
+
+    // If "read" (customer saw the message), schedule a follow-up
+    if (statusType === "read") {
+      // Store "seen" event so CRON can pick it up
+      await execute(env,
+        `INSERT INTO proactive_followups (phone, last_seen_at, last_outbound_at, followup_count, created_at)
+         VALUES (?, datetime('now'), datetime('now'), 0, datetime('now'))
+         ON CONFLICT(phone) DO UPDATE SET last_seen_at = datetime('now'), followup_count = followup_count + 1, updated_at = datetime('now')`,
+        [phone]
+      );
+    }
+
+    return true;
+  } catch { return false; }
+}
+
+async function sendProactiveFollowup(phone: string, env: any): Promise<void> {
+  try {
+    const { processMessage } = await import("@/lib/ai");
+    const { getOrCreateProfile, detectLanguage } = await import("@/lib/ai");
+
+    const profile = await getOrCreateProfile(phone);
+    const lang = detectLanguage(""); // default to Bengali
+    const brainCtx: MessageCtx = {
+      phone, text: "[Proactive Follow-up]",
+      name: profile?.name, role: "customer",
+      language: lang, mood: "curious",
+      totalChats: (profile?.total_chats || 0) + 1,
+      painPoints: [], interests: [],
+      isWorker: false, isPremium: false,
+    };
+
+    const brainResult = await processMessage(brainCtx);
+    const reply = brainResult.text || (lang === "bn"
+      ? `আপনি কি আমাদের প্রোগ্রাম সম্পর্কে আরও জানতে আগ্রহী? আমি আপনার জন্য কিছু গুরুত্বপূর্ণ তথ্য রাখছি...`
+      : `Are you interested in learning more about our program? I have some important information for you...`);
+
+    const { sendMessage } = await import("@/lib/whatsapp");
+    await sendMessage(phone, reply);
+    await execute(env,
+      "UPDATE proactive_followups SET last_outbound_at = datetime('now'), followup_count = followup_count + 1, updated_at = datetime('now') WHERE phone = ?",
+      [phone]
+    );
+    await execute(env,
+      "INSERT INTO wa_logs (phone, message, direction, status, message_type, created_at) VALUES (?, ?, 'outbound', 'sent', 'proactive_followup', datetime('now'))",
+      [phone, reply]
+    );
+  } catch (e) {
+    console.error(`[Proactive] Follow-up failed for ${phone}:`, (e as Error)?.message);
+  }
+}
+
 function parseIncomingMessage(body: any): { phone: string; text: string; name?: string; mediaId?: string; mediaType?: string; mimeType?: string } | null {
   const entry = body?.entry?.[0];
   const change = entry?.changes?.[0];
@@ -65,14 +140,19 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as Record<string, unknown>;
 
+    // ── Handle status updates (sent/delivered/read) BEFORE messages ──
+    const env = await getDB();
+    const statusHandled = await handleStatusUpdate(body, env);
+    if (statusHandled) {
+      return NextResponse.json({ received: true, type: "status" });
+    }
+
     const parsed = parseIncomingMessage(body);
     if (!parsed) {
       return NextResponse.json({ received: false });
     }
 
     let { phone, text, name, mediaId, mediaType, mimeType } = parsed;
-
-    const env = await getDB();
 
     // ── Process media (voice/image) if present ──
     let mediaDescription = "";

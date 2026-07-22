@@ -1,8 +1,88 @@
 import { NextResponse } from "next/server";
 import { ensureDB } from "@/lib/db";
-import { querySafe } from "@/lib/db/queries";
+import { querySafe, query, execute } from "@/lib/db/queries";
 import { setCached } from "@/lib/cache";
 import { scoreAllWorkers } from "@/lib/tracking/scoring";
+import { sendMessage } from "@/lib/whatsapp";
+
+const PROACTIVE_MESSAGES = [
+  (name: string) => `আসসালামু আলাইকুম ${name}! 🙌 আমি Jobayer Group Career থেকে কথা বলছি। আপনি কি কখনও ভেবেছেন কীভাবে অনলাইনে থেকে একটি স্থায়ী আয় করা যায়? আমাদের একটি বিশেষ প্রোগ্রাম আছে যা আপনার জীবন বদলে দিতে পারে। আগ্রহী হলে একটু সময় দিন — আমি সবকিছু বিস্তারিত বলব।`,
+  (name: string) => `হ্যালো ${name}! 👋 আমি আগের বার আপনার সাথে কথা বলেছিলাম। মনে করিয়ে দিতে চাই যে আমাদের প্রোগ্রামের মাধ্যমে আপনি মাসে ৫০,০০০+ টাকা আয় করতে পারেন। শুধু ১০ মিনিট সময় নিন, আমি সব বুঝিয়ে বলছি।`,
+  (name: string) => `${name} ভাই/আপু, আসসালামু আলাইকুম! 🌟 আমি Jobayer Group Career-এর পক্ষ থেকে বলছি। আমাদের ফ্রি রেজিস্ট্রেশন অফারটি এখনও চলছে। আপনি কি একটু সময় বের করে দেখতে চান কীভাবে এটি কাজ করে?`,
+  (name: string) => `আসসালামু আলাইকুম ${name}! 🚀 ভালো থাকবেন আশা করি। আমি জানি আপনি ব্যস্ত, কিন্তু একটি সুযোগ হাতছাড়া করবেন না যা আপনার আর্থিক ভবিষ্যৎ বদলে দিতে পারে। всего ৫ মিনিট — দেখুন না কীভাবে কাজ করে!`,
+  (name: string) => `${name} সাহেব, আমি Jobayer Group Career থেকে বলছি। 🌍 আমাদের গ্লোবাল প্রোগ্রামে যোগ দিয়ে আপনি আন্তর্জাতিকভাবে আয় করতে পারেন। ফ্রি রেজিস্ট্রেশন চলছে — শুধু একটি কল দিন!`,
+];
+
+async function runProactiveFollowups(): Promise<{ newLeads: number; seenNoReply: number; stale: number; sent: number }> {
+  const env = await ensureDB();
+  let sent = 0;
+
+  // 1) New leads (never contacted, 1+ hour old)
+  const newLeads = await query<any>(
+    { DB: env },
+    `SELECT p.phone, COALESCE(p.name, 'Valued Customer') as name
+     FROM profiles p
+     LEFT JOIN proactive_followups f ON p.phone = f.phone
+     WHERE f.phone IS NULL AND p.total_chats <= 1
+       AND p.created_at < datetime('now', '-1 hour')
+     ORDER BY p.created_at ASC LIMIT 3`
+  );
+
+  // 2) Seen but no reply (read within 30 min, no outbound after that)
+  const seenNoReply = await query<any>(
+    { DB: env },
+    `SELECT f.phone, f.followup_count, f.last_seen_at, f.last_outbound_at
+     FROM proactive_followups f
+     WHERE f.last_seen_at > datetime('now', '-30 minutes')
+       AND (f.last_outbound_at IS NULL OR f.last_outbound_at < f.last_seen_at)
+       AND f.followup_count < 5
+     ORDER BY f.last_seen_at DESC LIMIT 3`
+  );
+
+  // 3) Stale contacts (no activity > 48h, < 3 followups)
+  const staleContacts = await query<any>(
+    { DB: env },
+    `SELECT p.phone, COALESCE(p.name, 'Valued Customer') as name
+     FROM profiles p
+     LEFT JOIN proactive_followups f ON p.phone = f.phone
+     WHERE (f.phone IS NULL OR f.followup_count < 3)
+       AND p.total_chats > 1
+       AND p.updated_at < datetime('now', '-48 hours')
+     ORDER BY p.updated_at ASC LIMIT 3`
+  );
+
+  for (const lead of [...newLeads, ...staleContacts]) {
+    try {
+      const text = PROACTIVE_MESSAGES[Math.floor(Math.random() * PROACTIVE_MESSAGES.length)](lead.name || "Valued Customer");
+      const result = await sendMessage(lead.phone, text);
+      if (result.success) {
+        sent++;
+        await execute({ DB: env },
+          `INSERT INTO proactive_followups (phone, last_outbound_at, followup_count, created_at, updated_at)
+           VALUES (?, datetime('now'), 1, datetime('now'), datetime('now'))
+           ON CONFLICT(phone) DO UPDATE SET last_outbound_at = datetime('now'), followup_count = followup_count + 1, updated_at = datetime('now')`,
+          [lead.phone]
+        );
+      }
+    } catch {}
+  }
+
+  for (const contact of seenNoReply) {
+    try {
+      const text = PROACTIVE_MESSAGES[1](contact.phone);
+      const result = await sendMessage(contact.phone, text);
+      if (result.success) {
+        sent++;
+        await execute({ DB: env },
+          `UPDATE proactive_followups SET last_outbound_at = datetime('now'), followup_count = followup_count + 1, updated_at = datetime('now') WHERE phone = ?`,
+          [contact.phone]
+        );
+      }
+    } catch {}
+  }
+
+  return { newLeads: newLeads.length, seenNoReply: seenNoReply.length, stale: staleContacts.length, sent };
+}
 
 async function warmCourses(db: { DB: D1Database }): Promise<string> {
   const sql = `SELECT c.id, c.title, c.title_bn as titleBn, c.is_new as isNew, c.is_visible as isVisible,
@@ -42,14 +122,20 @@ export async function GET() {
   try {
     const d1 = await ensureDB();
     await d1.prepare("SELECT 1").run();
-    const warm = await warmCourses({ DB: d1 });
+    const [warm, proactive] = await Promise.all([
+      warmCourses({ DB: d1 }),
+      runProactiveFollowups().catch(() => ({ newLeads: 0, seenNoReply: 0, stale: 0, sent: 0 })),
+    ]);
     let scoring = { scored: 0, errors: 0 };
     try {
       scoring = await scoreAllWorkers();
     } catch (e) {
       console.error("Scoring error:", e);
     }
-    return NextResponse.json({ ok: true, warm, scoring: `${scoring.scored} scored, ${scoring.errors} errors`, ts: Date.now() });
+    return NextResponse.json({
+      ok: true, warm, scoring: `${scoring.scored} scored, ${scoring.errors} errors`,
+      proactive, ts: Date.now(),
+    });
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
   }
