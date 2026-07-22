@@ -188,9 +188,9 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     const wid = localStorage.getItem("worker_id");
-    if (!wid) { router.push("/login"); return; }
+    if (!wid) { window.location.href = "/login"; return; }
     setWorkerId(wid);
-  }, [router]);
+  }, []);
 
   const { data: profileData } = useSWRFetch<Record<string, any>>(
     workerId ? `/api/workers/profile?workerId=${workerId}` : null,

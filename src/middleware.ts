@@ -16,7 +16,7 @@ function verifyToken(token: string, secret: string): { sub: string } | null {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/company")) {
+  if (pathname.startsWith("/company") && pathname !== "/company/login") {
     const token = request.cookies.get("company_token")?.value;
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {

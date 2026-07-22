@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useLanguageStore } from "@/lib/store";
 import CommandPalette from "@/components/CommandPalette";
@@ -28,7 +28,6 @@ function parseCookie(name: string): string | null {
 export default function CompanyLayout({ children }: { children: React.ReactNode }) {
   const { lang } = useLanguageStore();
   const pathname = usePathname();
-  const router = useRouter();
   const [user, setUser] = useState<UserInfo | null>(null);
 
   const isTabActive = (href: string) => pathname === href || (href !== "/company" && pathname.startsWith(href));
@@ -45,14 +44,14 @@ export default function CompanyLayout({ children }: { children: React.ReactNode 
       .then((r) => r.json())
       .then((data: any) => {
         if (data.username) setUser(data);
-        else router.push("/company/login");
+        else window.location.href = "/company/login";
       })
-      .catch(() => router.push("/company/login"));
-  }, [router]);
+      .catch(() => window.location.href = "/company/login");
+  }, []);
 
   const handleLogout = async () => {
     await fetch("/api/auth/company-logout", { method: "POST" });
-    router.push("/company/login");
+    window.location.href = "/company/login";
   };
 
   if (!user) {

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
 import { useLanguageStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
 import ContactSyncBanner from "@/components/onboarding/ContactSyncBanner";
@@ -68,12 +67,10 @@ export default function WorkerDashboard() {
     insights: { type: string; title: string; titleBn: string; priority: number; actionUrl: string; emoji: string }[];
   } | null>(null);
 
-  const router = useRouter();
-
   useEffect(() => {
     const wid = localStorage.getItem("worker_id");
     if (!wid) {
-      router.replace("/login");
+      window.location.href = "/login";
       return;
     }
     setWorkerId(wid);
@@ -93,7 +90,7 @@ export default function WorkerDashboard() {
         if (p) {
           setWorker(p);
           if (!p.profileCompleted) {
-            router.replace("/onboarding");
+            window.location.href = "/onboarding";
             setLoading(false);
             return;
           }
@@ -125,7 +122,7 @@ export default function WorkerDashboard() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [workerId, router]);
+  }, [workerId]);
 
   const isPremium = worker?.membershipStatus === "premium";
 
