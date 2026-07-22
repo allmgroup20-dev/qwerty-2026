@@ -76,7 +76,7 @@ async function sendProactiveFollowup(phone: string, env: any): Promise<void> {
     const lang = detectLanguage(""); // default to Bengali
     const brainCtx: MessageCtx = {
       phone, text: "[Proactive Follow-up]",
-      name: profile?.name, role: "customer",
+      name: profile?.name_guess || undefined, role: "customer",
       language: lang, mood: "curious",
       totalChats: (profile?.total_chats || 0) + 1,
       painPoints: [], interests: [],
