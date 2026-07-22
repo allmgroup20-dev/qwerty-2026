@@ -1265,8 +1265,6 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     env.DB.prepare(`UPDATE workers SET membership_status = 'general' WHERE membership_status = 'active'`).run().catch(() => {});
     env.DB.prepare(`UPDATE workers SET membership_status = 'premium' WHERE membership_status = 'vip'`).run().catch(() => {});
 
-    await addCol("courses", "image_url", "TEXT");
-
     // Course performance indexes
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_course_files_course ON course_files(course_id)`).run().catch(() => {});
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_courses_is_new ON courses(is_new)`).run().catch(() => {});
@@ -1324,13 +1322,17 @@ export async function getDB(): Promise<{ DB: D1Database }> {
     const g = globalThis as any;
     if (!g[DONE_FLAG] && !g[PENDING_FLAG]) {
       g[PENDING_FLAG] = true;
-      ensureSchema({ DB: db }).then(() => {
+      try {
+        await Promise.race([
+          ensureSchema({ DB: db }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Schema init timeout")), 15000)),
+        ]);
         g[DONE_FLAG] = true;
+      } catch (e) {
+        console.error("Schema init failed:", e);
+      } finally {
         g[PENDING_FLAG] = false;
-      }).catch((e) => {
-        console.error("Background schema init failed:", e);
-        g[PENDING_FLAG] = false;
-      });
+      }
     }
 
     dbCache = { DB: db };

@@ -6,14 +6,14 @@ export async function sendMessage(
   to: string,
   text: string
 ): Promise<SendResult> {
-  const token = process.env.WHATSAPP_META_TOKEN;
+  const token = process.env.WHATSAPP_API_KEY || process.env.WHATSAPP_META_TOKEN;
   const phoneId = process.env.WHATSAPP_PHONE_ID;
 
   if (!token || !phoneId) {
     const db = await ensureDB();
     await execute(
       { DB: db },
-      "INSERT INTO wa_logs (phone, message, direction, status, error, message_type, created_at) VALUES (?, ?, 'outbound', 'failed', 'WHATSAPP_META_TOKEN or WHATSAPP_PHONE_ID not set', 'text', datetime('now'))",
+      "INSERT INTO wa_logs (phone, message, direction, status, error, message_type, created_at) VALUES (?, ?, 'outbound', 'failed', 'WHATSAPP_API_KEY/WHATSAPP_META_TOKEN or WHATSAPP_PHONE_ID not set', 'text', datetime('now'))",
       [to, text]
     );
     return { success: false, error: "WhatsApp API not configured" };

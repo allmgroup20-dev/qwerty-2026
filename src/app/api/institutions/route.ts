@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query, queryFirst, execute } from "@/lib/db/queries";
+import { query, querySafe, queryFirst, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 import { getCached, setCached, invalidateCache } from "@/lib/cache";
 
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     if (cached) return NextResponse.json({ institutions: cached });
 
     const sql = `SELECT * FROM institutions WHERE ${includeInactive ? "1" : "is_active = 1"} ORDER BY sort_order ASC, id DESC`;
-    const institutions = await query<any>(await getDB(), sql);
+    const institutions = await querySafe<any>(await getDB(), sql, [], 8000);
     await setCached(cacheKey, institutions);
     return NextResponse.json({ institutions });
   } catch (error) {

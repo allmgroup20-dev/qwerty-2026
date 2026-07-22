@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query, queryFirst, execute } from "@/lib/db/queries";
+import { query, querySafe, queryFirst, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
 import { getCached, setCached, invalidateCache } from "@/lib/cache";
 
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
        FROM trainers t LEFT JOIN institutions i ON i.id = t.institution_id
        WHERE ${includeInactive ? "1" : "t.is_active = 1"}
        ORDER BY t.sort_order ASC, t.id DESC`;
-    const rows = await query<any>(await getDB(), sql);
+    const rows = await querySafe<any>(await getDB(), sql, [], 8000);
     const trainers = rows.map(r => ({
       ...r,
       coursesEn: r.courses_en ? JSON.parse(r.courses_en) : [],

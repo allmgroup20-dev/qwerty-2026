@@ -49,14 +49,15 @@ async function startConnection() {
   connError = null;
   qrCode = null;
 
-  try {
-    let waVersion;
     try {
-      waVersion = (await fetchLatestBaileysVersion()).version;
-      logInfo(`Latest WA protocol v${waVersion.join(".")}`);
-    } catch {
-      logInfo("Using default Baileys version");
-    }
+      let waVersion;
+      try {
+        waVersion = (await fetchLatestBaileysVersion()).version;
+        logInfo(`Latest WA protocol v${waVersion.join(".")}`);
+      } catch {
+        waVersion = [2, 3000, 1018795645];
+        logInfo(`Using default Baileys version v${waVersion.join(".")}`);
+      }
 
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
     logInfo(`Auth state loaded — registered: ${!!state.creds?.registered}`);

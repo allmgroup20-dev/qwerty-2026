@@ -2,7 +2,7 @@ importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox
 
 workbox.setConfig({ debug: false });
 
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 2;
 const CACHE_NAMES = [
   'pages-v' + CACHE_VERSION,
   'static-assets-v' + CACHE_VERSION,

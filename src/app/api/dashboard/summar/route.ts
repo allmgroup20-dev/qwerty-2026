@@ -5,23 +5,11 @@ import { getCached, setCached } from "@/lib/cache";
 
 const MEMO_DASH = "__dashboardMemo";
 const MEMO_TTL = 120_000;
-const QUERY_TIMEOUT = 5000;
 
 function getMemo(): Map<string, { data: unknown; ts: number }> {
   const g = globalThis as any;
   if (!g[MEMO_DASH]) g[MEMO_DASH] = new Map();
   return g[MEMO_DASH];
-}
-
-async function safeQuery<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
-  try {
-    return await Promise.race([
-      fn(),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), QUERY_TIMEOUT)),
-    ]);
-  } catch {
-    return fallback;
-  }
 }
 
 export async function GET(request: NextRequest) {
@@ -47,33 +35,23 @@ export async function GET(request: NextRequest) {
 
     const db = await getDB();
 
-    // Load profile, settings, and level in parallel
-    const [profile, settingsRows] = await Promise.all([
-      safeQuery(
-        () => queryFirst<any>(db, `SELECT worker_id as workerId, name, phone, email, balance,
-          total_earned as totalEarned, total_spent as totalSpent,
-          total_team_members as totalTeamMembers,
-          membership_status as membershipStatus,
-          join_date as joinDate, avatar_url as avatarUrl,
-          sponsor_id as sponsorId, sponsor_name as sponsorName,
-          level, currency, preferred_language as preferredLanguage,
-          age_group as ageGroup, occupation, education_level as educationLevel,
-          gender, country, city, goal,
-          preferred_learning_time as preferredLearningTime,
-          referral_source as referralSource,
-          communication_preference as communicationPreference,
-          budget_range as budgetRange, religion,
-          resource_income as resourceIncome, resource_income_original as resourceIncomeOriginal
-        FROM workers WHERE worker_id = ?`, [workerId]),
-        null
-      ),
-      safeQuery(
-        () => query<{ setting_key: string; setting_value: string }>(db,
-          "SELECT setting_key, setting_value FROM company_settings"),
-        []
-      ),
-    ]);
-
+    const profile = await queryFirst<any>(db,
+      `SELECT worker_id as workerId, name, phone, email, balance,
+              total_earned as totalEarned, total_spent as totalSpent,
+              total_team_members as totalTeamMembers,
+              membership_status as membershipStatus,
+              join_date as joinDate, avatar_url as avatarUrl,
+              sponsor_id as sponsorId, sponsor_name as sponsorName,
+              level, currency, preferred_language as preferredLanguage,
+              age_group as ageGroup, occupation, education_level as educationLevel,
+              gender, country, city, goal,
+              preferred_learning_time as preferredLearningTime,
+              referral_source as referralSource,
+              communication_preference as communicationPreference,
+              budget_range as budgetRange, religion,
+              resource_income as resourceIncome, resource_income_original as resourceIncomeOriginal
+       FROM workers WHERE worker_id = ?`, [workerId]
+    );
     if (profile) {
       (profile as any).profileCompleted = !!(profile.name && !profile.name.startsWith("User") &&
         profile.ageGroup && profile.occupation && profile.educationLevel &&
@@ -82,32 +60,14 @@ export async function GET(request: NextRequest) {
         profile.communicationPreference && profile.budgetRange && profile.religion);
     }
 
-    // Load remaining data with individual timeouts
-    const [commissions, accounts, analytics, levelRow, teamCount, withdrawalSum] = await Promise.all([
-      safeQuery(
-        () => queryFirst<any>(db, "SELECT COUNT(*) as totalCommissions, COALESCE(SUM(total_amount), 0) as totalEarned, COALESCE(SUM(CASE WHEN status = 'paid' THEN total_amount ELSE 0 END), 0) as paidAmount FROM commissions WHERE to_worker_id = ?", [workerId]),
-        { totalCommissions: 0, totalEarned: 0, paidAmount: 0 }
-      ),
-      safeQuery(
-        () => query<any>(db, "SELECT id, account_type, account_number, account_name, is_default FROM saved_accounts WHERE worker_id = ? ORDER BY is_default DESC, created_at ASC", [workerId]),
-        []
-      ),
-      safeQuery(
-        () => queryFirst<any>(db, "SELECT COUNT(*) as totalViews, COUNT(DISTINCT session_id) as totalSessions FROM user_events WHERE worker_id = ? AND event_type = 'page_view'", [workerId]),
-        { totalViews: 0, totalSessions: 0 }
-      ),
-      safeQuery(
-        () => queryFirst<any>(db, "SELECT level_name as levelName, level_name_bn as levelNameBn FROM commission_levels WHERE level_number = ?", [profile?.level || 1]),
-        null
-      ),
-      safeQuery(
-        () => queryFirst<any>(db, "SELECT COUNT(*) as cnt FROM affiliate_tree WHERE parent_id = ? OR sponsor_id = ?", [workerId, workerId]),
-        { cnt: 0 }
-      ),
-      safeQuery(
-        () => queryFirst<any>(db, "SELECT COALESCE(SUM(final_amount), 0) as withdrawn FROM withdrawals WHERE worker_id = ? AND status = 'completed'", [workerId]),
-        { withdrawn: 0 }
-      ),
+    const [commissions, accounts, analytics, settingsRows, levelRow, teamCount, withdrawalSum] = await Promise.all([
+      queryFirst<any>(db, "SELECT COUNT(*) as totalCommissions, COALESCE(SUM(total_amount), 0) as totalEarned, COALESCE(SUM(CASE WHEN status = 'paid' THEN total_amount ELSE 0 END), 0) as paidAmount FROM commissions WHERE to_worker_id = ?", [workerId]),
+      query<any>(db, "SELECT id, account_type, account_number, account_name, is_default FROM saved_accounts WHERE worker_id = ? ORDER BY is_default DESC, created_at ASC", [workerId]),
+      queryFirst<any>(db, "SELECT COUNT(*) as totalViews, COUNT(DISTINCT session_id) as totalSessions FROM user_events WHERE worker_id = ? AND event_type = 'page_view'", [workerId]),
+      query<{ setting_key: string; setting_value: string }>(db, "SELECT setting_key, setting_value FROM company_settings"),
+      queryFirst<any>(db, "SELECT level_name as levelName, level_name_bn as levelNameBn FROM commission_levels WHERE level_number = ?", [profile?.level || 1]),
+      queryFirst<any>(db, "SELECT COUNT(*) as cnt FROM affiliate_tree WHERE parent_id = ? OR sponsor_id = ?", [workerId, workerId]),
+      queryFirst<any>(db, "SELECT COALESCE(SUM(final_amount), 0) as withdrawn FROM withdrawals WHERE worker_id = ? AND status = 'completed'", [workerId]),
     ]);
 
     const settingsMap: Record<string, string> = {};

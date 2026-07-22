@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     const bookmarks = await query<any>(await getDB(),
       `SELECT b.id, b.course_id as courseId, b.created_at as createdAt,
               c.title, c.title_bn as titleBn, c.is_premium as isPremium, c.price,
-              c.image_url as imageUrl,
               t.image_url as trainerImageUrl, t.name as trainerName, t.name_bn as trainerNameBn,
               i.logo_url as institutionLogoUrl, i.name as institutionName, i.name_bn as institutionNameBn
        FROM course_bookmarks b
