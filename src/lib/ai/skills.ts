@@ -36,7 +36,7 @@ export async function findSkill(text: string, phone = ""): Promise<string | null
     const db = await ensureDB();
     const skills = await query<Skill>(
       { DB: db },
-      "SELECT id, keywords, answer, usage_count FROM ai_skills ORDER BY usage_count DESC LIMIT 500"
+      "SELECT id, keywords, answer, usage_count FROM ai_skills WHERE manual_override = 1 OR usage_count > 3 ORDER BY usage_count DESC LIMIT 500"
     );
     if (skills.length === 0) return null;
 
@@ -44,15 +44,16 @@ export async function findSkill(text: string, phone = ""): Promise<string | null
     const words = normalizedText.split(/[\s,;:.!?()\[\]{}""'']+/).filter((w) => w.length > 2);
 
     for (const skill of skills) {
-      const keywords = skill.keywords.split(",").map((k) => k.trim().toLowerCase());
+      const keywords = skill.keywords.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean);
+      if (keywords.length === 0) continue;
       let matchCount = 0;
       for (const keyword of keywords) {
         if (!keyword) continue;
         if (normalizedText.includes(keyword)) matchCount++;
         else if (words.some((w) => w.includes(keyword) || keyword.includes(w))) matchCount++;
       }
-      const threshold = keywords.filter(Boolean).length === 1 ? 1 : 2;
-      if (matchCount >= threshold) {
+      const minRequired = Math.max(2, Math.ceil(keywords.length * 0.3));
+      if (matchCount >= minRequired) {
         await execute(
           { DB: db },
           "UPDATE ai_skills SET usage_count = usage_count + 1, updated_at = datetime('now') WHERE id = ?",

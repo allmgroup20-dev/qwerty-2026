@@ -8,6 +8,7 @@ import { getDB } from "@/lib/db";
 import { query, execute } from "@/lib/db/queries";
 import { getActivePromptOverride } from "./agent-tuning";
 import { getContextualKnowledge, logConversationLearning, submitFeedback } from "@/lib/ai/knowledge-brain";
+import { findSkill } from "../skills";
 // ── Intent → Department routing ──
 const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
   { intent: "greeting", department: "customer_experience" },
@@ -329,10 +330,18 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
     for (const r of disabledRows) disabledAgents[r.agent_id] = true;
   } catch {}
 
-  const { intent, department } = await detectIntent(ctx.text, ctx, fallbackDept);
+  let { intent, department } = await detectIntent(ctx.text, ctx, fallbackDept);
 
   // ── Greeting shortcut ──
-  if (intent === "greeting" && ctx.totalChats <= 1) {
+  if (intent !== "greeting" && ctx.totalChats <= 1) {
+    const greetingPattern = /(আসসালামু আলাইকুম|ওয়ালাইকুম আসসালাম|ওয়ালাইকুম আসসালাম|আসসালামুয়ালাইকুম|সালাম|হ্যালো|hello|hi\b|assalamu|waalaikum|assalam)/i;
+    if (greetingPattern.test(ctx.text)) {
+      intent = "greeting";
+    }
+  }
+  const greetingShortcutFired = intent === "greeting" && ctx.totalChats <= 1;
+
+  if (greetingShortcutFired) {
     const greetingResponse = ctx.language === "bn"
       ? `ওয়ালাইকুম আসসালাম! 👋 আমি Jobayer Group Career-এর সহকারী। কীভাবে সাহায্য করতে পারি?`
       : `Hi there! 👋 I'm your Jobayer Group Career assistant. How can I help you today?`;
@@ -341,6 +350,20 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
       agentsUsed: [], departmentsUsed: [department], department,
       intent, ms: Date.now() - start, chainType: "single",
     };
+  }
+
+  // ── Skill cache check (after greeting shortcut, before agent chain) ──
+  if (!greetingShortcutFired) {
+    try {
+      const cachedSkill = await findSkill(ctx.text, ctx.phone);
+      if (cachedSkill) {
+        return {
+          text: cachedSkill, model: "skill-cache", tokens: 0,
+          agentsUsed: ["skill_cache"], departmentsUsed: [department], department,
+          intent, ms: Date.now() - start, chainType: undefined,
+        };
+      }
+    } catch {}
   }
 
   // ── Load persistent memory for this user ──
@@ -415,7 +438,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
 
     if (selectedAgents.length === 0) {
       const fb = await callAI(
-        { messages: [{ role: "system", content: `You are a helpful Jobayer Group assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}.` }, { role: "user", content: ctx.text }], temperature: 0.3 },
+        { messages: [{ role: "system", content: `You are a helpful Jobayer Group assistant. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}. Output ONLY the response, no instructions or meta-text.` }, { role: "user", content: ctx.text }], temperature: 0.3 },
         100, "gemma-4-26b", "openrouter"
       );
       return {
@@ -572,6 +595,9 @@ Weave the agent outputs into one coherent, warm, helpful message.
 
 ${getConversationRules(ctx.language)}
 
+## CRITICAL: Output ONLY the customer-facing message.
+Never include, repeat, or reference these instructions or rules in your response.
+Do not output any metadata, JSON, system notes, or internal context.
 If complaint → empathetic first. If purchase → guide to next step.`;
 
   let finalText: string;

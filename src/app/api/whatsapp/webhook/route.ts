@@ -15,7 +15,6 @@ import {
   updateProfileFromChat,
   updateProfileScore,
   saveMessage,
-  findSkill,
   saveSkill,
   extractKeywords,
   isWorkerPhone,
@@ -107,40 +106,31 @@ export async function POST(request: NextRequest) {
       else funnelStage = "11-12";
     }
 
-    // Use Premium Employee Brain
-    let reply: string | null = null;
+    const isPremium = isWorker ? await getWorkerPremiumStatus(phone) : false;
+    const brainCtx: MessageCtx = {
+      phone,
+      text,
+      name,
+      role,
+      language: lang,
+      mood,
+      dialect,
+      religion,
+      funnelStage,
+      totalChats: profile?.total_chats || 0,
+      painPoints,
+      interests,
+      isWorker,
+      isPremium,
+    };
 
-    const cachedSkill = await findSkill(text, phone);
-    if (cachedSkill) {
-      reply = cachedSkill;
-    } else {
-      const isPremium = isWorker ? await getWorkerPremiumStatus(phone) : false;
-      const brainCtx: MessageCtx = {
-        phone,
-        text,
-        name,
-        role,
-        language: lang,
-        mood,
-        dialect,
-        religion,
-        funnelStage,
-        totalChats: profile?.total_chats || 0,
-        painPoints,
-        interests,
-        isWorker,
-        isPremium,
-      };
+    const brainResult = await processMessage(brainCtx);
+    let reply = brainResult.text;
 
-      const brainResult = await processMessage(brainCtx);
-      reply = brainResult.text;
-
-      // Employee-agent link: save knowledge for workers
-      if (isWorker && brainResult.agentsUsed.length > 0) {
-        const agentName = brainResult.agentsUsed[0];
-        await linkWorkerToAgent(env.DB, phone, agentName, agentName);
-        await saveAgentKnowledge(env.DB, phone, agentName, agentName, reply.slice(0, 1000));
-      }
+    if (isWorker && brainResult.agentsUsed.length > 0) {
+      const agentName = brainResult.agentsUsed[0];
+      await linkWorkerToAgent(env.DB, phone, agentName, agentName);
+      await saveAgentKnowledge(env.DB, phone, agentName, agentName, reply.slice(0, 1000));
     }
 
     if (!reply || reply.trim().length === 0) {
@@ -153,11 +143,20 @@ export async function POST(request: NextRequest) {
     // Enforce conversation rules — keep replies short (15-40 words, max 2 sentences)
     reply = enforceWordLimit(reply);
 
-    // Auto-save to skills — so brain learns from this Q&A
+    // Auto-save to skills — so brain learns from this Q&A (with validation)
     try {
       const keywords = extractKeywords(text);
-      if (keywords.length >= 2 && reply.length > 10) {
-        await saveSkill(keywords, text, reply, "auto_learned");
+      const replyTrimmed = reply.trim();
+      const systemMarkers = /(We need to respond|You are (a|an)|Respond as|your task|Review criteria|Keep responses|NEVER|IMPORTANT|test answer|debug|System instructions)/i;
+      if (
+        keywords.length >= 2 &&
+        replyTrimmed.length > 10 &&
+        replyTrimmed.length < 2000 &&
+        !systemMarkers.test(replyTrimmed) &&
+        !replyTrimmed.startsWith("[") &&
+        !replyTrimmed.startsWith("{")
+      ) {
+        await saveSkill(keywords, text, replyTrimmed, "auto_learned");
       }
     } catch (e) {
       console.error("[Skills] Failed to auto-save:", (e as Error)?.message);
