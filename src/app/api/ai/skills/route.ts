@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
-import { query } from "@/lib/db/queries";
+import { query, execute, queryFirst } from "@/lib/db/queries";
 
 interface SkillRow {
   id: number;
@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
       params.push(`%${search}%`, `%${search}%`);
     }
 
-    // Total count
     const countSql = sql.replace("SELECT *", "SELECT COUNT(*) as total");
     const countResult = await query<{ total: number }>(env, countSql, params);
     const total = countResult[0]?.total || 0;
@@ -44,7 +43,6 @@ export async function GET(request: NextRequest) {
 
     const skills = await query<SkillRow>(env, sql, params);
 
-    // Get all categories for filter
     const categories = await query<{ category: string }>(env,
       "SELECT DISTINCT category FROM ai_skills ORDER BY category"
     );
@@ -59,6 +57,63 @@ export async function GET(request: NextRequest) {
       limit,
       offset,
     });
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const env = await getDB();
+    const body = await request.json() as {
+      id: number;
+      keywords?: string;
+      question?: string;
+      answer?: string;
+      category?: string;
+    };
+    if (!body.id) {
+      return NextResponse.json({ error: "id required" }, { status: 400 });
+    }
+
+    const existing = await queryFirst<SkillRow>(
+      env,
+      "SELECT * FROM ai_skills WHERE id = ?",
+      [body.id]
+    );
+    if (!existing) {
+      return NextResponse.json({ error: "Skill not found" }, { status: 404 });
+    }
+
+    const setClauses: string[] = [];
+    const params: any[] = [];
+    if (body.keywords !== undefined) { setClauses.push("keywords = ?"); params.push(body.keywords); }
+    if (body.question !== undefined) { setClauses.push("question = ?"); params.push(body.question); }
+    if (body.answer !== undefined) { setClauses.push("answer = ?"); params.push(body.answer); }
+    if (body.category !== undefined) { setClauses.push("category = ?"); params.push(body.category); }
+    setClauses.push("updated_at = datetime('now')");
+
+    if (setClauses.length > 0) {
+      params.push(body.id);
+      await execute(env, `UPDATE ai_skills SET ${setClauses.join(", ")} WHERE id = ?`, params);
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const env = await getDB();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "id required" }, { status: 400 });
+    }
+    await execute(env, "DELETE FROM ai_skills WHERE id = ?", [parseInt(id)]);
+    return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }

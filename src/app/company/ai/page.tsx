@@ -210,6 +210,10 @@ export default function AIHubPage() {
   const [skillsCategoryFilter, setSkillsCategoryFilter] = useState("");
   const [consolidating, setConsolidating] = useState(false);
   const [consolidationResult, setConsolidationResult] = useState<ConsolidationResult | null>(null);
+  const [editingSkill, setEditingSkill] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ keywords: "", question: "", answer: "", category: "" });
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [skillsMsg, setSkillsMsg] = useState("");
 
   // ─── Dashboard State ───────────────────────────────────
   const [dashBrainStats, setDashBrainStats] = useState<any>(null);
@@ -444,6 +448,41 @@ export default function AIHubPage() {
       if (skillsData.skills) { setSkillsList(skillsData.skills); setSkillsTotal(skillsData.total || 0); setSkillsCategories(skillsData.categories || []); }
     } catch {}
     setSkillsLoading(false);
+  };
+
+  const openEditSkill = (skill: any) => {
+    setEditingSkill(skill);
+    setEditForm({ keywords: skill.keywords || "", question: skill.question || "", answer: skill.answer || "", category: skill.category || "general" });
+    setSkillsMsg("");
+  };
+  const saveSkill = async () => {
+    if (!editingSkill) return;
+    setSkillsMsg("");
+    try {
+      const res = await fetch("/api/ai/skills", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editingSkill.id, ...editForm }),
+      });
+      const d: { error?: string; success?: boolean } = await res.json();
+      if (d.error) { setSkillsMsg(lang === "bn" ? `ত্রুটি: ${d.error}` : `Error: ${d.error}`); } else {
+        setSkillsMsg(lang === "bn" ? "✅ সংরক্ষিত হয়েছে!" : "✅ Saved!");
+        setEditingSkill(null);
+        loadSkills();
+      }
+    } catch { setSkillsMsg(lang === "bn" ? "সার্ভার ত্রুটি" : "Server error"); }
+  };
+  const deleteSkill = async (id: number) => {
+    setSkillsMsg("");
+    try {
+      const res = await fetch(`/api/ai/skills?id=${id}`, { method: "DELETE" });
+      const d: { error?: string; success?: boolean } = await res.json();
+      if (d.error) { setSkillsMsg(lang === "bn" ? `ত্রুটি: ${d.error}` : `Error: ${d.error}`); } else {
+        setSkillsMsg(lang === "bn" ? "🗑️ ডিলিট করা হয়েছে!" : "🗑️ Deleted!");
+        setDeleteConfirmId(null);
+        loadSkills();
+      }
+    } catch { setSkillsMsg(lang === "bn" ? "সার্ভার ত্রুটি" : "Server error"); }
   };
 
   useEffect(() => {
@@ -1773,6 +1812,8 @@ export default function AIHubPage() {
 
               {/* ── Skills Learned List ── */}
               <div className="card p-5">
+                {skillsMsg && <div className="text-xs font-medium text-center mb-3 p-2 rounded-xl bg-green-50 text-green-700">{skillsMsg}</div>}
+
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold text-primary text-sm">{lang === "bn" ? `🧠 শিখেছে ${skillsTotal}টি দক্ষতা` : `🧠 ${skillsTotal} Skills Learned`}</h3>
                   <div className="flex gap-2">
@@ -1792,7 +1833,7 @@ export default function AIHubPage() {
                 ) : (
                   <div className="space-y-2 max-h-[500px] overflow-y-auto">
                     {skillsList.map((skill: any) => (
-                      <div key={skill.id} className="border border-border rounded-xl p-3 hover:border-primary/30 transition-all">
+                      <div key={skill.id} className="border border-border rounded-xl p-3 hover:border-primary/30 transition-all group">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
@@ -1809,6 +1850,14 @@ export default function AIHubPage() {
                                 </div>
                               )}
                             </div>
+                            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => openEditSkill(skill)} className="p-1.5 text-[10px] bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium">
+                                {lang === "bn" ? "সম্পাদনা" : "Edit"}
+                              </button>
+                              <button onClick={() => setDeleteConfirmId(skill.id)} className="p-1.5 text-[10px] bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-medium">
+                                {lang === "bn" ? "মুছুন" : "Delete"}
+                              </button>
+                            </div>
                             <span className="text-[10px] text-text-secondary shrink-0">{skill.created_at?.split(" ")[0] || ""}</span>
                           </div>
                         </div>
@@ -1816,6 +1865,42 @@ export default function AIHubPage() {
                   </div>
                 )}
               </div>
+
+              {/* ── Edit Skill Modal ── */}
+              {editingSkill && (
+                <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4" onClick={() => setEditingSkill(null)}>
+                  <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <h3 className="font-bold text-primary text-sm mb-4">{lang === "bn" ? "✏️ দক্ষতা সম্পাদনা" : "✏️ Edit Skill"}</h3>
+                    <div className="space-y-3">
+                      <div><label className="text-xs font-medium text-text-secondary">{lang === "bn" ? "প্রশ্ন" : "Question"}</label><input type="text" value={editForm.question} onChange={e => setEditForm({ ...editForm, question: e.target.value })} className="w-full px-3 py-2 text-sm border border-border rounded-xl mt-1 focus:outline-none focus:ring-2 focus:ring-primary/20" /></div>
+                      <div><label className="text-xs font-medium text-text-secondary">{lang === "bn" ? "উত্তর" : "Answer"}</label><textarea rows={4} value={editForm.answer} onChange={e => setEditForm({ ...editForm, answer: e.target.value })} className="w-full px-3 py-2 text-sm border border-border rounded-xl mt-1 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" /></div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div><label className="text-xs font-medium text-text-secondary">{lang === "bn" ? "কীওয়ার্ড" : "Keywords"}</label><input type="text" value={editForm.keywords} onChange={e => setEditForm({ ...editForm, keywords: e.target.value })} className="w-full px-3 py-2 text-sm border border-border rounded-xl mt-1 focus:outline-none focus:ring-2 focus:ring-primary/20" /></div>
+                        <div><label className="text-xs font-medium text-text-secondary">{lang === "bn" ? "ক্যাটাগরি" : "Category"}</label><select value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })} className="w-full px-3 py-2 text-sm border border-border rounded-xl mt-1 focus:outline-none"><option value="general">general</option><option value="pricing">pricing</option><option value="registration">registration</option><option value="support">support</option><option value="technical">technical</option></select></div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-5">
+                      <button onClick={() => setEditingSkill(null)} className="flex-1 py-2.5 text-sm font-medium bg-gray-100 text-text-secondary rounded-xl hover:bg-gray-200">{lang === "bn" ? "বাতিল" : "Cancel"}</button>
+                      <button onClick={saveSkill} className="flex-1 py-2.5 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/90">{lang === "bn" ? "💾 সংরক্ষণ" : "💾 Save"}</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Delete Confirmation ── */}
+              {deleteConfirmId !== null && (
+                <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4" onClick={() => setDeleteConfirmId(null)}>
+                  <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center" onClick={e => e.stopPropagation()}>
+                    <div className="text-3xl mb-3">🗑️</div>
+                    <h3 className="font-bold text-primary text-sm mb-2">{lang === "bn" ? "নিশ্চিত?" : "Are you sure?"}</h3>
+                    <p className="text-xs text-text-secondary mb-5">{lang === "bn" ? "এই দক্ষতা ডিলিট করলে AI আর এটি ব্যবহার করবে না।" : "This skill will be permanently removed. AI will no longer use it."}</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setDeleteConfirmId(null)} className="flex-1 py-2.5 text-sm font-medium bg-gray-100 text-text-secondary rounded-xl hover:bg-gray-200">{lang === "bn" ? "বাতিল" : "Cancel"}</button>
+                      <button onClick={() => deleteSkill(deleteConfirmId)} className="flex-1 py-2.5 text-sm font-medium bg-red-600 text-white rounded-xl hover:bg-red-700">{lang === "bn" ? "🗑️ ডিলিট" : "🗑️ Delete"}</button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
