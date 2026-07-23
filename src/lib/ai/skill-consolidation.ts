@@ -1,6 +1,7 @@
 import { query, queryFirst, execute } from "@/lib/db/queries";
 import { ensureDB } from "@/lib/db";
 import { extractKeywords } from "./analyzer";
+import { scoreQuality, QUALITY_THRESHOLD } from "./quality-gate";
 
 export async function consolidateSkills(): Promise<{ faqs: number; shortcuts: number }> {
   const db = await ensureDB();
@@ -31,6 +32,9 @@ export async function consolidateSkills(): Promise<{ faqs: number; shortcuts: nu
   }
   let faqs = 0, shortcuts = 0;
   for (const [question, data] of questionCounts) {
+    const qScore = scoreQuality(question, data.answer);
+    if (qScore.score < QUALITY_THRESHOLD) continue;
+
     if (data.count >= 3) {
       const existing = await queryFirst<{ id: number }>(
         { DB: db },

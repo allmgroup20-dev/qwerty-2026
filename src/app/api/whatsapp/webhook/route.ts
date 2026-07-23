@@ -29,6 +29,7 @@ import { linkWorkerToAgent, saveAgentKnowledge } from "@/lib/ai/brain/employee-l
 import type { MessageCtx } from "@/lib/ai/brain/types";
 import type { MediaResult } from "@/lib/whatsapp/media";
 import { storeContactInsight, extractInsightsFromText } from "@/lib/ai/contact-intelligence";
+import { scoreQuality, QUALITY_THRESHOLD } from "@/lib/ai/quality-gate";
 
 // ── In-memory follow-up tracker (persisted via DB) ──
 const SEEN_FOLLOWUP_DELAY_MS = 120_000; // 2 min after "read" without reply
@@ -343,15 +344,8 @@ export async function POST(request: NextRequest) {
     try {
       const keywords = extractKeywords(text);
       const replyTrimmed = reply.trim();
-      const systemMarkers = /(We need to respond|You are (a|an)|Respond as|your task|Review criteria|Keep responses|NEVER|IMPORTANT|test answer|debug|System instructions)/i;
-      if (
-        keywords.length >= 2 &&
-        replyTrimmed.length > 10 &&
-        replyTrimmed.length < 2000 &&
-        !systemMarkers.test(replyTrimmed) &&
-        !replyTrimmed.startsWith("[") &&
-        !replyTrimmed.startsWith("{")
-      ) {
+      const q = scoreQuality(text, replyTrimmed);
+      if (q.score >= QUALITY_THRESHOLD && keywords.length >= 2) {
         await saveSkill(keywords, text, replyTrimmed, "auto_learned");
       }
     } catch (e) {

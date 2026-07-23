@@ -24,6 +24,7 @@ import {
 } from "@/lib/ai";
 import { recordPlatformActivity } from "@/lib/platform-router";
 import { linkWorkerToAgent, saveAgentKnowledge } from "@/lib/ai/brain/employee-link";
+import { scoreQuality, QUALITY_THRESHOLD } from "@/lib/ai/quality-gate";
 import { enforceWordLimit } from "@/lib/ai/conversation-rules";
 import type { MessageCtx } from "@/lib/ai/brain/types";
 
@@ -127,8 +128,9 @@ export async function POST(request: NextRequest) {
     if (!fastHit) {
       try {
         const keywords = extractKeywords(text);
-        if (keywords.length >= 2 && reply.length > 10) {
-          await saveSkill(keywords, text, reply, "auto_learned");
+        const q = scoreQuality(text, reply || "");
+        if (q.score >= QUALITY_THRESHOLD && keywords.length >= 2) {
+          await saveSkill(keywords, text, reply!, "auto_learned");
         }
       } catch (e) {
         console.error("[Skills] Failed to auto-save:", (e as Error)?.message);
