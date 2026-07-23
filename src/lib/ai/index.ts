@@ -8,6 +8,7 @@ export { getHistory, saveMessage } from "./history";
 export { isWorkerPhone, getWorkerByPhone, getWorkerPremiumStatus } from "./worker-detection";
 export { getOrCreateLead, updateLeadStatus, getLeads, getLeadStats } from "./leads";
 export { consolidateSkills } from "./skill-consolidation";
+export { fastLane } from "./fast-lane";
 export { getSimilarUserContext } from "./cross-user-learning";
 export type { Mood, Dialect, Religion, TrustLevel, ControlResistance, ManipulationVulnerability, FearProfile, MaskStatus, CommStyle, TrustReadiness, DecisionMode, SpendStyle } from "./analyzer";
 

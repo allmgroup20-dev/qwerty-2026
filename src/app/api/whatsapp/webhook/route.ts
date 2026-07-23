@@ -22,6 +22,7 @@ import {
   getWorkerPremiumStatus,
   getOrCreateLead,
   updateLeadStatus,
+  fastLane,
 } from "@/lib/ai";
 import { recordPlatformActivity } from "@/lib/platform-router";
 import { linkWorkerToAgent, saveAgentKnowledge } from "@/lib/ai/brain/employee-link";
@@ -270,6 +271,17 @@ export async function POST(request: NextRequest) {
       isWorker,
       isPremium,
     };
+
+    // ── Fast Lane: 0-token instant replies (skip brain entirely) ──
+    const fastHit = fastLane(text, lang as "en" | "bn");
+    if (fastHit) {
+      await saveMessage(phone, "user", text, { language: lang, painPoints, interests, source: "whatsapp" });
+      await saveMessage(phone, "assistant", fastHit.reply, { language: lang, source: "whatsapp" });
+      await recordPlatformActivity(phone, "whatsapp");
+      const { sendMessage } = await import("@/lib/whatsapp");
+      await sendMessage(phone, fastHit.reply);
+      return NextResponse.json({ ok: true, fastLane: fastHit.lane });
+    }
 
     const brainResult = await Promise.race([
       processMessage(brainCtx),

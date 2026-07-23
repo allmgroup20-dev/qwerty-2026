@@ -14,6 +14,7 @@ import {
   updateProfileScore,
   saveMessage,
   findSkill,
+  fastLane,
   saveSkill,
   extractKeywords,
   isWorkerPhone,
@@ -81,47 +82,57 @@ export async function POST(request: NextRequest) {
     }
 
     let reply: string | null = null;
-    const cachedSkill = await findSkill(text);
-    if (cachedSkill) {
-      reply = cachedSkill;
-    } else {
-      const isPremium = isWorker ? await getWorkerPremiumStatus(phone) : false;
-      const brainCtx: MessageCtx = {
-        phone,
-        text,
-        name,
-        role,
-        language: lang,
-        mood,
-        dialect,
-        religion,
-        funnelStage,
-        totalChats: profile?.total_chats || 0,
-        painPoints,
-        interests,
-        isWorker,
-        isPremium,
-      };
-      const brainResult = await processMessage(brainCtx);
-      reply = brainResult.text;
 
-      if (isWorker && brainResult.agentsUsed.length > 0) {
-        const db = await ensureDB();
-        const agentName = brainResult.agentsUsed[0];
-        await linkWorkerToAgent(db, phone, agentName, agentName);
-        await saveAgentKnowledge(db, phone, agentName, agentName, reply.slice(0, 1000));
+    // ── Fast Lane: 0-token instant replies ──
+    const fastHit = fastLane(text, lang as "en" | "bn");
+    if (fastHit) {
+      reply = fastHit.reply;
+    } else {
+      const cachedSkill = await findSkill(text);
+      if (cachedSkill) {
+        reply = cachedSkill;
+      } else {
+        const isPremium = isWorker ? await getWorkerPremiumStatus(phone) : false;
+        const brainCtx: MessageCtx = {
+          phone,
+          text,
+          name,
+          role,
+          language: lang,
+          mood,
+          dialect,
+          religion,
+          funnelStage,
+          totalChats: profile?.total_chats || 0,
+          painPoints,
+          interests,
+          isWorker,
+          isPremium,
+        };
+        const brainResult = await processMessage(brainCtx);
+        reply = brainResult.text;
+
+        if (isWorker && brainResult.agentsUsed.length > 0) {
+          const db = await ensureDB();
+          const agentName = brainResult.agentsUsed[0];
+          await linkWorkerToAgent(db, phone, agentName, agentName);
+          await saveAgentKnowledge(db, phone, agentName, agentName, reply.slice(0, 1000));
+        }
       }
     }
 
     reply = enforceWordLimit(reply);
 
-    try {
-      const keywords = extractKeywords(text);
-      if (keywords.length >= 2 && reply.length > 10) {
-        await saveSkill(keywords, text, reply, "auto_learned");
+    // Skip auto-save for fast lane replies (zero-token, no AI involved)
+    if (!fastHit) {
+      try {
+        const keywords = extractKeywords(text);
+        if (keywords.length >= 2 && reply.length > 10) {
+          await saveSkill(keywords, text, reply, "auto_learned");
+        }
+      } catch (e) {
+        console.error("[Skills] Failed to auto-save:", (e as Error)?.message);
       }
-    } catch (e) {
-      console.error("[Skills] Failed to auto-save:", (e as Error)?.message);
     }
 
     await recordPlatformActivity(phone, "messenger");
