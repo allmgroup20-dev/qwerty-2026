@@ -6,6 +6,7 @@ import { getDB } from "@/lib/db";
 import { query } from "@/lib/db/queries";
 import { getContextualKnowledge, logConversationLearning } from "@/lib/ai/knowledge-brain";
 import { getContactIntelligence, extractInsightsFromText } from "../contact-intelligence";
+import { getSummary, getKeyPoints, getHistory } from "../history";
 
 const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
   { intent: "greeting", department: "customer_experience" },
@@ -97,6 +98,15 @@ const SYSTEM_PROMPT_TEMPLATE = `CRITICAL: You are a dedicated personal assistant
 ## CONTACT PROFILE
 {{contactIntelligence}}
 
+## PREVIOUS CONVERSATION SUMMARY
+{{conversationSummary}}
+
+## CONVERSATION KEY POINTS
+{{conversationKeyPoints}}
+
+## RECENT MESSAGES (last exchange before this one)
+{{recentConversation}}
+
 {{topTarget}}
 
 {{upsellContext}}
@@ -150,7 +160,7 @@ async function detectIntent(text: string, isWorker: boolean): Promise<{ intent: 
   return { intent: "general", department: fallbackDept };
 }
 
-function buildContext(ctx: MessageCtx, intent: Intent, knowledgeCtx: string, userMemories: any[], contactIntelligence: string, topTarget: string, upsellCtx: string): Record<string, any> {
+function buildContext(ctx: MessageCtx, intent: Intent, knowledgeCtx: string, userMemories: any[], contactIntelligence: string, topTarget: string, upsellCtx: string, conversationSummary: string, conversationKeyPoints: string, recentConversation: string): Record<string, any> {
   const memoryStr = buildMemoryContext(userMemories);
   const tierSummary = ctx.isPremium ? "PREMIUM MEMBER - Upsell additional resources. High LTV customer."
     : ctx.role === "customer" ? "NEW LEAD - Build trust first, then guide to registration."
@@ -173,6 +183,9 @@ function buildContext(ctx: MessageCtx, intent: Intent, knowledgeCtx: string, use
     contactIntelligence: contactIntelligence || "",
     topTarget: topTarget || "",
     upsellContext: upsellCtx || "",
+    conversationSummary: conversationSummary || "No previous conversation summary available.",
+    conversationKeyPoints: conversationKeyPoints || "No key points recorded.",
+    recentConversation: recentConversation || "No recent messages.",
     customerTierSummary: tierSummary,
   };
 }
@@ -245,6 +258,23 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   let contactIntelligence = "";
   try { contactIntelligence = await getContactIntelligence(ctx.phone); } catch {}
 
+  let conversationSummary = "";
+  let conversationKeyPoints = "";
+  let recentConversation = "";
+  try { conversationSummary = (await getSummary(ctx.phone)) || ""; } catch {}
+  try {
+    const kp = await getKeyPoints(ctx.phone);
+    if (kp) conversationKeyPoints = Object.entries(kp).map(([k, v]) => `${k}: ${v}`).join("\n");
+  } catch {}
+  try {
+    const history = await getHistory(ctx.phone);
+    if (history && history.length > 0) {
+      recentConversation = history
+        .map((m) => `${m.role === "user" ? "Customer" : "You"}: ${m.content.slice(0, 300)}`)
+        .join("\n");
+    }
+  } catch {}
+
   let knowledgeCtx = "";
   try { knowledgeCtx = await getContextualKnowledge(intent, department, ctx.language || "bn"); } catch {}
 
@@ -283,7 +313,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   }
 
   // Build context and system prompt
-  const contextVars = buildContext(ctx, intent, knowledgeCtx, userMemories, contactIntelligence, topTarget, upsellCtx);
+  const contextVars = buildContext(ctx, intent, knowledgeCtx, userMemories, contactIntelligence, topTarget, upsellCtx, conversationSummary, conversationKeyPoints, recentConversation);
   const systemPrompt = buildSystemPrompt(contextVars);
 
   // Single AI call
