@@ -261,7 +261,7 @@ export default function OnboardingPage() {
   }, [profileData, suggestions, suggestionsReady, workerId]);
 
   const showingConsent = !consentGiven;
-  const currentField: FieldKey | null = showingConsent ? null : pendingFields[currentIdx];
+  const currentField: FieldKey | null = showingConsent ? null : (pendingFields[currentIdx] ?? null);
   const fieldDef = currentField ? ALL_FIELDS.find(f => f.key === currentField) : null;
   const completedCount = TOTAL_STEPS - (pendingFields.length - currentIdx) - (showInterests ? 0 : 0) - (showingConsent ? 1 : 0);
   const progressPct = Math.round((completedCount / TOTAL_STEPS) * 100);
@@ -411,8 +411,8 @@ export default function OnboardingPage() {
 
               {fieldDef.type === "select" && fieldDef.options ? (
                 <select
-                  value={values[currentField]}
-                  onChange={e => setValue(currentField, e.target.value)}
+                  value={values[currentField!]}
+                  onChange={e => setValue(currentField!, e.target.value)}
                   className="input-field text-base"
                 >
                   <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select..."}</option>
@@ -425,22 +425,22 @@ export default function OnboardingPage() {
               ) : (
                 <input
                   type="text"
-                  value={values[currentField]}
-                  onChange={e => setValue(currentField, e.target.value)}
+                  value={values[currentField!]}
+                  onChange={e => setValue(currentField!, e.target.value)}
                   className="input-field text-base"
                   placeholder={lang === "bn" ? fieldDef.labelBn : fieldDef.labelEn}
                 />
               )}
 
-              {suggestions[currentField] && !values[currentField] && (
+              {suggestions[currentField!] && !values[currentField!] && (
                 <p className="text-xs text-action/70">
-                  {lang === "bn" ? "পরামর্শ" : "Suggested"}: {suggestions[currentField]}
+                  {lang === "bn" ? "পরামর্শ" : "Suggested"}: {suggestions[currentField!]}
                 </p>
               )}
 
               <button
                 onClick={handleNext}
-                disabled={saving || !values[currentField]?.trim()}
+                disabled={saving || !values[currentField!]?.trim()}
                 className="btn-primary w-full"
               >
                 {saving ? (

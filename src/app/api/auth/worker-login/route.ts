@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyWorkerPassword, generateToken, getJwtSecret } from "@/lib/auth";
 import { getCached, setCached } from "@/lib/cache";
-import { initEnv } from "@/lib/env";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 const MEMO = "__workerAuthMemo";
-const D1_TIMEOUT_MS = 8000;
-const HANDLER_TIMEOUT_MS = 15000;
+const D1_TIMEOUT = 8000;
 
 function getMemo(): Map<string, { worker_id: string; name: string; password: string }> {
   const g = globalThis as any;
@@ -15,30 +14,19 @@ function getMemo(): Map<string, { worker_id: string; name: string; password: str
 
 async function queryDB(phone: string): Promise<{ worker_id: string; name: string; password: string } | null> {
   try {
-    const ctx = await initEnv();
-    if (!ctx?.DB) return null;
-    const row = await ctx.DB.prepare(
+    const ctx = await getCloudflareContext({ async: true });
+    const db = (ctx.env as any)?.DB as D1Database | undefined;
+    if (!db) return null;
+    const row = await db.prepare(
       "SELECT worker_id, name, password FROM workers WHERE phone = ? AND membership_status IN ('general', 'premium')"
     ).bind(phone).first() as { worker_id: string; name: string; password: string } | undefined;
     return row || null;
-  } catch {
+  } catch (err) {
     return null;
   }
 }
 
 export async function POST(request: NextRequest) {
-  return await Promise.race([
-    handleLogin(request),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Handler timed out")), HANDLER_TIMEOUT_MS)
-    ),
-  ]).catch((err) => {
-    console.error("Login handler error:", err);
-    return NextResponse.json({ error: "Server timeout, please refresh and try again" }, { status: 503 });
-  });
-}
-
-async function handleLogin(request: NextRequest): Promise<NextResponse> {
   try {
     const { phone, password } = await request.json() as { phone: string; password: string };
     if (!phone || !password) {
@@ -51,7 +39,7 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
 
     const memo = getMemo();
 
-    // 1. In-memory cache (0ms)
+    // 1. In-memory cache
     const memoized = memo.get(phoneHash);
     if (memoized) {
       const valid = await verifyWorkerPassword(password, memoized.password);
@@ -60,7 +48,7 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ token, workerId: memoized.worker_id, name: memoized.name });
     }
 
-    // 2. KV cache (~20ms)
+    // 2. KV cache
     const cached = await getCached<{ worker_id: string; name: string; password: string }>(`auth:worker:${phoneHash}`, 1800);
     if (cached) {
       const valid = await verifyWorkerPassword(password, cached.password);
@@ -71,18 +59,12 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
     }
 
     // 3. Direct D1 query (bypasses schema init lock)
-    let timedOut = false;
     const worker = await Promise.race([
       queryDB(cleanPhone),
-      new Promise<null>((_, reject) =>
-        setTimeout(() => { timedOut = true; reject(new Error("D1 query timed out")); }, D1_TIMEOUT_MS)
-      ),
+      new Promise<null>((_, reject) => setTimeout(() => reject(new Error("D1 timeout")), D1_TIMEOUT)),
     ]).catch(() => null);
 
     if (!worker) {
-      if (timedOut) {
-        return NextResponse.json({ error: "Server busy, please try again", retryable: true }, { status: 503 });
-      }
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
@@ -97,7 +79,7 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
     const token = await generateToken(worker.worker_id, getJwtSecret());
     return NextResponse.json({ token, workerId: worker.worker_id, name: worker.name });
   } catch (error) {
-    console.error("Worker login error:", error);
+    console.error("Worker login error:", (error as Error)?.message || error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
