@@ -333,11 +333,16 @@ export default function CoursesPage() {
                 {statusText}
               </p>
             )}
-            {isLoggedIn && !isPremium && (
-              <button onClick={() => setShowCheckout(true)}
+            {!isPremium && (
+              <button onClick={() => { if (!isLoggedIn) { window.location.href = "/register?redirect=/courses"; } else { setShowCheckout(true); } }}
                 className="mt-5 inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-400 to-amber-300 text-amber-900 font-bold rounded-xl hover:shadow-xl hover:shadow-amber-400/30 hover:-translate-y-0.5 transition-all text-sm shadow-lg shadow-amber-400/20">
                 💳 {lang === "bn" ? "রিসোর্স আনলক কিনুন" : "Buy Resource Unlock"}
               </button>
+            )}
+            {isLoggedIn && !isPremium && unlockLimit !== null && (
+              <p className="text-white/30 text-xs mt-2">
+                🔑 আপনার আনলক ব্যালেন্স: {unlockLimit - unlockCount}টি রিসোর্স
+              </p>
             )}
             <div className="mt-6 max-w-lg mx-auto relative">
               <div className="flex items-center bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/20 border border-white/10 overflow-hidden transition-all duration-300 focus-within:bg-white/15 focus-within:border-white/20 focus-within:shadow-purple-500/10">

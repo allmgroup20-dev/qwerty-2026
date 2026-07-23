@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const [redirectAfter, setRedirectAfter] = useState("/onboarding");
   const [utmParams, setUtmParams] = useState({ utmSource: "", utmMedium: "", utmCampaign: "" });
 
   useEffect(() => {
@@ -26,6 +27,8 @@ export default function RegisterPage() {
       localStorage.setItem("referral_code", ref);
       setForm((prev) => ({ ...prev, referralCode: ref }));
     }
+    const redirect = params.get("redirect") || "";
+    if (redirect) setRedirectAfter(redirect);
     const us = params.get("utm_source") || "";
     const um = params.get("utm_medium") || "";
     const uc = params.get("utm_campaign") || "";
@@ -68,7 +71,7 @@ export default function RegisterPage() {
         localStorage.setItem("worker_name", data.name || "");
       }
       setSuccess(true);
-      setTimeout(() => router.push("/onboarding"), 1500);
+      setTimeout(() => router.push(redirectAfter), 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -88,7 +91,7 @@ export default function RegisterPage() {
           <h1 className="text-2xl font-black text-primary mb-2">
             {lang === "bn" ? "নিবন্ধন সফল হয়েছে!" : "Registration Successful!"}
           </h1>
-          <p className="text-text-secondary">{lang === "bn" ? "অনবোর্ডিং এ নিয়ে যাওয়া হচ্ছে..." : "Redirecting to onboarding..."}</p>
+          <p className="text-text-secondary">{lang === "bn" ? "রিডাইরেক্ট করা হচ্ছে..." : "Redirecting..."}</p>
         </div>
       </div>
     );

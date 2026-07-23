@@ -48,24 +48,18 @@ export async function POST(request: NextRequest) {
     const workerId = purchase.worker_id;
     const resourceCount = purchase.resource_count;
 
-    const existingUnlocks = await queryFirst<any>(
-      db, "SELECT COUNT(*) as cnt FROM user_unlocks WHERE worker_id = ?", [workerId]
+    const existingLimit = await queryFirst<any>(
+      db, "SELECT max_unlocks FROM unlock_limits WHERE worker_id = ?", [workerId]
     );
-    const existingCount = existingUnlocks?.cnt || 0;
+    const currentMax = existingLimit?.max_unlocks || 0;
+    const newMax = currentMax + resourceCount;
 
-    const courseRows = await query<any>(
-      db, `SELECT id FROM courses WHERE is_premium = 1 ORDER BY id LIMIT ? OFFSET ?`,
-      [resourceCount, existingCount]
+    await execute(db,
+      `INSERT INTO unlock_limits (worker_id, max_unlocks, set_by, set_at, updated_at)
+       VALUES (?, ?, 'payment', datetime('now'), datetime('now'))
+       ON CONFLICT(worker_id) DO UPDATE SET max_unlocks = excluded.max_unlocks, updated_at = datetime('now')`,
+      [workerId, newMax]
     );
-
-    if (courseRows && courseRows.length > 0) {
-      const insertStmts = courseRows.map(c =>
-        db.DB.prepare(
-          `INSERT OR IGNORE INTO user_unlocks (course_id, worker_id, unlocked_by, unlocked_at) VALUES (?, ?, 'payment', datetime('now'))`
-        ).bind(c.id, workerId)
-      );
-      if (insertStmts.length > 0) await db.DB.batch(insertStmts);
-    }
 
     const worker = await queryFirst<any>(db, "SELECT membership_status FROM workers WHERE worker_id = ?", [workerId]);
     if (worker && worker.membership_status !== "premium") {

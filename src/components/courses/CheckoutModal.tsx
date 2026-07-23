@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface CheckoutModalProps {
   workerId: string;
@@ -10,61 +10,71 @@ interface CheckoutModalProps {
   onClose: () => void;
 }
 
-const BASE_PRICE = 99;
+interface Tier {
+  id: string; credits: number; retailPrice: number;
+  offerPrice: number; savings: number; popular: boolean; pricePerCredit: number;
+}
 
 export default function CheckoutModal({ workerId, cusName, cusPhone, cusEmail, onClose }: CheckoutModalProps) {
-  const [step, setStep] = useState<"select" | "bargain" | "pay">("select");
-  const [resourceCount, setResourceCount] = useState(1);
-  const [finalAmount, setFinalAmount] = useState(BASE_PRICE);
-  const [finalCount, setFinalCount] = useState(1);
+  const [tiers, setTiers] = useState<Tier[]>([]);
+  const [loadingTiers, setLoadingTiers] = useState(true);
+  const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
+  const [step, setStep] = useState<"tiers" | "bargain" | "pay">("tiers");
+  const [finalAmount, setFinalAmount] = useState(0);
+  const [finalCredits, setFinalCredits] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [bargainSessionId, setBargainSessionId] = useState<number | null>(null);
+  const [bargainRound, setBargainRound] = useState(1);
   const [bargainMessages, setBargainMessages] = useState<{ role: "ai" | "user"; text: string }[]>([]);
   const [userPriceInput, setUserPriceInput] = useState("");
   const [canBargain, setCanBargain] = useState(true);
+  const [bargainAccepted, setBargainAccepted] = useState(false);
 
-  const basePrice = resourceCount * BASE_PRICE;
+  useEffect(() => {
+    fetch("/api/pricing/tiers")
+      .then(r => r.json() as Promise<{ tiers: Tier[] }>)
+      .then(d => { setTiers(d.tiers); setLoadingTiers(false); })
+      .catch(() => setLoadingTiers(false));
+  }, []);
 
-  const handleStartBargain = async () => {
-    setLoading(true);
+  const handleSelectTier = (tier: Tier) => {
+    setSelectedTier(tier);
+    setFinalAmount(tier.offerPrice);
+    setFinalCredits(tier.credits);
+    setBargainMessages([{
+      role: "ai",
+      text: `👋 ${tier.credits}টি রিসোর্সের জন্য রিটেইল প্রাইস ৳${tier.retailPrice.toLocaleString()}। আমাদের অফার ৳${tier.offerPrice.toLocaleString()}। আপনি কত দিতে চান?`,
+    }]);
+    setBargainRound(1);
+    setCanBargain(true);
+    setBargainAccepted(false);
+    setUserPriceInput("");
     setError("");
-    try {
-      const res = await fetch("/api/ai/bargain", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workerId, resourceCount }),
-      });
-      const data = await res.json() as { sessionId: number; currentOffer: number; message: string; canBargain: boolean; error?: string };
-      if (!res.ok) throw new Error(data.error || "Failed");
-      setBargainSessionId(data.sessionId);
-      setBargainMessages([{ role: "ai", text: data.message }]);
-      setFinalAmount(data.currentOffer);
-      setCanBargain(data.canBargain);
-      setStep("bargain");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "বার্গেনিং শুরু করতে ব্যর্থ");
-    } finally {
-      setLoading(false);
-    }
+    setStep("bargain");
   };
 
   const handleBargainRespond = async () => {
+    if (!selectedTier) return;
     const desiredPrice = parseInt(userPriceInput);
-    if (!desiredPrice || desiredPrice < 60 || desiredPrice > finalAmount) {
-      setError("দয়া করে একটি বৈধ মূল্য লিখুন (৬০-বর্তমান অফারের মধ্যে)");
+    if (!desiredPrice || desiredPrice < selectedTier.floor || desiredPrice > selectedTier.offerPrice) {
+      const expectedMin = selectedTier.floor;
+      setError(`দয়া করে ৳${expectedMin.toLocaleString()} – ৳${selectedTier.offerPrice.toLocaleString()} এর মধ্যে একটি মূল্য দিন`);
       return;
     }
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/ai/bargain/respond", {
+      const res = await fetch("/api/pricing/tiers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: bargainSessionId, desiredPrice }),
+        body: JSON.stringify({ tierId: selectedTier.id, desiredPrice, round: bargainRound }),
       });
-      const data = await res.json() as { accepted: boolean; offer: number | null; message: string; canContinue?: boolean; error?: string };
+      const data = await res.json() as {
+        accepted: boolean; final: boolean; message: string;
+        counterOffer?: number; finalPrice?: number; credits?: number; round?: number;
+        error?: string;
+      };
       if (!res.ok) throw new Error(data.error || "Failed");
 
       const newMessages = [...bargainMessages, { role: "user" as const, text: `আমি ৳${desiredPrice.toLocaleString()} দিতে চাই` }];
@@ -72,38 +82,27 @@ export default function CheckoutModal({ workerId, cusName, cusPhone, cusEmail, o
       if (data.accepted) {
         newMessages.push({ role: "ai", text: data.message });
         setBargainMessages(newMessages);
-        setFinalAmount(data.offer || desiredPrice);
-        setTimeout(() => setStep("pay"), 1500);
-      } else if (data.offer) {
+        setFinalAmount(data.finalPrice || desiredPrice);
+        setBargainAccepted(true);
+        setCanBargain(false);
+        setTimeout(() => { setStep("pay"); }, 2000);
+      } else if (data.counterOffer) {
         newMessages.push({ role: "ai", text: data.message });
         setBargainMessages(newMessages);
-        setFinalAmount(data.offer);
-        setCanBargain(data.canContinue !== false);
+        setFinalAmount(data.counterOffer);
+        setBargainRound(data.round || bargainRound + 1);
+        setCanBargain(!data.final);
       } else {
         newMessages.push({ role: "ai", text: data.message });
         setBargainMessages(newMessages);
         setCanBargain(false);
       }
-      setBargainMessages(newMessages);
       setUserPriceInput("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "বার্গেনিং ব্যর্থ");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleAcceptDeal = async () => {
-    if (bargainSessionId) {
-      try {
-        await fetch("/api/ai/bargain/accept", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId: bargainSessionId }),
-        });
-      } catch {}
-    }
-    setStep("pay");
   };
 
   const handlePay = async () => {
@@ -115,7 +114,7 @@ export default function CheckoutModal({ workerId, cusName, cusPhone, cusEmail, o
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           workerId,
-          resourceCount: finalCount,
+          resourceCount: finalCredits,
           amount: finalAmount,
           cusName: cusName || "Resource User",
           cusPhone: cusPhone || "01XXXXXXXXX",
@@ -136,139 +135,197 @@ export default function CheckoutModal({ workerId, cusName, cusPhone, cusEmail, o
     }
   };
 
+  const progressBar = () => (
+    <div className="flex gap-1.5 mb-4">
+      {["tiers", "bargain", "pay"].map((s, i) => (
+        <div key={s} className="flex-1 h-1.5 rounded-full overflow-hidden bg-white/20">
+          <div className={`h-full rounded-full transition-all duration-500 ${stepperIndex(s) <= stepperIndex(step) ? "bg-amber-300" : ""}`}
+            style={{ width: stepperIndex(s) <= stepperIndex(step) ? "100%" : "0%" }} />
+        </div>
+      ))}
+    </div>
+  );
+
+  const stepperIndex = (s: string) => s === "tiers" ? 0 : s === "bargain" ? 1 : 2;
+
+  const stepLabel = () => {
+    if (step === "tiers") return { title: "🛒 রিসোর্স ক্রয়", subtitle: "আপনার প্যাকেজ নির্বাচন করুন" };
+    if (step === "bargain") return { title: "💰 দাম দরকরুন", subtitle: `${selectedTier?.credits || 0}টি রিসোর্স` };
+    return { title: "💳 পেমেন্ট", subtitle: `${finalCredits}টি রিসোর্স = ৳${finalAmount.toLocaleString()}` };
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-        <div className="bg-gradient-to-r from-primary to-primary/80 p-5 text-white sticky top-0 z-10">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+        <div className="bg-gradient-to-r from-[#0f0c29] via-[#302b63] to-[#24243e] p-5 text-white sticky top-0 z-10">
+          {progressBar()}
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold">
-              {step === "bargain" ? "💰 দাম দরকরুন" : step === "pay" ? "💳 পেমেন্ট" : "🛒 রিসোর্স আনলক"}
-            </h2>
+            <div>
+              <h2 className="text-xl font-bold">{stepLabel().title}</h2>
+              <p className="text-white/70 text-sm mt-0.5">{stepLabel().subtitle}</p>
+            </div>
             <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors text-lg">✕</button>
           </div>
-          <p className="text-white/80 text-sm mt-1">
-            {step === "select" ? `প্রতি রিসোর্স মাত্র ${BASE_PRICE} ৳` : `${finalCount}টি রিসোর্স = ৳${finalAmount.toLocaleString()}`}
-          </p>
         </div>
 
         <div className="p-5 space-y-3">
-          {step === "select" && (
-            <>
-              <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl border-2 border-primary/20">
-                <span className="text-sm font-bold text-text shrink-0">{resourceCount}টি</span>
-                <input
-                  type="range"
-                  min={1}
-                  max={50}
-                  value={resourceCount}
-                  onChange={(e) => { const v = parseInt(e.target.value); setResourceCount(v); setFinalAmount(v * BASE_PRICE); setFinalCount(v); }}
-                  className="flex-1 accent-primary"
-                />
-                <span className="text-sm font-bold text-text shrink-0">৫০টি</span>
+          {step === "tiers" && (
+            loadingTiers ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />
+                ))}
               </div>
-
-              <div className="flex items-center justify-between px-2">
-                <button
-                  onClick={() => { const v = Math.max(1, resourceCount - 1); setResourceCount(v); setFinalAmount(v * BASE_PRICE); setFinalCount(v); }}
-                  className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-lg font-bold text-primary hover:bg-gray-200 transition-all"
-                >−</button>
-                <div className="text-center">
-                  <p className="text-2xl font-black text-primary">{basePrice.toLocaleString()} ৳</p>
-                  <p className="text-xs text-text-secondary">{resourceCount}টি × {BASE_PRICE} ৳</p>
+            ) : (
+              <>
+                <p className="text-xs text-text-secondary text-center mb-1 font-medium">
+                  ⚡ সকল প্যাকেজের সাথে ফ্রি প্রিমিয়াম মেম্বারশিপ
+                </p>
+                <div className="space-y-2.5">
+                  {tiers.map(tier => (
+                    <button
+                      key={tier.id}
+                      onClick={() => handleSelectTier(tier)}
+                      className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 ${
+                        tier.popular
+                          ? "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300 shadow-lg shadow-amber-200/30"
+                          : "bg-white border-gray-200 hover:border-primary/30 hover:shadow-md"
+                      }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black ${
+                            tier.popular ? "bg-amber-100 text-amber-600" : "bg-primary/10 text-primary"
+                          }`}>
+                            {tier.credits}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-bold text-text">{tier.credits}টি {tier.id === "try" ? "রিসোর্স" : "রিসোর্স"}</p>
+                              {tier.popular && (
+                                <span className="px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-800 text-[9px] font-bold tracking-wide">🔥 BEST</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-text-secondary/60">
+                              ৳{tier.pricePerCredit}/রিসোর্স {tier.savings > 0 && `· সাশ্রয় ${tier.savings}%`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-black text-primary">৳{tier.offerPrice.toLocaleString()}</p>
+                          <p className="text-[10px] text-gray-400 line-through">৳{tier.retailPrice.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                <button
-                  onClick={() => { const v = Math.min(50, resourceCount + 1); setResourceCount(v); setFinalAmount(v * BASE_PRICE); setFinalCount(v); }}
-                  className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-lg font-bold text-primary hover:bg-gray-200 transition-all"
-                >+</button>
-              </div>
 
-              {resourceCount >= 2 && (
-                <button
-                  onClick={handleStartBargain}
-                  disabled={loading}
-                  className="w-full py-3 bg-amber-50 border-2 border-amber-200 text-amber-700 font-bold rounded-xl hover:bg-amber-100 transition-all disabled:opacity-50"
-                >
-                  💰 দাম দরকরুন
-                </button>
-              )}
-
-              {resourceCount === 1 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-blue-700 text-sm text-center font-medium">
-                  ⚡ ১টি রিসোর্সের জন্য দাম ফিক্সড — বার্গেনিং শুধু ২টি বা তার বেশি রিসোর্সের জন্য
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-3 border border-purple-200">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-lg">👑</span>
+                    <p className="text-purple-700 font-semibold">
+                      যেকোনো প্যাকেজ কিনলেই ফ্রি প্রিমিয়াম মেম্বারশিপ!
+                    </p>
+                  </div>
+                  <ul className="mt-2 space-y-1">
+                    <li className="text-xs text-purple-600/80 flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-purple-400" /> সব রিসোর্স আনলিমিটেড এক্সেস
+                    </li>
+                    <li className="text-xs text-purple-600/80 flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-purple-400" /> কমিশন হার বৃদ্ধি
+                    </li>
+                    <li className="text-xs text-purple-600/80 flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-purple-400" /> ন্যূনতম উইথড্রয়াল ৳২০০
+                    </li>
+                  </ul>
                 </div>
-              )}
-
-              <button
-                onClick={() => { setFinalAmount(basePrice); setFinalCount(resourceCount); setStep("pay"); }}
-                className="w-full py-3.5 bg-gradient-to-r from-primary to-primary/80 text-white font-bold rounded-xl text-lg hover:shadow-lg hover:shadow-primary/30 transition-all"
-              >
-                💳 {basePrice.toLocaleString()} ৳ পেমেন্ট করুন
-              </button>
-            </>
+              </>
+            )
           )}
 
-          {step === "bargain" && (
+          {step === "bargain" && selectedTier && (
             <>
-              <div className="bg-gray-50 rounded-xl p-4 space-y-3 max-h-60 overflow-y-auto text-sm">
+              <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 space-y-3 max-h-60 overflow-y-auto text-sm border border-gray-100">
                 {bargainMessages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === "ai" ? "justify-start" : "justify-end"}`}>
-                    <div className={`max-w-[85%] p-3 rounded-2xl ${
+                  <div key={i} className={`flex ${msg.role === "ai" ? "justify-start" : "justify-end"} animate-fade-up`}>
+                    <div className={`max-w-[88%] p-3 rounded-2xl leading-relaxed ${
                       msg.role === "ai"
-                        ? "bg-white border border-gray-200 text-text"
-                        : "bg-primary text-white"
+                        ? "bg-white border border-gray-200 text-text shadow-sm"
+                        : "bg-gradient-to-r from-primary to-primary/80 text-white shadow-md"
                     }`}>
+                      {msg.role === "ai" && <span className="text-sm mr-1">🤖</span>}
                       {msg.text}
                     </div>
                   </div>
                 ))}
+                {bargainAccepted && (
+                  <div className="flex justify-center">
+                    <div className="px-5 py-3 bg-green-50 border-2 border-green-200 rounded-2xl text-green-700 font-bold text-center animate-bounce-in">
+                      ✅ ডিল সম্পন্ন! পেমেন্টে যাচ্ছি...
+                    </div>
+                  </div>
+                )}
               </div>
 
               {canBargain && (
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={userPriceInput}
-                    onChange={(e) => setUserPriceInput(e.target.value)}
-                    placeholder="আপনার প্রস্তাবিত মূল্য (৳)"
-                    className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm font-medium outline-none focus:border-primary"
-                    min={60}
-                    max={finalAmount}
-                  />
-                  <button
-                    onClick={handleBargainRespond}
-                    disabled={loading || !userPriceInput}
-                    className="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 text-sm"
-                  >
-                    {loading ? "..." : "পাঠান"}
-                  </button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={userPriceInput}
+                      onChange={(e) => setUserPriceInput(e.target.value)}
+                      placeholder={`আপনার প্রস্তাব (৳${selectedTier.floor.toLocaleString()} – ৳${selectedTier.offerPrice.toLocaleString()})`}
+                      className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm font-medium outline-none focus:border-primary"
+                      min={selectedTier.floor}
+                      max={selectedTier.offerPrice}
+                    />
+                    <button
+                      onClick={handleBargainRespond}
+                      disabled={loading || !userPriceInput}
+                      className="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 text-sm cursor-pointer"
+                    >
+                      {loading ? "..." : "পাঠান"}
+                    </button>
+                  </div>
+                  <p className="text-xs text-text-secondary/50 text-center">
+                    * {selectedTier.credits}টি রিসোর্সের জন্য ন্যূনতম ৳{selectedTier.floor.toLocaleString()}
+                  </p>
                 </div>
               )}
 
-              {!canBargain && (
+              {!canBargain && !bargainAccepted && (
                 <button
-                  onClick={handleAcceptDeal}
-                  className="w-full py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all"
+                  onClick={() => setStep("pay")}
+                  className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-green-500/30 transition-all cursor-pointer"
                 >
                   ✅ {finalAmount.toLocaleString()} ৳ তে ডিল করুন
                 </button>
               )}
+
+              <div className="flex items-center justify-center gap-2 text-xs text-text-secondary/50">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span>আমাদের টিম অনলাইন — সর্বোচ্চ চেষ্টা করছে সেরা দাম দিতে</span>
+              </div>
             </>
           )}
 
           {step === "pay" && (
             <div className="space-y-4">
-              <div className="bg-primary/5 rounded-xl p-4 text-center">
-                <p className="text-xl font-black text-primary">{finalAmount.toLocaleString()} ৳</p>
-                <p className="text-sm text-text-secondary">{finalCount}টি রিসোর্স</p>
+              <div className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-xl p-5 text-center border border-primary/10">
+                <div className="text-3xl mb-1">👑</div>
+                <p className="text-2xl font-black text-primary">{finalAmount.toLocaleString()} ৳</p>
+                <p className="text-sm text-text-secondary">{finalCredits}টি রিসোর্স আনলক</p>
+                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs font-bold border border-green-200">
+                  ⭐ প্রিমিয়াম মেম্বারশিপ ফ্রি
+                </div>
               </div>
 
               <button
                 onClick={handlePay}
                 disabled={loading}
-                className="w-full py-3.5 bg-gradient-to-r from-primary to-primary/80 text-white font-bold rounded-xl text-lg hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3.5 bg-gradient-to-r from-primary to-primary/80 text-white font-bold rounded-xl text-lg hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                {loading ? "⏳ প্রসেসিং..." : `💳 ${finalAmount.toLocaleString()} ৳ পেমেন্ট করুন`}
+                {loading ? "⏳ SSLCommerz এ যাচ্ছি..." : `💳 ${finalAmount.toLocaleString()} ৳ পেমেন্ট করুন`}
               </button>
             </div>
           )}
@@ -279,7 +336,9 @@ export default function CheckoutModal({ workerId, cusName, cusPhone, cusEmail, o
             </div>
           )}
 
-          <p className="text-center text-xs text-text-secondary">SSLCommerz এর মাধ্যমে নিরাপদ পেমেন্ট</p>
+          <p className="text-center text-xs text-text-secondary/40 pt-2">
+            🔒 SSLCommerz এর মাধ্যমে নিরাপদ পেমেন্ট | পেমেন্ট সম্পন্ন হলে অটো প্রিমিয়াম মেম্বারশিপ
+          </p>
         </div>
       </div>
     </div>
