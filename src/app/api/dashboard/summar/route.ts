@@ -1,15 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query, queryFirst } from "@/lib/db/queries";
-import { getDB } from "@/lib/db";
 import { getCached, setCached } from "@/lib/cache";
+import { initEnv } from "@/lib/env";
 
 const MEMO_DASH = "__dashboardMemo";
 const MEMO_TTL = 120_000;
+const QUERY_TIMEOUT = 8000;
 
 function getMemo(): Map<string, { data: unknown; ts: number }> {
   const g = globalThis as any;
   if (!g[MEMO_DASH]) g[MEMO_DASH] = new Map();
   return g[MEMO_DASH];
+}
+
+async function q<T>(db: D1Database, sql: string, ...params: unknown[]): Promise<T | null> {
+  return Promise.race<T | null>([
+    db.prepare(sql).bind(...params).first<T>(),
+    new Promise<T | null>((_, reject) => setTimeout(() => reject(new Error("Query timeout")), QUERY_TIMEOUT)),
+  ]).catch(() => null);
+}
+
+async function qAll<T>(db: D1Database, sql: string, ...params: unknown[]): Promise<T[]> {
+  return Promise.race<T[]>([
+    db.prepare(sql).bind(...params).all<T>().then(r => r.results || []),
+    new Promise<T[]>((_, reject) => setTimeout(() => reject(new Error("Query timeout")), QUERY_TIMEOUT)),
+  ]).catch(() => []);
 }
 
 export async function GET(request: NextRequest) {
@@ -33,9 +47,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(cached);
     }
 
-    const db = await getDB();
+    const ctx = await initEnv();
+    if (!ctx?.DB) {
+      return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+    }
+    const db = ctx.DB;
 
-    const profile = await queryFirst<any>(db,
+    const profile = await q<any>(db,
       `SELECT worker_id as workerId, name, phone, email, balance,
               total_earned as totalEarned, total_spent as totalSpent,
               total_team_members as totalTeamMembers,
@@ -50,7 +68,7 @@ export async function GET(request: NextRequest) {
               communication_preference as communicationPreference,
               budget_range as budgetRange, religion,
               resource_income as resourceIncome, resource_income_original as resourceIncomeOriginal
-       FROM workers WHERE worker_id = ?`, [workerId]
+       FROM workers WHERE worker_id = ?`, workerId
     );
     if (profile) {
       (profile as any).profileCompleted = !!(profile.name && !profile.name.startsWith("User") &&
@@ -60,15 +78,14 @@ export async function GET(request: NextRequest) {
         profile.communicationPreference && profile.budgetRange && profile.religion);
     }
 
-    const [commissions, accounts, analytics, settingsRows, levelRow, teamCount, withdrawalSum] = await Promise.all([
-      queryFirst<any>(db, "SELECT COUNT(*) as totalCommissions, COALESCE(SUM(total_amount), 0) as totalEarned, COALESCE(SUM(CASE WHEN status = 'paid' THEN total_amount ELSE 0 END), 0) as paidAmount FROM commissions WHERE to_worker_id = ?", [workerId]),
-      query<any>(db, "SELECT id, account_type, account_number, account_name, is_default FROM saved_accounts WHERE worker_id = ? ORDER BY is_default DESC, created_at ASC", [workerId]),
-      queryFirst<any>(db, "SELECT COUNT(*) as totalViews, COUNT(DISTINCT session_id) as totalSessions FROM user_events WHERE worker_id = ? AND event_type = 'page_view'", [workerId]),
-      query<{ setting_key: string; setting_value: string }>(db, "SELECT setting_key, setting_value FROM company_settings"),
-      queryFirst<any>(db, "SELECT level_name as levelName, level_name_bn as levelNameBn FROM commission_levels WHERE level_number = ?", [profile?.level || 1]),
-      queryFirst<any>(db, "SELECT COUNT(*) as cnt FROM affiliate_tree WHERE parent_id = ? OR sponsor_id = ?", [workerId, workerId]),
-      queryFirst<any>(db, "SELECT COALESCE(SUM(final_amount), 0) as withdrawn FROM withdrawals WHERE worker_id = ? AND status = 'completed'", [workerId]),
-    ]);
+    const fallback = <T>(v: T | null | undefined, def: T) => v ?? def;
+    const commissions = await q<any>(db, "SELECT COUNT(*) as totalCommissions, COALESCE(SUM(total_amount), 0) as totalEarned, COALESCE(SUM(CASE WHEN status = 'paid' THEN total_amount ELSE 0 END), 0) as paidAmount FROM commissions WHERE to_worker_id = ?", workerId);
+    const accounts = await qAll<any>(db, "SELECT id, account_type, account_number, account_name, is_default FROM saved_accounts WHERE worker_id = ? ORDER BY is_default DESC, created_at ASC", workerId);
+    const analytics = await q<any>(db, "SELECT COUNT(*) as totalViews, COUNT(DISTINCT session_id) as totalSessions FROM user_events WHERE worker_id = ? AND event_type = 'page_view'", workerId);
+    const settingsRows = await qAll<{ setting_key: string; setting_value: string }>(db, "SELECT setting_key, setting_value FROM company_settings");
+    const levelRow = await q<any>(db, "SELECT level_name as levelName, level_name_bn as levelNameBn FROM commission_levels WHERE level_number = ?", profile?.level || 1);
+    const teamCount = await q<any>(db, "SELECT COUNT(*) as cnt FROM affiliate_tree WHERE parent_id = ? OR sponsor_id = ?", workerId, workerId);
+    const withdrawalSum = await q<any>(db, "SELECT COALESCE(SUM(final_amount), 0) as withdrawn FROM withdrawals WHERE worker_id = ? AND status = 'completed'", workerId);
 
     const settingsMap: Record<string, string> = {};
     for (const row of settingsRows) {

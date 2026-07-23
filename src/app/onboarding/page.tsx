@@ -261,7 +261,7 @@ export default function OnboardingPage() {
   }, [profileData, suggestions, suggestionsReady, workerId]);
 
   const showingConsent = !consentGiven;
-  const currentField = showingConsent ? null : pendingFields[currentIdx];
+  const currentField: FieldKey | null = showingConsent ? null : pendingFields[currentIdx];
   const fieldDef = currentField ? ALL_FIELDS.find(f => f.key === currentField) : null;
   const completedCount = TOTAL_STEPS - (pendingFields.length - currentIdx) - (showInterests ? 0 : 0) - (showingConsent ? 1 : 0);
   const progressPct = Math.round((completedCount / TOTAL_STEPS) * 100);
@@ -400,7 +400,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {!showingConsent && !showInterests && fieldDef && (
+          {!showingConsent && !showInterests && fieldDef && currentField && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs text-text-secondary bg-gray-100 px-2 py-0.5 rounded-full">
@@ -428,7 +428,7 @@ export default function OnboardingPage() {
                   value={values[currentField]}
                   onChange={e => setValue(currentField, e.target.value)}
                   className="input-field text-base"
-                  placeholder={lang === "bn" ? "আপনার উত্তর লিখুন" : "Type your answer"}
+                  placeholder={lang === "bn" ? fieldDef.labelBn : fieldDef.labelEn}
                 />
               )}
 

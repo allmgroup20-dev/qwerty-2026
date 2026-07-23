@@ -38,11 +38,12 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
 
   if (g[DONE_LOCK]) {
     let waited = 0;
-    while (g[DONE_FLAG] === false && g[DONE_LOCK] && waited < 300) {
+    while (g[DONE_FLAG] === false && g[DONE_LOCK] && waited < 50) {
       await new Promise(r => setTimeout(r, 100));
       waited++;
     }
     if (g[DONE_FLAG]) return;
+    g[DONE_LOCK] = false;
   }
   g[DONE_LOCK] = true;
 

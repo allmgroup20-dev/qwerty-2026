@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useLanguageStore } from "@/lib/store";
@@ -67,6 +67,8 @@ export default function WorkerDashboard() {
     insights: { type: string; title: string; titleBn: string; priority: number; actionUrl: string; emoji: string }[];
   } | null>(null);
 
+  const fetchRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     const wid = localStorage.getItem("worker_id");
     if (!wid) {
@@ -81,8 +83,16 @@ export default function WorkerDashboard() {
       setLoading(false);
       return;
     }
+
+    if (fetchRef.current) fetchRef.current.abort();
+    const controller = new AbortController();
+    fetchRef.current = controller;
+    const signal = controller.signal;
+
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
     setLoading(true);
-    fetch(`/api/dashboard/summar?workerId=${workerId}`)
+    fetch(`/api/dashboard/summar?workerId=${workerId}`, { signal })
       .then(r => r.json())
       .then((data: any) => {
         if (data.error) { setLoading(false); return; }
@@ -113,7 +123,7 @@ export default function WorkerDashboard() {
         if (data.analytics) setAnalytics(data.analytics);
         setReferralRedirectPath(s.referral_redirect_path || "/register");
         // Fetch personalized insights
-        fetch(`/api/personalize/insights?workerId=${workerId}`)
+        fetch(`/api/personalize/insights?workerId=${workerId}`, { signal })
           .then(r => r.json())
           .then((insightData: any) => {
             if (insightData?.insights) setPersonalizedInsights(insightData);
@@ -121,7 +131,19 @@ export default function WorkerDashboard() {
           .catch(() => {});
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        if (err?.name === "AbortError") {
+          window.location.href = "/login";
+        } else {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+      fetchRef.current = null;
+    };
   }, [workerId]);
 
   const isPremium = worker?.membershipStatus === "premium";

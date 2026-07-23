@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryFirst } from "@/lib/db/queries";
-import { getDB } from "@/lib/db";
 import { verifyWorkerPassword, generateToken, getJwtSecret } from "@/lib/auth";
 import { getCached, setCached } from "@/lib/cache";
+import { initEnv } from "@/lib/env";
 
 const MEMO = "__workerAuthMemo";
 const D1_TIMEOUT_MS = 8000;
@@ -12,6 +11,19 @@ function getMemo(): Map<string, { worker_id: string; name: string; password: str
   const g = globalThis as any;
   if (!g[MEMO]) g[MEMO] = new Map();
   return g[MEMO];
+}
+
+async function queryDB(phone: string): Promise<{ worker_id: string; name: string; password: string } | null> {
+  try {
+    const ctx = await initEnv();
+    if (!ctx?.DB) return null;
+    const row = await ctx.DB.prepare(
+      "SELECT worker_id, name, password FROM workers WHERE phone = ? AND membership_status IN ('general', 'premium')"
+    ).bind(phone).first() as { worker_id: string; name: string; password: string } | undefined;
+    return row || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -58,15 +70,10 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ token, workerId: cached.worker_id, name: cached.name });
     }
 
-    // 3. D1 query with timeout
-    const db = await getDB();
+    // 3. Direct D1 query (bypasses schema init lock)
     let timedOut = false;
     const worker = await Promise.race([
-      queryFirst<{ worker_id: string; name: string; password: string }>(
-        db,
-        "SELECT worker_id, name, password FROM workers WHERE phone = ? AND membership_status IN ('general', 'premium')",
-        [cleanPhone]
-      ),
+      queryDB(cleanPhone),
       new Promise<null>((_, reject) =>
         setTimeout(() => { timedOut = true; reject(new Error("D1 query timed out")); }, D1_TIMEOUT_MS)
       ),
