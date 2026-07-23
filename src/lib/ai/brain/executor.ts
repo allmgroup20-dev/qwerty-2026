@@ -4,6 +4,7 @@ import { getConversationRules } from "../conversation-rules";
 import { execute } from "@/lib/db/queries";
 import { ensureDB } from "@/lib/db";
 import { checkResponseCache, storeResponseCache } from "../response-cache";
+import { findSkill } from "../skills";
 
 const MODEL_MAP: Record<string, { model: string; provider: string }> = {
   "llama-3.3-70b": { model: "meta-llama/llama-3.3-70b-instruct:free", provider: "openrouter" },
