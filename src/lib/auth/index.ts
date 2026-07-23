@@ -4,7 +4,8 @@ export {
   generateToken, 
   verifyToken, 
   generateWorkerId,
-  getJwtSecret
+  getJwtSecret,
+  normalizePhone
 } from "./worker-auth";
 
 export { 

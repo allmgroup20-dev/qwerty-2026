@@ -9,7 +9,7 @@ let dbCache: { DB: D1Database } | null = null;
 
 const SCHEMA_COLS = ["google_id","facebook_id","preferred_language","resource_income","resource_income_original"];
 
-export async function ensureSchema(env: { DB: D1Database }): Promise<void> {
+async function ensureSchema(env: { DB: D1Database }): Promise<void> {
   const g = globalThis as any;
 
   // ── Forced migrations: run once per isolate even when schema fast check skips ──
@@ -38,12 +38,11 @@ export async function ensureSchema(env: { DB: D1Database }): Promise<void> {
 
   if (g[DONE_LOCK]) {
     let waited = 0;
-    while (g[DONE_FLAG] === false && g[DONE_LOCK] && waited < 50) {
+    while (g[DONE_FLAG] === false && g[DONE_LOCK] && waited < 30) {
       await new Promise(r => setTimeout(r, 100));
       waited++;
     }
     if (g[DONE_FLAG]) return;
-    g[DONE_LOCK] = false;
   }
   g[DONE_LOCK] = true;
 

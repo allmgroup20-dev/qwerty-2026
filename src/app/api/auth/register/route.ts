@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, queryFirst, execute } from "@/lib/db/queries";
 import { getDB } from "@/lib/db";
-import { hashWorkerPassword, generateToken, generateWorkerId, getJwtSecret } from "@/lib/auth";
+import { hashWorkerPassword, generateToken, generateWorkerId, getJwtSecret, normalizePhone } from "@/lib/auth";
 import { setCached } from "@/lib/cache";
 
 export async function POST(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     if (!phone || !password) {
       return NextResponse.json({ error: "Phone and password required" }, { status: 400 });
     }
-    const cleanPhone = phone.replace(/\D/g, "");
+    const cleanPhone = normalizePhone(phone);
     const displayName = name || `User${cleanPhone.slice(-6)}`;
 
     const env = await getDB();

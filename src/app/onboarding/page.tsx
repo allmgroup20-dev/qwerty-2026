@@ -183,7 +183,6 @@ export default function OnboardingPage() {
   const [showInterests, setShowInterests] = useState(false);
   const [interestSaved, setInterestSaved] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
-  const [consentBoxChecked, setConsentBoxChecked] = useState(false);
   const [done, setDone] = useState(false);
 
   const processed = useRef(false);
@@ -261,8 +260,9 @@ export default function OnboardingPage() {
   }, [profileData, suggestions, suggestionsReady, workerId]);
 
   const showingConsent = !consentGiven;
-  const currentField: FieldKey | null = showingConsent ? null : (pendingFields[currentIdx] ?? null);
+  const currentField = showingConsent ? null : pendingFields[currentIdx];
   const fieldDef = currentField ? ALL_FIELDS.find(f => f.key === currentField) : null;
+  const fk = currentField as FieldKey | null;
   const completedCount = TOTAL_STEPS - (pendingFields.length - currentIdx) - (showInterests ? 0 : 0) - (showingConsent ? 1 : 0);
   const progressPct = Math.round((completedCount / TOTAL_STEPS) * 100);
 
@@ -390,17 +390,17 @@ export default function OnboardingPage() {
                 <p>{lang === "bn" ? "যেকোনো সময় আপনি আপনার প্রোফাইল থেকে তথ্য মুছতে বা এক্সপোর্ট করতে পারবেন।" : "You can delete or export your data at any time from your profile settings."}</p>
               </div>
               <label className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20 cursor-pointer">
-                <input type="checkbox" checked={consentBoxChecked} onChange={() => setConsentBoxChecked(!consentBoxChecked)} className="w-5 h-5 accent-primary" />
+                <input type="checkbox" checked={consentGiven} onChange={handleConsentAccept} className="w-5 h-5 accent-primary" />
                 <span className="text-sm font-medium text-text text-left">{lang === "bn" ? "আমি সকল শর্তাবলী, গোপনীয়তা নীতি ও কুকিজ পলিসি গ্রহণ করছি" : "I accept all terms, privacy policy & cookie policy"}</span>
               </label>
-              <button onClick={handleConsentAccept} disabled={saving || !consentBoxChecked}
-                className="btn-primary w-full disabled:opacity-50">
+              <button onClick={handleConsentAccept} disabled={saving}
+                className="btn-primary w-full">
                 {saving ? "..." : (lang === "bn" ? "✅ গ্রহণ করুন ও এগিয়ে যান" : "✅ Accept & Continue")}
               </button>
             </div>
           )}
 
-          {!showingConsent && !showInterests && fieldDef && currentField && (
+          {!showingConsent && !showInterests && fieldDef && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs text-text-secondary bg-gray-100 px-2 py-0.5 rounded-full">
@@ -411,7 +411,7 @@ export default function OnboardingPage() {
 
               {fieldDef.type === "select" && fieldDef.options ? (
                 <select
-                  value={values[currentField!]}
+                  value={fk ? values[fk] : ""}
                   onChange={e => setValue(currentField!, e.target.value)}
                   className="input-field text-base"
                 >
@@ -425,22 +425,22 @@ export default function OnboardingPage() {
               ) : (
                 <input
                   type="text"
-                  value={values[currentField!]}
+                  value={fk ? values[fk] : ""}
                   onChange={e => setValue(currentField!, e.target.value)}
                   className="input-field text-base"
-                  placeholder={lang === "bn" ? fieldDef.labelBn : fieldDef.labelEn}
+                  placeholder={lang === "bn" ? "আপনার উত্তর লিখুন" : "Type your answer"}
                 />
               )}
 
-              {suggestions[currentField!] && !values[currentField!] && (
+              {fk && suggestions[fk] && !values[fk] && (
                 <p className="text-xs text-action/70">
-                  {lang === "bn" ? "পরামর্শ" : "Suggested"}: {suggestions[currentField!]}
+                  {lang === "bn" ? "পরামর্শ" : "Suggested"}: {suggestions[fk]}
                 </p>
               )}
 
               <button
                 onClick={handleNext}
-                disabled={saving || !values[currentField!]?.trim()}
+                disabled={saving || !(fk && values[fk]?.trim())}
                 className="btn-primary w-full"
               >
                 {saving ? (

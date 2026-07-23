@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useLanguageStore } from "@/lib/store";
@@ -67,8 +67,6 @@ export default function WorkerDashboard() {
     insights: { type: string; title: string; titleBn: string; priority: number; actionUrl: string; emoji: string }[];
   } | null>(null);
 
-  const fetchRef = useRef<AbortController | null>(null);
-
   useEffect(() => {
     const wid = localStorage.getItem("worker_id");
     if (!wid) {
@@ -83,18 +81,15 @@ export default function WorkerDashboard() {
       setLoading(false);
       return;
     }
-
-    if (fetchRef.current) fetchRef.current.abort();
-    const controller = new AbortController();
-    fetchRef.current = controller;
-    const signal = controller.signal;
-
-    const timeout = setTimeout(() => controller.abort(), 10000);
-
     setLoading(true);
-    fetch(`/api/dashboard/summar?workerId=${workerId}`, { signal })
+
+    const abort = new AbortController();
+    const timeout = setTimeout(() => abort.abort(), 15000);
+
+    fetch(`/api/dashboard/summar?workerId=${workerId}`, { signal: abort.signal })
       .then(r => r.json())
       .then((data: any) => {
+        if (abort.signal.aborted) return;
         if (data.error) { setLoading(false); return; }
         const p = data.profile;
         if (p) {
@@ -122,8 +117,8 @@ export default function WorkerDashboard() {
         if (accounts.length) setSelectedAccId(accounts[0].id);
         if (data.analytics) setAnalytics(data.analytics);
         setReferralRedirectPath(s.referral_redirect_path || "/register");
-        // Fetch personalized insights
-        fetch(`/api/personalize/insights?workerId=${workerId}`, { signal })
+        // Fetch personalized insights (fire-and-forget, no abort needed)
+        fetch(`/api/personalize/insights?workerId=${workerId}`)
           .then(r => r.json())
           .then((insightData: any) => {
             if (insightData?.insights) setPersonalizedInsights(insightData);
@@ -131,18 +126,15 @@ export default function WorkerDashboard() {
           .catch(() => {});
         setLoading(false);
       })
-      .catch((err) => {
-        if (err?.name === "AbortError") {
+      .catch(() => {
+        if (!abort.signal.aborted) {
           window.location.href = "/login";
-        } else {
-          setLoading(false);
         }
       });
 
     return () => {
       clearTimeout(timeout);
-      controller.abort();
-      fetchRef.current = null;
+      abort.abort();
     };
   }, [workerId]);
 

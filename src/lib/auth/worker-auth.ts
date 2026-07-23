@@ -68,3 +68,14 @@ export function generateWorkerId(name: string, phone: string): string {
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
   return `${prefix}${namePart}${phonePart}${random}`;
 }
+
+export function normalizePhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("01") && digits.length === 11) {
+    return "880" + digits.slice(1);
+  }
+  if (digits.startsWith("880") && digits.length === 13) {
+    return digits;
+  }
+  return digits;
+}

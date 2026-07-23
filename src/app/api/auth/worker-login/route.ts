@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyWorkerPassword, generateToken, getJwtSecret } from "@/lib/auth";
+import { verifyWorkerPassword, generateToken, getJwtSecret, normalizePhone } from "@/lib/auth";
 import { getCached, setCached } from "@/lib/cache";
 
 const MEMO = "__workerAuthMemo";
+const D1_TIMEOUT_MS = 8000;
 
 function getMemo(): Map<string, { worker_id: string; name: string; password: string }> {
   const g = globalThis as any;
@@ -17,13 +18,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Phone and password required" }, { status: 400 });
     }
 
-    const cleanPhone = phone.replace(/\D/g, "");
+    const cleanPhone = normalizePhone(phone);
     const phoneHash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(cleanPhone))))
       .map(b => b.toString(16).padStart(2, "0")).join("");
 
     const memo = getMemo();
 
-    // 1. In-memory cache
+    // 1. In-memory cache (0ms)
     const memoized = memo.get(phoneHash);
     if (memoized) {
       const valid = await verifyWorkerPassword(password, memoized.password);
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ token, workerId: memoized.worker_id, name: memoized.name });
     }
 
-    // 2. KV cache
+    // 2. KV cache (~20ms)
     const cached = await getCached<{ worker_id: string; name: string; password: string }>(`auth:worker:${phoneHash}`, 1800);
     if (cached) {
       const valid = await verifyWorkerPassword(password, cached.password);
@@ -42,15 +43,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ token, workerId: cached.worker_id, name: cached.name });
     }
 
-    // 3. Direct D1 query via getCloudflareContext
-    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-    const cfCtx = await getCloudflareContext({ async: true });
-    const db = (cfCtx.env as any)?.DB as D1Database | undefined;
-    if (!db) throw new Error("DB binding unavailable");
-    const row = await db.prepare(
-      "SELECT worker_id, name, password FROM workers WHERE phone = ? AND membership_status IN ('general', 'premium')"
-    ).bind(cleanPhone).first() as { worker_id: string; name: string; password: string } | undefined;
-    const worker = row || null;
+    // 3. Direct D1 query — bypass schema lock
+    const { initEnv } = await import("@/lib/env");
+    const { DB: db } = await initEnv();
+
+    const worker = await Promise.race([
+      db.prepare("SELECT worker_id, name, password FROM workers WHERE phone = ? AND membership_status IN ('general', 'premium')")
+        .bind(cleanPhone).first() as Promise<{ worker_id: string; name: string; password: string } | undefined>,
+      new Promise<undefined>((_, reject) =>
+        setTimeout(() => reject(new Error("D1 query timed out")), D1_TIMEOUT_MS)
+      ),
+    ]).catch(() => undefined);
 
     if (!worker) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
