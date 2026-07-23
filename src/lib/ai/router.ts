@@ -282,7 +282,21 @@ export async function callAI(
     const hasFreeRouter = isFreeRouterProvider && modelsToTry.includes("openrouter/free");
     const staticModels = modelsToTry.filter(m => m !== "openrouter/free");
 
-    // 1) Try openrouter/free FIRST (highest priority per plan)
+    // 1) Try preferredModel FIRST (if explicitly requested and not free router)
+    if (preferredModel && preferredModel !== "openrouter/free" && modelsToTry.includes(preferredModel)) {
+      const modelKey = `k${keyId}|${provider}|${preferredModel}`;
+      if (!isOnCooldown(cooldowns, modelKey)) {
+        const result = await tryModel(apiKey, provider, preferredModel, messages, maxTokens, request.temperature);
+        if (result) {
+          await recordSuccess(db);
+          return { text: result.text, model: `${provider}:${preferredModel}`, tokens: result.tokens };
+        }
+        await recordCooldown(db, modelKey, cooldowns);
+        console.warn(`[FAILOVER] ${provider} key#${keyId} preferred ${preferredModel} — cooling down 5min`);
+      }
+    }
+
+    // 2) Try openrouter/free (high availability catch-all)
     if (hasFreeRouter) {
       for (let i = 0; i < 2; i++) {
         if (i === 1) await new Promise(r => setTimeout(r, 1_000));
@@ -295,8 +309,11 @@ export async function callAI(
       }
     }
 
-    // 2) Try static models with cooldown
-    for (const modelId of staticModels) {
+    // 3) Try remaining static models with cooldown
+    const remainingModels = preferredModel
+      ? staticModels.filter(m => m !== preferredModel)
+      : staticModels;
+    for (const modelId of remainingModels) {
       const modelKey = `k${keyId}|${provider}|${modelId}`;
       if (isOnCooldown(cooldowns, modelKey)) continue;
 
@@ -310,7 +327,7 @@ export async function callAI(
       console.warn(`[FAILOVER] ${provider} key#${keyId} model ${modelId} — cooling down 5min`);
     }
 
-    // 3) If static models all failed, retry openrouter/free one more time
+    // 4) If all static models failed, retry openrouter/free one more time
     if (hasFreeRouter) {
       await new Promise(r => setTimeout(r, 1_500));
       const result = await tryModel(apiKey, provider, "openrouter/free", messages, maxTokens, request.temperature);

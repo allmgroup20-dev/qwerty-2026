@@ -45,26 +45,32 @@ const INTENT_CLASSIFIER_PROMPT = `You are an intent classifier for Jobayer Group
 
 Return ONLY the intent word, nothing else.`;
 
-const PRODUCT_CATALOG = `## JOBAYER GROUP CAREER — PRODUCTS & PRICING
+async function getProductCatalog(db: any): Promise<string> {
+  try {
+    const products = await query<any>(
+      { DB: db },
+      "SELECT name, name_bn, price, description, category, commission_percentage, is_active FROM products WHERE is_active = 1 ORDER BY category, price ASC LIMIT 20"
+    );
+    if (products.length === 0) return "";
 
-### Membership Plans
-1. **Standard (Free)**: Basic training, community access, 10% commission on direct referrals, weekly resources. Min withdrawal: 500 TK (10% fee).
-2. **Premium (1,500 TK one-time)**: Unlimited premium training, 0% withdrawal tax, 25% direct commission, priority support, contest eligibility, geometric target plan access, team bonuses.
-3. **VIP (5,000 TK one-time)**: Personal mentor, VIP live sessions, exclusive group, 35% commission, priority withdrawal (12-24h), monthly 1-on-1 strategy, early access.
+    const grouped: Record<string, string[]> = {};
+    for (const p of products) {
+      const cat = p.category || "General";
+      if (!grouped[cat]) grouped[cat] = [];
+      const commission = p.commission_percentage ? ` (${p.commission_percentage}% commission)` : "";
+      grouped[cat].push(`- ${p.name}${p.name_bn ? ` / ${p.name_bn}` : ""}: ৳${p.price}${commission}`);
+    }
 
-### Income Programs
-- **Direct Affiliate**: Earn 10-35% per referral (depends on tier)
-- **Team Building Bonus**: 3 members -> 500 TK, 10 -> 2,000 TK, 25 -> 5,000 TK, 50 -> 15,000 TK
-- **Geometric Target Plan**: Day 1 = 100 TK, doubles daily. Complete 10 days = earn 153,450 TK
-- **Contests**: Daily (200 TK), Weekly (1,000 TK), Monthly Grand (10,000 TK)
-
-### Training Programs
-- **Freelancing**: Graphic Design (4 wks), Web Dev (6 wks), Digital Marketing (5 wks) - Free for Premium
-- **YouTube Growth**: Channel setup, monetization, content planning
-- **Payment**: bKash, Nagad, Rocket, PayPal, USDT
-
-### Contact
-WhatsApp: +880 1234-567890 | Email: support@jobayergroup.com | Office: Dhanmondi, Dhaka`;
+    const lines = ["## JOBAYER GROUP CAREER — PRODUCTS & PRICING (from database)"];
+    for (const [cat, items] of Object.entries(grouped)) {
+      lines.push(`\n### ${cat}`);
+      lines.push(...items);
+    }
+    return lines.join("\n");
+  } catch {
+    return "";
+  }
+}
 
 const SYSTEM_PROMPT_TEMPLATE = `CRITICAL: You are a dedicated personal assistant and mentor for this Jobayer Group Career member. Your ONLY goal is to make this person maximally successful. You are not just a salesperson - you are their guide, strategist, motivator, and support system rolled into one.
 
@@ -160,7 +166,7 @@ async function detectIntent(text: string, isWorker: boolean): Promise<{ intent: 
   return { intent: "general", department: fallbackDept };
 }
 
-function buildContext(ctx: MessageCtx, intent: Intent, knowledgeCtx: string, userMemories: any[], contactIntelligence: string, topTarget: string, upsellCtx: string, conversationSummary: string, conversationKeyPoints: string, recentConversation: string): Record<string, any> {
+function buildContext(ctx: MessageCtx, intent: Intent, knowledgeCtx: string, userMemories: any[], contactIntelligence: string, topTarget: string, upsellCtx: string, conversationSummary: string, conversationKeyPoints: string, recentConversation: string, productCatalog: string): Record<string, any> {
   const memoryStr = buildMemoryContext(userMemories);
   const tierSummary = ctx.isPremium ? "PREMIUM MEMBER - Upsell additional resources. High LTV customer."
     : ctx.role === "customer" ? "NEW LEAD - Build trust first, then guide to registration."
@@ -179,7 +185,7 @@ function buildContext(ctx: MessageCtx, intent: Intent, knowledgeCtx: string, use
     religion: ctx.religion || "not specified",
     userMemory: memoryStr,
     knowledgeContext: knowledgeCtx || "",
-    productCatalog: PRODUCT_CATALOG,
+    productCatalog: productCatalog || "",
     contactIntelligence: contactIntelligence || "",
     topTarget: topTarget || "",
     upsellContext: upsellCtx || "",
@@ -295,6 +301,9 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
     }
   } catch {}
 
+  let productCatalog = "";
+  if (db) try { productCatalog = await getProductCatalog(db); } catch {}
+
   let upsellCtx = "";
   if (ctx.isPremium && db) {
     try {
@@ -313,7 +322,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   }
 
   // Build context and system prompt
-  const contextVars = buildContext(ctx, intent, knowledgeCtx, userMemories, contactIntelligence, topTarget, upsellCtx, conversationSummary, conversationKeyPoints, recentConversation);
+  const contextVars = buildContext(ctx, intent, knowledgeCtx, userMemories, contactIntelligence, topTarget, upsellCtx, conversationSummary, conversationKeyPoints, recentConversation, productCatalog);
   const systemPrompt = buildSystemPrompt(contextVars);
 
   // Single AI call
@@ -324,10 +333,10 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   try {
     const result = await callAI(
       { messages: [
-        { role: "system", content: "You are a dedicated personal assistant and mentor for this Jobayer Group Career member. Your ONLY goal is to make this person maximally successful.\n\n" + systemPrompt + "\n\n" + getConversationRules(ctx.language) },
+        { role: "system", content: systemPrompt + "\n\n" + getConversationRules(ctx.language) },
         { role: "user", content: ctx.text },
-      ], temperature: 0.4 },
-      300, "llama-3.3-70b", "openrouter"
+      ], temperature: 0.7 },
+      800, "llama-3.3-70b", "openrouter"
     );
     finalText = result.text;
     finalModel = result.model;
@@ -338,8 +347,8 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         { messages: [
           { role: "system", content: `You are a dedicated personal assistant at Jobayer Group Career. Reply in ${ctx.language === "bn" ? "Bengali" : "English"}. Be warm, helpful, and persistent. Guide the customer step by step. Use real product info: Premium=1,500 TK, VIP=5,000 TK, commissions up to 35%. Success stories: Rahim (joined Standard, now earning 8-12k/month), Fatima (homemaker to 25k+/month passive). NEVER give up - pivot to a different benefit. Output ONLY your response.` },
           { role: "user", content: ctx.text },
-        ], temperature: 0.4 },
-        200, "llama-3.3-70b", "openrouter"
+        ], temperature: 0.7 },
+        800, "llama-3.3-70b", "openrouter"
       );
       finalText = fb.text;
       finalModel = fb.model;
