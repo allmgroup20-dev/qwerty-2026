@@ -13,6 +13,7 @@ export async function GET() {
     id: t.id, credits: t.credits, retailPrice: t.retailPrice,
     offerPrice: t.offerPrice, savings: t.savings, popular: t.popular,
     pricePerCredit: Math.round(t.offerPrice / t.credits),
+    floor: t.floor,
   }));
   return NextResponse.json({ tiers: publicTiers });
 }

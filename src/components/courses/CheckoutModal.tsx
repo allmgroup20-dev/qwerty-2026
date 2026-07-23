@@ -13,6 +13,7 @@ interface CheckoutModalProps {
 interface Tier {
   id: string; credits: number; retailPrice: number;
   offerPrice: number; savings: number; popular: boolean; pricePerCredit: number;
+  floor: number;
 }
 
 export default function CheckoutModal({ workerId, cusName, cusPhone, cusEmail, onClose }: CheckoutModalProps) {
