@@ -1851,12 +1851,11 @@ export default function AIHubPage() {
                               )}
                             </div>
                             <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => openEditSkill(skill)} className="p-1.5 text-[10px] bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium">
-                                {lang === "bn" ? "সম্পাদনা" : "Edit"}
-                              </button>
-                              <button onClick={() => setDeleteConfirmId(skill.id)} className="p-1.5 text-[10px] bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-medium">
-                                {lang === "bn" ? "মুছুন" : "Delete"}
-                              </button>
+                              <span className={"text-[9px] px-1.5 py-0.5 rounded-full font-medium " + (skill.manual_override ? "text-green-700 bg-green-50" : "text-gray-500 bg-gray-100")}>{skill.manual_override ? (lang === "bn" ? "প্রমোটেড" : "PROMOTED") : ""}</span>
+                              <button onClick={async () => { try { await fetch("/api/ai/skills/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skillId: skill.id, action: "like" }) }); loadSkills(); } catch {} }} className="p-1.5 text-[10px] bg-green-50 text-green-600 rounded-lg hover:bg-green-100 font-medium">👍</button>
+                              <button onClick={async () => { try { await fetch("/api/ai/skills/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skillId: skill.id, action: "dislike" }) }); loadSkills(); } catch {} }} className="p-1.5 text-[10px] bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-medium">👎</button>
+                              <button onClick={() => openEditSkill(skill)} className="p-1.5 text-[10px] bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium">{lang === "bn" ? "সম্পাদনা" : "Edit"}</button>
+                              <button onClick={() => setDeleteConfirmId(skill.id)} className="p-1.5 text-[10px] bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-medium">{lang === "bn" ? "মুছুন" : "Delete"}</button>
                             </div>
                             <span className="text-[10px] text-text-secondary shrink-0">{skill.created_at?.split(" ")[0] || ""}</span>
                           </div>
