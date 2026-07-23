@@ -10,11 +10,10 @@ export default function RegisterPage() {
   const { lang } = useLanguageStore();
   const router = useRouter();
 
-  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", confirmPassword: "", referralCode: "" });
+  const [form, setForm] = useState({ phone: "", password: "", confirmPassword: "", referralCode: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const [redirectAfter, setRedirectAfter] = useState("/onboarding");
@@ -49,9 +48,7 @@ export default function RegisterPage() {
     }
 
     const payload: Record<string, unknown> = {
-      name: form.name || undefined,
       phone: form.phone,
-      email: form.email || undefined,
       password: form.password,
       referralCode: form.referralCode || undefined,
       ...utmParams,
@@ -79,7 +76,7 @@ export default function RegisterPage() {
     }
   };
 
-  const update = (k: keyof typeof form, v: string) => setForm((prev) => ({ ...prev, [k]: v }));
+  const update = (k: string, v: string) => setForm((prev) => ({ ...prev, [k]: v }));
 
   if (success) {
     return (
@@ -101,14 +98,14 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gradient-to-br from-bg via-accent/5 to-primary/5 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-2xl mx-auto mb-4 shadow-xl shadow-primary/20">
-            🚀
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#25D366] to-[#128C7E] flex items-center justify-center text-3xl mx-auto mb-4 shadow-xl shadow-green-500/20">
+            💬
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-primary">
             {lang === "bn" ? "নিবন্ধন" : "Create Account"}
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            {lang === "bn" ? "আপনার যাত্রা শুরু করুন" : "Start Your Journey"}
+            {lang === "bn" ? "আপনার হোয়াটসঅ্যাপ নম্বর দিয়ে শুরু করুন" : "Start with your WhatsApp number"}
           </p>
         </div>
 
@@ -119,67 +116,71 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm border border-border/80 space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">{lang === "bn" ? "নাম" : "Name"}</label>
-              <input type="text" value={form.name} onChange={(e) => update("name", e.target.value)} placeholder={lang === "bn" ? "আপনার নাম" : "Your Name"} className="input-field" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">{lang === "bn" ? "ফোন নম্বর" : "Phone Number"}</label>
-              <input type="tel" value={form.phone} onChange={(e) => update("phone", e.target.value)} placeholder="০১XXX-XXXXXX" className="input-field" required />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">Email</label>
-              <input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="email@example.com" className="input-field" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">{lang === "bn" ? "পাসওয়ার্ড" : "Password"}</label>
-              <div className="relative">
-                <input type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => update("password", e.target.value)} placeholder="••••••" className="input-field pr-10" required />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary text-sm">{showPassword ? "🙈" : "👁️"}</button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">{lang === "bn" ? "নিশ্চিত করুন" : "Confirm"}</label>
-              <div className="relative">
-                <input type={showConfirm ? "text" : "password"} value={form.confirmPassword} onChange={(e) => update("confirmPassword", e.target.value)} placeholder="••••••" className="input-field pr-10" required />
-                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary text-sm">{showConfirm ? "🙈" : "👁️"}</button>
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
+              💬 {lang === "bn" ? "হোয়াটসঅ্যাপ নম্বর" : "WhatsApp Number"} <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-text-secondary/50">+880</span>
+              <input type="tel" value={form.phone} onChange={(e) => update("phone", e.target.value)}
+                placeholder="1XXX-XXXXXX" className="input-field pl-12" required />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">{lang === "bn" ? "রেফারেল কোড" : "Referral Code"}</label>
-            <input type="text" value={form.referralCode} onChange={(e) => update("referralCode", e.target.value)} placeholder={lang === "bn" ? "ঐচ্ছিক" : "Optional"} className="input-field" />
+            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
+              🔒 {lang === "bn" ? "পাসওয়ার্ড" : "Password"} <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <input type={showPassword ? "text" : "password"} value={form.password}
+                onChange={(e) => update("password", e.target.value)}
+                placeholder="••••••" className="input-field pr-10" required minLength={4} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary text-sm">
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
+              🔒 {lang === "bn" ? "পাসওয়ার্ড নিশ্চিত করুন" : "Confirm Password"} <span className="text-red-400">*</span>
+            </label>
+            <input type="password" value={form.confirmPassword}
+              onChange={(e) => update("confirmPassword", e.target.value)}
+              placeholder="••••••" className="input-field" required minLength={4} />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wider">
+              🔗 {lang === "bn" ? "রেফারেল কোড" : "Referral Code"}
+            </label>
+            <input type="text" value={form.referralCode} onChange={(e) => update("referralCode", e.target.value)}
+              placeholder={lang === "bn" ? "ঐচ্ছিক — কারো কোড থাকলে দিন" : "Optional — enter referral code"} className="input-field" />
           </div>
 
           <button type="submit" disabled={loading}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-accent to-accent-light text-white font-bold text-base shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px]">
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white font-bold text-base shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px]">
             {loading ? (
               <span className="flex items-center gap-2">
                 <LoadingDots />
-                <span className="text-sm font-medium animate-loading-pulse">{lang === "bn" ? "নিবন্ধন হচ্ছে..." : "Registering..."}</span>
+                <span className="text-sm font-medium">{lang === "bn" ? "নিবন্ধন হচ্ছে..." : "Registering..."}</span>
               </span>
             ) : (lang === "bn" ? "নিবন্ধন করুন" : "Register")}
           </button>
 
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/60" /></div>
-            <div className="relative flex justify-center"><span className="px-3 text-xs font-bold text-text-secondary bg-white">{lang === "bn" ? "অথবা" : "OR"}</span></div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <button type="button" onClick={() => { const email = prompt("Enter Google email:"); if (email) fetch("/api/auth/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }).then(r => r.json() as Promise<Record<string, unknown>>).then(d => { if (d.token) { localStorage.setItem("worker_token", d.token as string); window.location.href = "/dashboard"; } }).catch(() => setError("Google login failed")); }} className="flex items-center justify-center gap-2 py-3 rounded-xl border border-border/80 text-sm font-bold text-text-secondary hover:bg-primary/5 hover:border-primary/30 transition-all"><span>🔵</span> Google</button>
-            <button type="button" onClick={() => { const email = prompt("Enter Facebook email:"); if (email) fetch("/api/auth/facebook", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }).then(r => r.json() as Promise<Record<string, unknown>>).then(d => { if (d.token) { localStorage.setItem("worker_token", d.token as string); window.location.href = "/dashboard"; } }).catch(() => setError("Facebook login failed")); }} className="flex items-center justify-center gap-2 py-3 rounded-xl border border-border/80 text-sm font-bold text-text-secondary hover:bg-primary/5 hover:border-primary/30 transition-all"><span>🔷</span> Facebook</button>
-          </div>
+          <p className="text-center text-xs text-text-secondary/50">
+            {lang === "bn"
+              ? "নিবন্ধন করে আপনি আমাদের শর্তাবলী ও গোপনীয়তা নীতিতে সম্মত হচ্ছেন"
+              : "By registering you agree to our Terms & Privacy Policy"}
+          </p>
         </form>
 
         <p className="text-center text-sm text-text-secondary mt-6">
           {lang === "bn" ? "ইতিমধ্যে অ্যাকাউন্ট আছে?" : "Already have an account?"}{" "}
-          <Link href="/login" className="font-bold text-accent hover:text-accent-light transition-colors">{lang === "bn" ? "লগইন করুন" : "Login"}</Link>
+          <Link href="/login" className="font-bold text-[#25D366] hover:text-[#128C7E] transition-colors">
+            {lang === "bn" ? "লগইন করুন" : "Login"}
+          </Link>
         </p>
       </div>
     </div>
