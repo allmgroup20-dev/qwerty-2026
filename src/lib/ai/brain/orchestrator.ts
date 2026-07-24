@@ -11,6 +11,10 @@ import { classifyIntentFree } from "../intent-classifier";
 import { buildStageScriptsContext } from "../prompts/stage-scripts";
 import { buildTrainingContext } from "../prompts/training-modules";
 import { buildTeamContext } from "../prompts/team-tracker";
+import { calculateScores, buildScoreContext } from "../scoring-engine";
+import { getRecommendations, buildRecommendationContext } from "../recommendation-engine";
+import { detectSegment, suggestCampaign, buildSegmentContext } from "../marketing-intelligence";
+import { buildPurchaseContext, buildOrderContext, getRecommendedPlan } from "../purchase-automation";
 
 const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
   { intent: "greeting", department: "customer_experience" },
@@ -107,12 +111,21 @@ Last exchange: {{recentConversation}}
 ## PRODUCTS & PRICING (use real prices only)
 {{productCatalog}}
 
+## MEMBERSHIP PLANS & ORDER FLOW
+{{purchaseCtx}}
+
 {{knowledgeContext}}
 {{topTarget}}
 {{upsellContext}}
 
 {{stageScripts}}
 {{trainingCtx}}
+
+{{scoreCtx}}
+
+{{recCtx}}
+
+{{miCtx}}
 
 {{teamCtx}}
 
@@ -187,7 +200,7 @@ async function detectIntent(text: string, isWorker: boolean): Promise<{ intent: 
   return { intent: "general", department: fallbackDept };
 }
 
-function buildContext(ctx: MessageCtx, intent: Intent, knowledgeCtx: string, userMemories: any[], contactIntelligence: string, topTarget: string, upsellCtx: string, conversationSummary: string, conversationKeyPoints: string, recentConversation: string, productCatalog: string, stageScripts: string, trainingCtx: string, teamCtx: string): Record<string, any> {
+function buildContext(ctx: MessageCtx, intent: Intent, knowledgeCtx: string, userMemories: any[], contactIntelligence: string, topTarget: string, upsellCtx: string, conversationSummary: string, conversationKeyPoints: string, recentConversation: string, productCatalog: string, stageScripts: string, trainingCtx: string, teamCtx: string, scoreCtx: string, recCtx: string, miCtx: string, purchaseCtx: string): Record<string, any> {
   const memoryStr = buildMemoryContext(userMemories);
   const tierSummary = ctx.isPremium ? "PREMIUM MEMBER - Upsell additional resources. High LTV customer."
     : ctx.role === "customer" ? "NEW LEAD - Build trust first, then guide to registration."
@@ -207,6 +220,7 @@ function buildContext(ctx: MessageCtx, intent: Intent, knowledgeCtx: string, use
     userMemory: memoryStr,
     knowledgeContext: knowledgeCtx || "",
     productCatalog: productCatalog || "",
+    purchaseCtx: purchaseCtx || "",
     contactIntelligence: contactIntelligence || "",
     topTarget: topTarget || "",
     upsellContext: upsellCtx || "",
@@ -217,6 +231,9 @@ function buildContext(ctx: MessageCtx, intent: Intent, knowledgeCtx: string, use
     stageScripts: stageScripts || "",
     trainingCtx: trainingCtx || "",
     teamCtx: teamCtx || "",
+    scoreCtx: scoreCtx || "",
+    recCtx: recCtx || "",
+    miCtx: miCtx || "",
   };
 }
 
@@ -328,6 +345,14 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   let productCatalog = "";
   if (db) try { productCatalog = await getProductCatalog(db); } catch {}
 
+  let purchaseCtx = "";
+  if (db && ctx.phone) {
+    try {
+      purchaseCtx = buildPurchaseContext(ctx.language || "bn");
+      purchaseCtx += "\n" + buildOrderContext([], ctx.language || "bn");
+    } catch {}
+  }
+
   let upsellCtx = "";
   if (ctx.isPremium && db) {
     try {
@@ -349,6 +374,42 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   let teamCtx = "";
   if (ctx.isWorker && db) {
     try { teamCtx = await buildTeamContext(db, ctx.phone, ctx.language || "bn"); } catch {}
+  }
+
+  // Lead scoring + segment intelligence
+  let scoreCtx = "";
+  let recCtx = "";
+  let miCtx = "";
+  let leadScores: any = null;
+  if (db) {
+    try {
+      const profile = await query<any>(
+        { DB: db },
+        "SELECT total_chats, total_orders, total_spent, created_at, updated_at, interests, pain_points, trust_score, membership_status FROM profiles WHERE phone = ?",
+        [ctx.phone]
+      );
+      if (profile.length > 0) {
+        const scores = calculateScores(profile[0]);
+        leadScores = scores;
+        scoreCtx = buildScoreContext(scores, ctx.language || "bn");
+      }
+    } catch {}
+    try {
+      const recs = await getRecommendations(db, ctx.phone, ctx.phone, 3, ctx.language || "bn");
+      recCtx = buildRecommendationContext(recs, ctx.language || "bn");
+    } catch {}
+    // Marketing Intelligence: segment user and suggest campaign
+    try {
+      if (leadScores) {
+        const interestsRow = await db.prepare(
+          "SELECT top_categories FROM user_interests WHERE worker_id = ?"
+        ).bind(ctx.phone).first() as any;
+        const interests = interestsRow ? JSON.parse(interestsRow.top_categories || "[]") : [];
+        const segment = detectSegment(leadScores);
+        const campaign = suggestCampaign(segment, interests, ctx.language || "bn");
+        miCtx = buildSegmentContext(segment, campaign, ctx.language || "bn");
+      }
+    } catch {}
   }
 
   // Build stage-aware scripts
@@ -377,7 +438,7 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
   const trainingCtx = trainingModuleIds.length > 0 ? buildTrainingContext(trainingModuleIds, ctx.language || "bn") : "";
 
   // Build context and system prompt
-  const contextVars = buildContext(ctx, intent, knowledgeCtx, userMemories, contactIntelligence, topTarget, upsellCtx, conversationSummary, conversationKeyPoints, recentConversation, productCatalog, stageScripts, trainingCtx, teamCtx);
+  const contextVars = buildContext(ctx, intent, knowledgeCtx, userMemories, contactIntelligence, topTarget, upsellCtx, conversationSummary, conversationKeyPoints, recentConversation, productCatalog, stageScripts, trainingCtx, teamCtx, scoreCtx, recCtx, miCtx, purchaseCtx);
   const systemPrompt = buildSystemPrompt(contextVars);
 
   // Single AI call

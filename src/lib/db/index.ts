@@ -1252,6 +1252,17 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
 
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_permissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      worker_id TEXT NOT NULL,
+      permission_type TEXT NOT NULL,
+      granted_at TEXT DEFAULT (datetime('now')),
+      expires_at TEXT,
+      scope TEXT DEFAULT '{}',
+      is_active INTEGER DEFAULT 1,
+      UNIQUE(worker_id, permission_type)
+    )`).run();
+
     g[DONE_FLAG] = true;
     g[DONE_LOCK] = false;
 
@@ -1307,6 +1318,7 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
       `CREATE INDEX IF NOT EXISTS idx_knowledge_entries_tags ON knowledge_entries(tags)`,
       `CREATE INDEX IF NOT EXISTS idx_conversation_learnings_type ON conversation_learnings(learning_type, applied)`,
       `CREATE INDEX IF NOT EXISTS idx_knowledge_relationships_source ON knowledge_relationships(source_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_user_permissions_worker ON user_permissions(worker_id, permission_type)`,
     ].map(sql => env.DB.prepare(sql));
     env.DB.batch(indexStmts).catch(() => {});
 
