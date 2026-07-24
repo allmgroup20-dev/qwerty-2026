@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useLanguageStore } from "@/lib/store";
-import { testimonials, chatTestimonials, gridTestimonials, phpSliderTestimonials } from "@/data/landing-page-data";
+import { testimonials, chatTestimonials, gridTestimonials, phpSliderTestimonials } from "@/data/home/testimonials";
 
 type TabType = "carousel" | "chat" | "grid";
 

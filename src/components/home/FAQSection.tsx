@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLanguageStore } from "@/lib/store";
-import { faqs } from "@/data/landing-page-data";
+import { faqs } from "@/data/home/faq";
 
 const previewFaqs = faqs.slice(0, 4);
 

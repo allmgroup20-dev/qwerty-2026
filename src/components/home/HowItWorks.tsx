@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLanguageStore } from "@/lib/store";
-import { howItWorksSteps, howItWorksFooterNoteBn, howItWorksFooterNoteEn } from "@/data/landing-page-data";
+import { howItWorksSteps, howItWorksFooterNoteBn, howItWorksFooterNoteEn } from "@/data/home/how-it-works";
 
 export default function HowItWorks() {
   const { lang } = useLanguageStore();

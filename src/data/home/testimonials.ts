@@ -1,0 +1,136 @@
+export interface Testimonial {
+  stars: string;
+  rating: string;
+  quoteBn: string;
+  quoteEn: string;
+  authorBn: string;
+  authorEn: string;
+  labelBn: string;
+  labelEn: string;
+}
+
+export const testimonials: Testimonial[] = [
+  { stars: "★★★★★", rating: "5.0/5",
+    quoteBn: "আমি আগে কখনো অনলাইনে কাজ করিনি। জোবায়ের গ্রুপের নির্দেশিকা আর সহায়তার কারণে আজ আমি নিজের ল্যাপটপ থেকে মাসে ২৫,০০০+ টাকা ইনকাম করছি। শুরুটা ছিল ৯৯ টাকা, কিন্তু ভ্যালু পেয়েছি লক্ষ টাকার বেশি!",
+    quoteEn: "I never worked online before. Thanks to Jobayer Group's guidance, I now earn 25,000+ BDT monthly from my laptop. Started with just 99 BDT, but got value worth lakhs!",
+    authorBn: "মিতা ইসলাম", authorEn: "Mita Islam",
+    labelBn: "ফ্রিল্যান্সার, সিলেট", labelEn: "Freelancer, Sylhet" },
+  { stars: "★★★★★", rating: "4.9/5",
+    quoteBn: "ইউটিউবে অনেক কিছু ফ্রিতে পাওয়া যায়, কিন্তু স্ট্রাকচার আর দিকনির্দেশনা ছাড়া শেখা অসম্পূর্ণ। এই কোর্সটা আমাকে রিয়েল মার্কেটের জন্য প্রস্তুত করেছে। এখন নিয়মিত ক্লায়েন্ট পাচ্ছি। সবার কাছে রেকমেন্ড করব!",
+    quoteEn: "YouTube has lots of free content, but learning without structure is incomplete. This course prepared me for the real market. I'm getting regular clients now. Highly recommend!",
+    authorBn: "নীলা হোসেন", authorEn: "Neela Hossain",
+    labelBn: "ডিজিটাল মার্কেটার, ঢাকা", labelEn: "Digital Marketer, Dhaka" },
+  { stars: "★★★★★", rating: "5.0/5",
+    quoteBn: "শুরুতে ভেবেছিলাম এটা আর দশটা অনলাইন স্ক্যাম হবে। কিন্তু জোবায়ের গ্রুপের ট্রান্সপারেন্সি আর রিয়েল শিক্ষার্থী ফলাফল দেখে কনফিডেন্ট হলাম। ৭ মাসে এখন মাসিক আয় ৪০,০০০+। সবচেয়ে বড় কথা, একটা সহায়ক কমিউনিটি পেয়েছি।",
+    quoteEn: "I initially thought this was just another online scam. But Jobayer Group's transparency and real student results made me confident. Now earning 40,000+ monthly in 7 months. Most importantly, I found a supportive community.",
+    authorBn: "রাফসান জামান", authorEn: "Rafsan Zaman",
+    labelBn: "ই-কমার্স আর্নার, চট্টগ্রাম", labelEn: "E-commerce Earner, Chittagong" },
+];
+
+export const chatTestimonials = [
+  {
+    avatar: "🌸",
+    nameBn: "রোজিনা আক্তার",
+    nameEn: "Rozina Akter",
+    platformBn: "ফেসবুক গ্রুপ · ২ সপ্তাহ আগে",
+    platformEn: "Facebook Group · 2 weeks ago",
+    msgBn: "প্রথম বোনাস পাওয়ার দিনটা এখনো মনে আছে। নিজের চেষ্টায় কিছু অর্জনের অনুভূতি অসাধারণ! মাত্র ৯৯ টাকা দিয়ে শুরু করে আজ মাসে ২৫,০০০+ টাকা আয় করছি। যারা দ্বিধায় আছেন, তাদের বলব—শুরু করে দেখুন!",
+    msgEn: "I still remember the day I got my first bonus. The feeling of achieving something through my own effort is incredible! Started with just 99 BDT and now earning 25,000+ BDT monthly. To those hesitating — just start!",
+    stars: "★★★★★",
+    timeBn: "গতকাল ৩:৪২ PM",
+    timeEn: "Yesterday 3:42 PM",
+  },
+  {
+    avatar: "🌿",
+    nameBn: "পূর্ণিমা বেগম",
+    nameEn: "Purnima Begum",
+    platformBn: "হোয়াটসঅ্যাপ গ্রুপ · ১ মাস আগে",
+    platformEn: "WhatsApp Group · 1 month ago",
+    msgBn: "আমি গ্রামের মেয়ে। আগে ভাবতাম অনলাইনে কাজ করা শুধু শহরের ছেলেমেয়েদের জন্য। কিন্তু এই প্ল্যাটফর্মে যুক্ত হওয়ার পর আমার চোখ খুলে গেছে। এখন ঘরে বসে কাজ করি আর পরিবারকে সাহায্য করি।",
+    msgEn: "I'm a village girl. I used to think online work was only for city people. But joining this platform opened my eyes. Now I work from home and support my family.",
+    stars: "★★★★★",
+    timeBn: "গত সপ্তাহে ১১:১৫ AM",
+    timeEn: "Last week 11:15 AM",
+  },
+  {
+    avatar: "💪",
+    nameBn: "ফারিয়া ইসলাম",
+    nameEn: "Faria Islam",
+    platformBn: "ফেসবুক মেসেঞ্জার · ৩ সপ্তাহ আগে",
+    platformEn: "Facebook Messenger · 3 weeks ago",
+    msgBn: "শেখার সুযোগ আর আয়—দুটোই পাচ্ছি এখান থেকে। সঠিক নির্দেশিকা আর সহায়তা পেলে যে কেউ সফল হতে পারে। আমি এখন ৬ মাস ধরে যুক্ত আর প্রতিদিন নতুন কিছু শিখছি। ধন্যবাদ জোবায়ের গ্রুপ টিমকে!",
+    msgEn: "I'm getting both learning opportunities and income here. With proper guidance and support, anyone can succeed. I've been here for 6 months and learn something new every day. Thank you Jobayer Group team!",
+    stars: "★★★★★",
+    timeBn: "গতকাল ৭:০৮ PM",
+    timeEn: "Yesterday 7:08 PM",
+  },
+  {
+    avatar: "🔥",
+    nameBn: "তামান্না হাসান",
+    nameEn: "Tamanna Hasan",
+    platformBn: "হোয়াটসঅ্যাপ · ৫ দিন আগে",
+    platformEn: "WhatsApp · 5 days ago",
+    msgBn: "আমার জন্য এটি নতুন দিগন্ত খুলে দিয়েছে। প্রথমে ভয় ছিল, কিন্তু টিমের সহায়তায় সব ভয় কেটে গেছে। এখন ইনকাম শুরু করেছি, খুব ভালো লাগছে। এখন আমি অনলাইন জগত নিয়ে অনেক বেশি আত্মবিশ্বাসী!",
+    msgEn: "This has opened new horizons for me. I was scared at first, but the team's support eliminated all fears. I've started earning now and feeling great. I'm much more confident about the online world now!",
+    stars: "★★★★★",
+    timeBn: "গতকাল ৯:২২ PM",
+    timeEn: "Yesterday 9:22 PM",
+  },
+];
+
+export const gridTestimonials = [
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "নীলা হোসেন", nameEn: "Neela Hossain", textBn: "আমি শুরুতে ভেবেছিলাম এটা হয়তো অন্য অনেক অনলাইন সুযোগের মতোই হবে। কিন্তু কাজ শুরু করার পর বুঝলাম এখানে নিয়মিত নির্দেশিকা দেওয়া হয় এবং নতুনদের শেখানোর জন্য আলাদা সহায়তা রয়েছে। এখন প্রতি মাসে নিয়মিত কাজ করছি এবং সময়মতো পেমেন্ট পাচ্ছি।", textEn: "I initially thought this would be like other online opportunities. But after starting, I realized regular guidance and dedicated support is provided. Now I work regularly and get paid on time." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "মিতা ইসলাম", nameEn: "Mita Islam", textBn: "আমি আগে কোনো অনলাইন কাজ করিনি। এখানে যোগ দেওয়ার পর ধাপে ধাপে কাজ শিখেছি। পরিবারের পাশে থেকে কাজ করতে পারছি, এটা আমার জন্য সবচেয়ে বড় সুবিধা।", textEn: "I never did online work before. After joining, I learned step by step. Working while being with family is the biggest advantage for me." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "রাফসান জামান", nameEn: "Rafsan Zaman", textBn: "ই-কমার্সে কাজ করে মাসে ৪০,০০০+ ইনকাম করছি। শুরুতে কেউ বিশ্বাস করেনি, কিন্তু আজ আমি প্রমাণ করেছি। সবার দোয়া চাই।", textEn: "Earning 40,000+ monthly from e-commerce. No one believed at first, but today I proved them wrong." },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "সাবরিনা খান", nameEn: "Sabrina Khan", textBn: "ডিজিটাল মার্কেটিং শিখে এখন নিজেই ক্লায়েন্ট ম্যানেজ করি। এটা শুধু আয়ের জায়গা না, এটি পেশা গড়ার জায়গা।", textEn: "After learning digital marketing, I now manage my own clients. This isn't just an earning opportunity — it's a career builder." },
+  { stars: "★★★★★", rating: "4.8/5", nameBn: "রেহানা বেগম", nameEn: "Rehana Begum", textBn: "গৃহিণী হয়েও অনলাইনে কাজ করা সম্ভব—এটা প্রমাণ করেছি নিজেই। মাসে ভালো ইনকাম করছি।", textEn: "Being a homemaker, I proved that online work is possible. I earn well monthly." },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "নাদিয়া সুলতানা", nameEn: "Nadia Sultana", textBn: "প্রথম প্রথম কাজ পেতে সময় লেগেছে, কিন্তু এখন নিয়মিত আয়। সবার ধৈর্য ধরাটা জরুরি।", textEn: "It took time to get work initially, but now I earn regularly. Patience is key." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "নাজনীন আক্তার", nameEn: "Naznin Akter", textBn: "যারা শুরু করতে চান তাদের বলব—ভয় না করে শুরু করুন। সঠিক নির্দেশিকা পেলে সফলতা আসবেই।", textEn: "To those wanting to start — don't be afraid, just start. With proper guidance, success will follow." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "তামান্না হাসান", nameEn: "Tamanna Hasan", textBn: "আমার জন্য এটি নতুন দিগন্ত খুলে দিয়েছে। এখন আমি অনলাইন জগত নিয়ে অনেক বেশি আত্মবিশ্বাসী।", textEn: "This has opened new horizons for me. I'm much more confident about the online world now." },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "মর্জিনা খাতুন", nameEn: "Morjina Khatun", textBn: "প্রথমে ভয় ছিল, কিন্তু টিমের সহায়তায় সব ভয় কেটে গেছে। এখন ইনকাম শুরু করেছি, খুব ভালো লাগছে।", textEn: "I was scared at first, but the team's support eliminated all fears. I've started earning now." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "শামীমা আক্তার", nameEn: "Shamima Akter", textBn: "যারা এখনো শুরু করেননি, তাদের বলব—সময় নষ্ট না করে শুরু করুন। সঠিক নির্দেশিকা পেতে দেরি করবেন না।", textEn: "To those who haven't started yet — don't waste time, just begin. Don't delay getting proper guidance." },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "ফারিয়া ইসলাম", nameEn: "Faria Islam", textBn: "শেখার সুযোগ আর আয়—দুটোই পাচ্ছি। যারা শুরু করবেন, তাদের জন্য এটি সেরা জায়গা।", textEn: "I'm getting both learning and earning. This is the best place for starters." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "সাবিকুন নাহার", nameEn: "Sabikun Nahar", textBn: "সঠিক নির্দেশিকা এবং সহায়তা পেলে যে কেউ সফল হতে পারে। আমি তার উদাহরণ।", textEn: "With proper guidance and support, anyone can succeed. I'm living proof." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "নুসরাত জাহান", nameEn: "Nusrat Jahan", textBn: "নতুনদের ছোট করে দেখা হয় না, যে কোনো প্রশ্নের উত্তর ধৈর্য সহকারে দেওয়া হয়। এটাই আমার সবচেয়ে পছন্দের দিক।", textEn: "Newcomers are never looked down upon. Every question is answered patiently. That's what I like most." },
+  { stars: "★★★★★", rating: "4.8/5", nameBn: "ইভা রহমান", nameEn: "Eva Rahman", textBn: "শুরুতে ধৈর্য ধরে কাজ করতে হবে, কিন্তু ফলাফল ভালো। আমি এখন সন্তুষ্ট।", textEn: "Need patience initially, but the results are good. I'm satisfied now." },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "মামুন মিয়া", nameEn: "Mamun Mia", textBn: "যারা দ্বিধায় আছেন তাদের বলব, শুরু করে দিন। এখানে সঠিক দিকনির্দেশনা পাবেন।", textEn: "To those who are hesitant — just start. You'll get proper guidance here." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "মোর্শেদ মিয়া", nameEn: "Morshed Mia", textBn: "পেশাদার পরিবেশ আর নিয়মিত কাজ — এটাই সবার জন্য দরকার।", textEn: "Professional environment and regular work — that's what everyone needs." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "আনিকা ইসলাম", nameEn: "Anika Islam", textBn: "ই-কমার্সে কাজ করে মাসে ৪০,০০০+ ইনকাম করছি। শুরুতে কেউ বিশ্বাস করেনি, কিন্তু আজ আমি প্রমাণ করেছি।", textEn: "Earning 40,000+ monthly from e-commerce. No one believed at first, but I proved them wrong today." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "করিম মিয়া", nameEn: "Karim Mia", textBn: "৩ মাসের মধ্যেই প্রথম ক্লায়েন্ট পেয়ে গিয়েছি। এখন মাসে ১৮,০০০+ টাকা আয় করছি। যারা শুরু করতে চান, তাদের বলব—শুধু শুরু করুন!", textEn: "Got my first client within 3 months. Now earning 18,000+ BDT monthly. To those wanting to start — just begin!" },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "শাহিনা বেগম", nameEn: "Shahina Begum", textBn: "গৃহিণী হয়েও যে অনলাইনে এত ভালো আয় করা যায়, তা আগে কল্পনাও করিনি। এখন মাসে ১২,০০০+ টাকা আয় করছি। সংসারে হাত লাগাতে পারছি।", textEn: "Never imagined a housewife could earn this much online. Now earning 12,000+ BDT monthly and supporting my family." },
+  { stars: "★★★★★", rating: "4.8/5", nameBn: "রাসেল আহমেদ", nameEn: "Rasel Ahmed", textBn: "চাকরি হারানোর পর হতাশায় ছিলাম। জোবায়ের গ্রুপের ফ্রিল্যান্সিং কোর্স আমাকে নতুন পথ দেখিয়েছে। এখন আপওয়ার্কে মাসে ৩৫,০০০+ টাকা আয় করছি।", textEn: "Was depressed after losing my job. Jobayer Group's freelancing course showed me a new path. Now earning 35,000+ BDT monthly on Upwork." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "নাছিমা আক্তার", nameEn: "Nashima Akter", textBn: "স্কিল ডেভেলপমেন্টের জন্য ভর্তি হয়েছিলাম, কিন্তু আয়ের সুযোগ পেয়ে গিয়েছি। প্রথম মাসেই ৮,০০০+ টাকা আয়! অসাধারণ এক প্ল্যাটফর্ম।", textEn: "Joined for skill development but found earning opportunities. Earned 8,000+ BDT in the first month! An amazing platform." },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "তৌহিদুল ইসলাম", nameEn: "Touhidul Islam", textBn: "ওয়েব ডেভেলপমেন্ট শিখে এখন ফ্রিল্যান্সিং করছি। ৬ মাসে মাসিক আয় ৫০,০০০+। জোবায়ের গ্রুপের কোর্স ছাড়া এটা সম্ভব ছিল না।", textEn: "Learned web development and now freelancing. Monthly income 50,000+ BDT in 6 months. Impossible without Jobayer Group's course." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "সুফিয়া খাতুন", nameEn: "Sufia Khatun", textBn: "মেয়েকে নিয়ে থাকি, স্বামী নেই। অনলাইনে কাজ শিখে এখন মাসে ২০,০০০+ টাকা আয় করছি। মেয়ের পড়ার খরচ নিজেই দিতে পারছি। আল্লাহর পর জোবায়ের গ্রুপকে ধন্যবাদ।", textEn: "Single mother raising my daughter. Learned online work and now earn 20,000+ BDT monthly. Can pay for my daughter's education myself. Thank you Jobayer Group!" },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "জাহিদ করিম", nameEn: "Jahid Karim", textBn: "ছোটবেলা থেকে প্রোগ্রামিং শেখার ইচ্ছা ছিল। এই প্ল্যাটফর্মে পাইথন ও জাভা শিখে এখন সফটওয়্যার কোম্পানিতে চাকরি করছি। স্যালারি ৪৫,০০০+।", textEn: "Always wanted to learn programming. Learned Python & Java here and now work at a software company. Salary 45,000+ BDT." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "রোকেয়া বেগম", nameEn: "Rokeya Begum", textBn: "বয়স ৪৫, কম্পিউটার চালানো শিখেছি এই প্ল্যাটফর্ম থেকে। আজ ফাইভারে গ্রাফিক্স ডিজাইন করে মাসে ১৫,০০০+ টাকা আয় করছি। বয়স কোনো বাধা না!", textEn: "Age 45, learned computer skills from this platform. Now earning 15,000+ BDT monthly on Fiverr doing graphic design. Age is no barrier!" },
+  { stars: "★★★★★", rating: "4.8/5", nameBn: "ইমরান খান", nameEn: "Imran Khan", textBn: "ইংলিশে দুর্বল ছিলাম, স্পোকেন ইংলিশ কোর্সটা আমার জীবন বদলে দিয়েছে। এখন কল সেন্টারে চাকরি করছি। মাসে ৩০,০০০+ ইনকাম।", textEn: "Was weak in English. The spoken English course changed my life. Now working at a call center earning 30,000+ BDT monthly." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "পারভীন সুলতানা", nameEn: "Parvin Sultana", textBn: "গ্রামের বাড়ি থেকে বসেই অনলাইনে কাজ করতে পারব ভাবিনি। এখন মাসে ২২,০০০+ টাকা আয় করছি। সবাই ভেবেছিল এটা সম্ভব না।", textEn: "Never thought I could work online from my village home. Now earning 22,000+ BDT monthly. Everyone thought it was impossible." },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "মিজানুর রহমান", nameEn: "Mizanur Rahman", textBn: "বেকার ছিলাম ২ বছর। ফ্রিল্যান্সিং কোর্স করার পর এখন ইউটিউব থেকে মাসে ২৮,০০০+ টাকা আয় করছি। জীবনটা বদলে গেছে।", textEn: "Was unemployed for 2 years. After the freelancing course, now earning 28,000+ BDT monthly from YouTube. Life has changed." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "আছিয়া বেগম", nameEn: "Ashiya Begum", textBn: "স্বামী প্রবাসী, আমি একা সংসার দেখি। এই কোর্স করে এখন নিজের পায়ে দাঁড়িয়েছি। মাসে ১৬,০০০+ আয়। অসম্ভবকে সম্ভব করেছেন জোবায়ের গ্রুপ।", textEn: "Husband lives abroad, I manage the household alone. After this course, I'm now independent. Earning 16,000+ BDT monthly. Jobayer Group made the impossible possible." },
+  { stars: "★★★★★", rating: "4.8/5", nameBn: "সাজ্জাদ হোসেন", nameEn: "Sazzad Hossain", textBn: "ডিজিটাল মার্কেটিং শিখে এখন নিজের এজেন্সি খুলেছি। ৩ জন কর্মচারী। মাসে ৬০,০০০+ আয়। সবার কাছে রেকমেন্ড করব এই প্ল্যাটফর্ম।", textEn: "Learned digital marketing and opened my own agency with 3 employees. Earning 60,000+ BDT monthly. Highly recommend this platform." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "লায়লা আক্তার", nameEn: "Laila Akter", textBn: "ভাষা ও চাকরি বিভাগের কোর্সগুলো অসাধারণ। IELTS প্রস্তুতি নিয়ে এখন কানাডায় পড়তে যাচ্ছি। স্বপ্ন পূরণের পথ দেখিয়েছে জোবায়ের গ্রুপ।", textEn: "The language & jobs courses are amazing. Prepared for IELTS through this and now going to Canada for studies. Jobayer Group showed me the path to my dream." },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "আমিনুল ইসলাম", nameEn: "Aminul Islam", textBn: "ই-কমার্স কোর্স করে শপিফাই স্টোর খুলেছি। প্রথম মাসেই ১২,০০০+ টাকা সেলস! এখন পুরোদমে ব্যবসা করছি। বড় হওয়ার স্বপ্ন দেখছি।", textEn: "Opened a Shopify store after the e-commerce course. 12,000+ BDT sales in the first month! Now running a full business. Dreaming big." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "রাহেলা খাতুন", nameEn: "Rahela Khatun", textBn: "ছেলেকে নিয়ে থাকি, আয়ের তেমন পথ ছিল না। এই প্ল্যাটফর্মে ভার্চুয়াল অ্যাসিস্ট্যান্ট কোর্স করে এখন মাসে ১৮,০০০+ টাকা আয় করছি।", textEn: "Live with my son, had no income source. After the VA course on this platform, now earning 18,000+ BDT monthly." },
+  { stars: "★★★★★", rating: "4.8/5", nameBn: "শরীফ হাসান", nameEn: "Sharif Hasan", textBn: "SEO শিখে এখন ফাইভারে টॉप রেটেড সেলার। মাসে ৪০,০০০+ টাকা আয়। এই প্ল্যাটফর্মের SEO কোর্সই আমার সাফল্যের চাবিকাঠি।", textEn: "Learned SEO and now a top-rated seller on Fiverr. Earning 40,000+ BDT monthly. This platform's SEO course was the key to my success." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "মনিরা বেগম", nameEn: "Monira Begum", textBn: "মোবাইল দিয়েই সব শিখেছি। ল্যাপটপ ছিল না, কিন্তু তাতেও সমস্যা হয়নি। এখন মোবাইল দিয়েই কন্টেন্ট রাইটিং করে মাসে ১৪,০০০+ টাকা আয় করছি।", textEn: "Learned everything using just my mobile phone. Didn't have a laptop but that wasn't a problem. Now earning 14,000+ BDT monthly through content writing on my phone." },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "ফরহাদ মিয়া", nameEn: "Farhad Mia", textBn: "ইউটিউব মার্কেটিং কোর্সটা সোনায় মোড়ানো। আমার চ্যানেল এখন ৫০K সাবস্কাইবার। মাসে ২৫,০০০+ গুগল অ্যাডসেন্স আয়। অসাধারণ!", textEn: "The YouTube marketing course is pure gold. My channel now has 50K subscribers. Earning 25,000+ BDT monthly from Google AdSense. Amazing!" },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "ছবি আক্তার", nameEn: "Chobi Akter", textBn: "গ্রাফিক্স ডিজাইন শিখে আজ আমি একজন পেশাদার ডিজাইনার। ফাইভার ও ফেসবুক থেকে মাসে ৩২,০০০+ টাকা আয়। এই প্ল্যাটফর্ম না থাকলে আজ আমি এখানে থাকতাম না।", textEn: "Learned graphic design and today I'm a professional designer. Earning 32,000+ BDT monthly from Fiverr & Facebook. Wouldn't be here without this platform." },
+  { stars: "★★★★★", rating: "4.8/5", nameBn: "হাসান মাহমুদ", nameEn: "Hasan Mahmud", textBn: "ফেসবুক অ্যাডস মাস্টারি কোর্স করে এখন ক্লায়েন্টদের অ্যাড ম্যানেজ করি। মাসে ৫৫,০০০+ আয়। কোন কলেজের ডিগ্রি এই মূল্য দেয়নি।", textEn: "After the Facebook Ads Mastery course, I now manage ads for clients. Earning 55,000+ BDT monthly. No college degree gave me this value." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "নূরজাহান বেগম", nameEn: "Noorjahan Begum", textBn: "বিয়ে শেষ, সংসারে সমস্যা। অনলাইনে কাজ শিখে নিজের পায়ে দাঁড়িয়েছি। মাসে ২১,০০০+ আয়। আত্মবিশ্বাস ফিরে পেয়েছি। জোবায়ের গ্রুপকে লক্ষ কোটি ধন্যবাদ।", textEn: "Marriage ended, family issues. Learned online work and became independent. Earning 21,000+ BDT monthly. Got my confidence back. Countless thanks to Jobayer Group." },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "রিয়াজ উদ্দিন", nameEn: "Riaz Uddin", textBn: "এমএস অফিস ও এক্সেল শিখে এখন একটি ব্যাংকে চাকরি পেয়েছি। কম্পিউটার বেসিক কোর্সটা আমার ক্যারিয়ার বদলে দিয়েছে। সবার জন্য রেকমেন্ডেড!", textEn: "Learned MS Office & Excel and got a job at a bank. The computer basic course changed my career. Highly recommended for everyone!" },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "সেলিনা আক্তার", nameEn: "Selina Akter", textBn: "ইন্টারনেট কীভাবে ব্যবহার করতে হয় শিখেছি এই প্ল্যাটফর্ম থেকে। আজ আমি ফেসবুক মার্কেটিং করে মাসে ২০,০০০+ আয় করছি। কখনো ভাবিনি পারব!", textEn: "Learned how to use the internet from this platform. Today I earn 20,000+ BDT monthly from Facebook marketing. Never thought I could!" },
+  { stars: "★★★★★", rating: "4.8/5", nameBn: "মাহবুব আলম", nameEn: "Mahbub Alam", textBn: "ফ্রিল্যান্সিং শিখে এখন বিদেশি ক্লায়েন্টদের সাথে কাজ করছি। মাসে ৭০,০০০+ টাকা আয়। জোবায়ের গ্রুপের ফ্রিল্যান্সিং কোর্স ছাড়া এত দূর আসতে পারতাম না।", textEn: "Learned freelancing and now working with international clients. Earning 70,000+ BDT monthly. Couldn't have come this far without Jobayer Group's freelancing course." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "তাসনিম জাহান", nameEn: "Tasnim Jahan", textBn: "ইংরেজি গ্রামার ১০১ ও ১০২ কোর্স দুইটাই অসাধারণ। এখন ইংরেজিতে fluent। ইনশাআল্লাহ বিদেশে উচ্চশিক্ষার জন্য আবেদন করব। ধন্যবাদ জোবায়ের গ্রুপ।", textEn: "English Grammar 101 & 102 courses are amazing. Now fluent in English. Will apply for higher studies abroad InshaAllah. Thank you Jobayer Group." },
+  { stars: "★★★★★", rating: "4.9/5", nameBn: "জাকির হোসেন", nameEn: "Jakir Hossain", textBn: "গুগল অ্যাডস ও অ্যানালিটিক্স শিখে এখন নিজেই ডিজিটাল মার্কেটিং এজেন্সি চালাই। মাসে ৮০,০০০+ টাকা আয়। এই প্ল্যাটফর্মের প্রতিটি কোর্স প্র্যাকটিক্যাল।", textEn: "Learned Google Ads & Analytics and now run my own digital marketing agency. Earning 80,000+ BDT monthly. Every course here is practical." },
+  { stars: "★★★★★", rating: "4.8/5", nameBn: "হালিমা বেগম", nameEn: "Halima Begum", textBn: "ছোট বাচ্চা নিয়ে বসে থাকতাম। এখন অনলাইনে ডাটা এন্ট্রি করে মাসে ১০,০০০+ টাকা আয় করছি। নিজের কিছু আয় হচ্ছে—অনেক ভালো লাগছে।", textEn: "Used to sit at home with young kids. Now earning 10,000+ BDT monthly through online data entry. Having my own income feels great." },
+  { stars: "★★★★★", rating: "5.0/5", nameBn: "মোশাররফ হোসেন", nameEn: "Mosharraf Hossain", textBn: "রোবোটিক্স ও গেম ডেভেলপমেন্ট কোর্স আমার ছেলের জন্য কিনেছিলাম। ছেলে এখন নিজেই গেম বানায় এবং অনলাইনে sells করে। মাসে ১৫,০০০+ আয় করছে।", textEn: "Bought the robotics & game dev courses for my son. He now makes his own games and sells them online. Earning 15,000+ BDT monthly." },
+];
+
+export const phpSliderTestimonials: Testimonial[] = [
+  { stars: "★★★★★", rating: "5.0/5", quoteBn: "\"প্রথমে আমার সন্দেহ ছিল, কিন্তু যোগ দেওয়ার পর প্রথম মাসেই ৪৫,০০০ টাকা আয় করেছি। ট্রেইনাররা অসাধারণ!\"", quoteEn: "\"I was skeptical at first, but after joining I earned ৳45,000 in my first month. The trainers are amazing!\"", authorBn: "রাকিব এইচ", authorEn: "Rakib H.", labelBn: "ফ্রিল্যান্সার, ঢাকা", labelEn: "Freelancer, Dhaka" },
+  { stars: "★★★★★", rating: "5.0/5", quoteBn: "\"২৩০+ কোর্স মাত্র ৯৯ টাকায় দারুণ ব্যাপার। কোর্সের মান চমৎকার। সবার জন্য রেকমেন্ডেড!\"", quoteEn: "\"230+ courses for only ৳99 is a steal. The course quality is top-notch. Highly recommend!\"", authorBn: "ফাতিমা কে", authorEn: "Fatima K.", labelBn: "শিক্ষার্থী, চট্টগ্রাম", labelEn: "Student, Chattogram" },
+  { stars: "★★★★★", rating: "4.9/5", quoteBn: "\"ক্লায়েন্ট ফাইন্ডিং গাইড একাই দামের ১০ গুণ মূল্যবান। আমি ৩ দিনের মধ্যেই প্রথম প্রজেক্ট পেয়ে গিয়েছি!\"", quoteEn: "\"The client-finding guide alone is worth 10x the price. I landed my first project in 3 days!\"", authorBn: "শাহিন এ", authorEn: "Shahin A.", labelBn: "ওয়েব ডেভেলপার, সিলেট", labelEn: "Web Developer, Sylhet" },
+  { stars: "★★★★★", rating: "5.0/5", quoteBn: "\"আগে কিছুই আয় করতাম না। এখন ফ্রিল্যান্সিং থেকে মাসে ২৫,০০০+ টাকা আয় করি। জোবায়ের গ্রুপকে ধন্যবাদ!\"", quoteEn: "\"I was earning nothing before. Now I make ৳25,000+ monthly from freelancing. Thank you Jobayer Group!\"", authorBn: "নুসরাত জে", authorEn: "Nusrat J.", labelBn: "ভার্চুয়াল অ্যাসিস্ট্যান্ট, রাজশাহী", labelEn: "Virtual Assistant, Rajshahi" },
+  { stars: "★★★★★", rating: "4.9/5", quoteBn: "\"শুধু ইংরেজি কোর্সগুলিই ৯৯ টাকার চেয়ে অনেক বেশি মূল্যবান। মাত্র ২ সপ্তাহে আমার স্পিকিং স্কিল নাটকীয়ভাবে উন্নত হয়েছে।\"", quoteEn: "\"The English courses alone are worth ৳99. I improved my speaking skills dramatically in just 2 weeks.\"", authorBn: "আরিফ এম", authorEn: "Arif M.", labelBn: "চাকরিপ্রার্থী, খুলনা", labelEn: "Job Seeker, Khulna" },
+];

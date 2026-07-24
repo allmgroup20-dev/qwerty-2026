@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useLanguageStore } from "@/lib/store";
-import { courseCategories, platformShowcaseText, platforms, trainers } from "@/data/landing-page-data";
+import { courseCategories } from "@/data/home/courses";
+import { platformShowcaseText, platforms } from "@/data/home/platforms";
+import { trainers } from "@/data/home/trainers";
 
 export default function MenuPreviewSection() {
   const { lang } = useLanguageStore();

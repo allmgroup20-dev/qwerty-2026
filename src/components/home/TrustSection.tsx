@@ -1,6 +1,6 @@
 "use client";
 
-import { trustBadges, trustSectionData } from "@/data/landing-page-data";
+import { trustBadges, trustSectionData } from "@/data/home/trust";
 import { useLanguageStore } from "@/lib/store";
 import Link from "next/link";
 

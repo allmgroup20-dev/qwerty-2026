@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useLanguageStore } from "@/lib/store";
-import { testimonials, chatTestimonials, gridTestimonials, faqs } from "@/data/landing-page-data";
+import { testimonials, chatTestimonials, gridTestimonials } from "@/data/home/testimonials";
+import { faqs } from "@/data/home/faq";
 
 export default function ReviewsPage() {
   const { lang } = useLanguageStore();

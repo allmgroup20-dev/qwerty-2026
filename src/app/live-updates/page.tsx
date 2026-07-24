@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLanguageStore } from "@/lib/store";
-import { liveSalaryText } from "@/data/landing-page-data";
+import { liveSalaryText } from "@/data/home/salary";
 import SalaryTable from "@/components/home/SalaryTable";
 import PaymentGallery from "@/components/home/PaymentGallery";
 import LiveNotificationBar from "@/components/home/LiveNotificationBar";

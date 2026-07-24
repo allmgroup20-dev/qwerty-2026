@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useLanguageStore } from "@/lib/store";
-import { salaryNames, liveSalaryText } from "@/data/landing-page-data";
+import { salaryNames, liveSalaryText } from "@/data/home/salary";
 
 type RowData = { name: string; amount: number; status: string; success: boolean };
 

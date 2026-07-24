@@ -1,7 +1,7 @@
 "use client";
 
 import { useLanguageStore } from "@/lib/store";
-import { stats } from "@/data/landing-page-data";
+import { stats } from "@/data/home/stats";
 
 export default function StatsCounter() {
   const { lang } = useLanguageStore();

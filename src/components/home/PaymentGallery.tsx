@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useLanguageStore } from "@/lib/store";
-import { galleryImages, paymentGalleryText } from "@/data/landing-page-data";
+import { galleryImages, paymentGalleryText } from "@/data/home/gallery";
 
 export default function PaymentGallery() {
   const { lang } = useLanguageStore();

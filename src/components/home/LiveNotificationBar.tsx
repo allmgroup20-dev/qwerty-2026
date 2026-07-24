@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLanguageStore } from "@/lib/store";
-import { liveNotifText } from "@/data/landing-page-data";
+import { liveNotifText } from "@/data/home/salary";
 
 const bdDistricts = [
   "\u09A2\u09BE\u0995\u09BE", "\u099A\u099F\u09CD\u099F\u0997\u09CD\u09B0\u09BE\u09AE", "\u09B0\u09BE\u099C\u09B6\u09BE\u09B9\u09C0", "\u0996\u09C1\u09B2\u09A8\u09BE", "\u09B8\u09BF\u09B2\u09C7\u099F", "\u09AC\u09B0\u09BF\u09B6\u09BE\u09B2", "\u09B0\u0982\u09AA\u09C1\u09B0",

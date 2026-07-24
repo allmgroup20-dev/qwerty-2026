@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useLanguageStore } from "@/lib/store";
-import { heroData, heroSectionBadgeBn, heroSectionBadgeEn, heroFeatureGridItems } from "@/data/landing-page-data";
+import { heroData, heroSectionBadgeBn, heroSectionBadgeEn, heroFeatureGridItems } from "@/data/home/hero";
 
 function toBn(v: number) {
   return String(v).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[parseInt(d, 10)]);
