@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyWorkerPassword, generateToken, getJwtSecret, normalizePhone } from "@/lib/auth";
 import { getCached, setCached } from "@/lib/cache";
+import { initEnv } from "@/lib/env";
 
 const MEMO = "__workerAuthMemo";
 const D1_TIMEOUT_MS = 8000;
@@ -44,7 +45,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Direct D1 query — bypass schema lock
-    const { initEnv } = await import("@/lib/env");
     const { DB: db } = await initEnv();
 
     // Try normalized phone first (880...), fallback to raw cleaned phone (017...) for existing users

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryFirstSafe, querySafe } from "@/lib/db/queries";
 import { getCached, setCached } from "@/lib/cache";
+import { initEnv } from "@/lib/env";
 
 const MEMO_DASH = "__dashboardMemo";
 const MEMO_TTL = 120_000;
@@ -34,7 +35,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Direct D1 binding — bypass schema lock
-    const { initEnv } = await import("@/lib/env");
     const db = await initEnv();
 
     const profile = await queryFirstSafe<any>(db,
