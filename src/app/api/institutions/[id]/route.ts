@@ -25,8 +25,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const vals: unknown[] = [];
     const fields = ["name", "name_bn", "logo_url", "description_en", "description_bn", "website_url", "sort_order", "is_active"];
     for (const f of fields) {
-      const srcKey = f === "logo_url" ? "logoUrl" : f;
-      if (body[srcKey] !== undefined) { updates.push(`${f} = ?`); vals.push(body[srcKey]); }
+      const camelKey = f.replace(/_([a-z])/g, (_, l) => l.toUpperCase());
+      const val = body[f] !== undefined ? body[f] : body[camelKey];
+      if (val !== undefined) { updates.push(`${f} = ?`); vals.push(val); }
     }
     if (updates.length === 0) return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     updates.push("updated_at = datetime('now')");
