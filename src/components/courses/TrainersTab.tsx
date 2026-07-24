@@ -155,6 +155,7 @@ export default function TrainersTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 text-left text-text-secondary font-semibold">
+              <th className="p-3">{lang === "bn" ? "ছবি" : "Image"}</th>
               <th className="p-3">{lang === "bn" ? "নাম" : "Name"}</th>
               <th className="p-3">{lang === "bn" ? "পদবী" : "Title"}</th>
               <th className="p-3">{lang === "bn" ? "প্রতিষ্ঠান" : "Institution"}</th>
@@ -167,6 +168,13 @@ export default function TrainersTab() {
           <tbody>
             {trainers.map(t => (
               <tr key={t.id} className="border-t border-border hover:bg-gray-50">
+                <td className="p-3">
+                  {t.image_url ? (
+                    <img src={t.image_url} alt="" className="w-9 h-9 rounded-lg object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none" }} />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-400">{(t.name_bn || t.name).charAt(0)}</div>
+                  )}
+                </td>
                 <td className="p-3 font-medium text-primary">{lang === "bn" ? t.name_bn || t.name : t.name}</td>
                 <td className="p-3 text-text-secondary">{lang === "bn" ? t.credential_bn || t.specialty_bn : t.credential_en || t.specialty_en}</td>
                 <td className="p-3 text-text-secondary">{t.institution_name || "-"}</td>
@@ -179,7 +187,7 @@ export default function TrainersTab() {
                 </td>
               </tr>
             ))}
-            {trainers.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-text-secondary">{lang === "bn" ? "কোনো প্রশিক্ষক নেই" : "No trainers yet"}</td></tr>}
+            {trainers.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-text-secondary">{lang === "bn" ? "কোনো প্রশিক্ষক নেই" : "No trainers yet"}</td></tr>}
           </tbody>
         </table>
       </div>

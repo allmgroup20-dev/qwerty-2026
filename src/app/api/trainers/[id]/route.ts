@@ -35,7 +35,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       "bio_en", "bio_bn", "image_url", "experience_years", "institution_id", "sort_order", "is_active",
       "courses_en", "courses_bn"];
     for (const f of fields) {
-      if (body[f] !== undefined) {
+      const srcKey = f === "image_url" ? "imageUrl" : f;
+      if (body[srcKey] !== undefined) {
         if (f === "courses_en" || f === "courses_bn") {
           updates.push(`${f} = ?`);
           vals.push(JSON.stringify(body[f]));

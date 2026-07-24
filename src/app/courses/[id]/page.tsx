@@ -18,6 +18,7 @@ interface Course {
   avgRating: number; ratingCount: number;
   trainerId?: number | null; institutionId?: number | null;
   trainerName?: string | null; trainerNameBn?: string | null;
+  imageUrl?: string | null;
   trainerImageUrl?: string | null;
   institutionName?: string | null; institutionNameBn?: string | null;
   institutionLogoUrl?: string | null;
@@ -216,9 +217,9 @@ export default function CourseDetailPage() {
       <div className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 py-10 md:py-14 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-start gap-4 mb-4">
-            {course.trainerImageUrl || course.institutionLogoUrl ? (
+            {course.imageUrl || course.trainerImageUrl || course.institutionLogoUrl ? (
               <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 overflow-hidden">
-                <img src={course.trainerImageUrl || course.institutionLogoUrl || ""} alt={course.trainerName || course.institutionName || ""} className="w-full h-full object-cover" />
+                <img src={course.imageUrl || course.trainerImageUrl || course.institutionLogoUrl || ""} alt={course.trainerName || course.institutionName || ""} className="w-full h-full object-cover" />
               </div>
             ) : null}
             <div className="flex-1">
@@ -397,9 +398,9 @@ export default function CourseDetailPage() {
               {relatedCourses.map(c => (
                 <a key={c.id} href={`/courses/${c.id}`}
                   className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all">
-                  {c.trainerImageUrl || c.institutionLogoUrl ? (
+                  {c.imageUrl || c.trainerImageUrl || c.institutionLogoUrl ? (
                     <span className="w-9 h-9 rounded-lg overflow-hidden shrink-0">
-                      <img src={c.trainerImageUrl || c.institutionLogoUrl || ""} alt="" className="w-full h-full object-cover" />
+                      <img src={c.imageUrl || c.trainerImageUrl || c.institutionLogoUrl || ""} alt="" className="w-full h-full object-cover" />
                     </span>
                   ) : null}
                   <div className="min-w-0 flex-1">

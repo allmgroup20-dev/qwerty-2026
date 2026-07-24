@@ -69,7 +69,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const existing = await queryFirst<{ id: number }>(db, "SELECT id FROM courses WHERE id = ?", [parseInt(id)]);
     if (!existing) return NextResponse.json({ error: "Course not found" }, { status: 404 });
 
-    await invalidateCache("courses");
+    await invalidateCache("courses:*");
+    await invalidateCache(`course:${id}`);
     await execute(db,
       `UPDATE courses SET title=COALESCE(?,title), title_bn=COALESCE(?,title_bn),
        description=COALESCE(?,description), description_bn=COALESCE(?,description_bn),
@@ -109,7 +110,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   try {
     const { id } = await params;
     const db = await getDB();
-    await invalidateCache("courses");
+    await invalidateCache("courses:*");
+    await invalidateCache(`course:${id}`);
     await execute(db, "DELETE FROM course_category_map WHERE course_id = ?", [parseInt(id)]);
     await execute(db, "DELETE FROM course_files WHERE course_id = ?", [parseInt(id)]);
     await execute(db, "DELETE FROM courses WHERE id = ?", [parseInt(id)]);

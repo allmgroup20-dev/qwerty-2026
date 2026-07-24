@@ -334,6 +334,7 @@ export default function CoursesTab() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-border">
+                <th className="text-left p-4 text-sm font-semibold text-primary">{lang === "bn" ? "ছবি" : "Image"}</th>
                 <th className="text-left p-4 text-sm font-semibold text-primary">{lang === "bn" ? "রিসোর্স" : "Resource"}</th>
                 <th className="text-left p-4 text-sm font-semibold text-primary">{lang === "bn" ? "ক্যাটাগরি" : "Category"}</th>
                 <th className="text-center p-4 text-sm font-semibold text-primary">{lang === "bn" ? "নতুন" : "New"}</th>
@@ -345,6 +346,13 @@ export default function CoursesTab() {
             <tbody>
               {courses.map((c) => (
                 <tr key={c.id} className="border-b border-border last:border-0 hover:bg-gray-50/50">
+                  <td className="p-4">
+                    {c.imageUrl ? (
+                      <img src={c.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none" }} />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-400">{(c.titleBn || c.title).charAt(0)}</div>
+                    )}
+                  </td>
                   <td className="p-4 text-sm font-medium text-primary">
                     <div className="flex items-center gap-2">
                       <span>{lang === "bn" && c.titleBn ? c.titleBn : c.title}</span>
@@ -379,7 +387,7 @@ export default function CoursesTab() {
               ))}
               {courses.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-text-secondary text-sm">
+                  <td colSpan={7} className="p-8 text-center text-text-secondary text-sm">
                     <div className="mb-3 text-3xl">📭</div>
                     {lang === "bn" ? "কোনো রিসোর্স নেই। উপরে \"Import Static Data\" বাটনে ক্লিক করে ৮০০+ রিসোর্স ইম্পোর্ট করুন, অথবা ম্যানুয়ালি রিসোর্স যোগ করুন।" : "No resources. Click \"Import Static Data\" above to import 800+ resources, or add manually."}
                   </td>
