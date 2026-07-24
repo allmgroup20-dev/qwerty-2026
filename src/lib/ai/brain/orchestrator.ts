@@ -25,6 +25,8 @@ import { buildGraphContext, autoLinkFromText } from "./graph-memory";
 import { getSkillPaths, getRecommendedPath, buildLearningPathContext } from "../learning-graph";
 import { getSkillScores, inferSkillFromText, buildSkillScoreContext } from "../skill-score";
 import { getReferralTree, getReferralStats, findNetworkGaps, getNetworkDepth, buildReferralIntelligenceContext } from "../referral-intelligence";
+import { triggerWorkflows, trackFunnelEvent } from "../workflow/engine";
+import { getFunnelAnalytics, buildFunnelAnalyticsContext } from "../analytics";
 
 const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
   { intent: "greeting", department: "customer_experience" },
@@ -485,6 +487,26 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         lifeCtx += "\n" + buildReferralIntelligenceContext(tree, stats, gaps, networkSize, ctx.language || "bn");
       } catch {}
     }
+    // Funnel analytics
+    try {
+      const funnelSummaries = await getFunnelAnalytics(30);
+      if (funnelSummaries.length > 0) {
+        lifeCtx += "\n" + buildFunnelAnalyticsContext(funnelSummaries, ctx.language || "bn");
+      }
+    } catch {}
+    // Track funnel event
+    try {
+      const stageMap: Record<string, string> = { customer: "lead", worker: "premium", admin: "vip" };
+      const stage = stageMap[ctx.role] || "stranger";
+      await trackFunnelEvent(ctx.phone, stage, `message_${intent}`, JSON.stringify({ text: ctx.text.slice(0, 200) }));
+    } catch {}
+    // Trigger workflows based on message
+    try {
+      triggerWorkflows("message_received", {
+        phone: ctx.phone, name: ctx.name, text: ctx.text, intent,
+        isPremium: ctx.isPremium, role: ctx.role, language: ctx.language,
+      }).catch(() => {});
+    } catch {}
   }
 
   // Build stage-aware scripts
