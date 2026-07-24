@@ -47,16 +47,29 @@ export async function POST(request: NextRequest) {
     const { initEnv } = await import("@/lib/env");
     const { DB: db } = await initEnv();
 
-    const worker = await Promise.race([
-      db.prepare("SELECT worker_id, name, password FROM workers WHERE phone = ? AND membership_status IN ('general', 'premium')")
-        .bind(cleanPhone).first() as Promise<{ worker_id: string; name: string; password: string } | undefined>,
-      new Promise<undefined>((_, reject) =>
-        setTimeout(() => reject(new Error("D1 query timed out")), D1_TIMEOUT_MS)
-      ),
-    ]).catch(() => undefined);
+    // Try normalized phone first (880...), fallback to raw cleaned phone (017...) for existing users
+    const rawPhone = phone.replace(/\D/g, "");
+    const phoneVariants = cleanPhone === rawPhone ? [cleanPhone] : [cleanPhone, rawPhone];
+
+    let worker: { worker_id: string; name: string; password: string } | undefined;
+    for (const variant of phoneVariants) {
+      worker = await Promise.race([
+        db.prepare("SELECT worker_id, name, password FROM workers WHERE phone = ? AND membership_status IN ('general', 'premium')")
+          .bind(variant).first() as Promise<{ worker_id: string; name: string; password: string } | undefined>,
+        new Promise<undefined>((_, reject) =>
+          setTimeout(() => reject(new Error("D1 query timed out")), D1_TIMEOUT_MS)
+        ),
+      ]).catch(() => undefined);
+      if (worker) break;
+    }
 
     if (!worker) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
+
+    // Update phone to normalized format for future logins
+    if (worker && cleanPhone !== rawPhone) {
+      db.prepare("UPDATE workers SET phone = ? WHERE worker_id = ?").bind(cleanPhone, worker.worker_id).run().catch(() => {});
     }
 
     const valid = await verifyWorkerPassword(password, worker.password);

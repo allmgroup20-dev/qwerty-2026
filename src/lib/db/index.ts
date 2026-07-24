@@ -1116,6 +1116,75 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN content_preferences TEXT").run(); } catch {}
     try { await env.DB.prepare("ALTER TABLE ai_phone_profiles ADD COLUMN active_hours TEXT").run(); } catch {}
 
+    // ── Phase X: Knowledge Graph ──
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS knowledge_graph_nodes (
+      node_id TEXT PRIMARY KEY,
+      node_type TEXT NOT NULL,
+      node_value TEXT NOT NULL,
+      node_value_bn TEXT,
+      metadata TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS knowledge_graph_edges (
+      edge_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      from_node TEXT NOT NULL,
+      to_node TEXT NOT NULL,
+      edge_type TEXT NOT NULL,
+      weight REAL DEFAULT 1.0,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(from_node, to_node, edge_type)
+    )`).run();
+    await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_edge_from ON knowledge_graph_edges(from_node)").run().catch(() => {});
+    await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_edge_to ON knowledge_graph_edges(to_node)").run().catch(() => {});
+    await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_node_type ON knowledge_graph_nodes(node_type)").run().catch(() => {});
+
+    // ── Phase X: Skill Paths & Learning Graph ──
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS skill_paths (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      name_bn TEXT,
+      description TEXT,
+      description_bn TEXT,
+      icon TEXT,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS skill_path_courses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      path_id INTEGER NOT NULL,
+      course_id INTEGER NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      estimated_days INTEGER DEFAULT 7,
+      UNIQUE(path_id, course_id)
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS course_prerequisites (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      course_id INTEGER NOT NULL,
+      prerequisite_course_id INTEGER NOT NULL,
+      is_required INTEGER DEFAULT 1,
+      UNIQUE(course_id, prerequisite_course_id)
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS skill_scores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      skill TEXT NOT NULL,
+      score REAL DEFAULT 0,
+      assessments_done INTEGER DEFAULT 0,
+      last_assessed TEXT,
+      UNIQUE(phone, skill)
+    )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS skill_definitions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      skill_key TEXT UNIQUE NOT NULL,
+      skill_name TEXT NOT NULL,
+      skill_bn TEXT,
+      category TEXT,
+      description TEXT
+    )`).run();
+    await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_skill_score_phone ON skill_scores(phone)").run().catch(() => {});
+    await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_skill_path_id ON skill_path_courses(path_id)").run().catch(() => {});
+    await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_course_preq ON course_prerequisites(course_id)").run().catch(() => {});
+
     // ── Phase X: Emotion Timeline ──
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS emotion_timeline (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

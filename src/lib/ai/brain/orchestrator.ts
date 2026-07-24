@@ -21,6 +21,10 @@ import { buildMultiChannelContext } from "../outreach/multi-channel";
 import type { OutreachChannel } from "../outreach/multi-channel";
 import { analyzeEmotionTrend, buildEmotionContext } from "../emotion-tracker";
 import { buildRetentionContext } from "../retention-engine";
+import { buildGraphContext, autoLinkFromText } from "./graph-memory";
+import { getSkillPaths, getRecommendedPath, buildLearningPathContext } from "../learning-graph";
+import { getSkillScores, inferSkillFromText, buildSkillScoreContext } from "../skill-score";
+import { getReferralTree, getReferralStats, findNetworkGaps, getNetworkDepth, buildReferralIntelligenceContext } from "../referral-intelligence";
 
 const INTENT_ROUTES: { intent: Intent; department: DepartmentId }[] = [
   { intent: "greeting", department: "customer_experience" },
@@ -449,6 +453,38 @@ export async function processMessage(ctx: MessageCtx): Promise<BrainResult> {
         if (retentionCtx) lifeCtx += "\n" + retentionCtx;
       }
     } catch {}
+    // Knowledge graph: auto-link and build context
+    try {
+      await autoLinkFromText(ctx.phone, ctx.text);
+      const graphCtx = await buildGraphContext(ctx.phone, ctx.language || "bn", 2);
+      if (graphCtx) lifeCtx += "\n" + graphCtx;
+    } catch {}
+    // Learning paths
+    try {
+      const paths = await getSkillPaths();
+      if (paths.length > 0) {
+        const recommended = await getRecommendedPath(ctx.phone);
+        lifeCtx += "\n" + buildLearningPathContext(paths, recommended, ctx.language || "bn");
+      }
+    } catch {}
+    // Skill scores
+    try {
+      await inferSkillFromText(ctx.phone, ctx.text);
+      const scores = await getSkillScores(ctx.phone);
+      if (scores.length > 0) {
+        lifeCtx += "\n" + buildSkillScoreContext(scores, ctx.language || "bn");
+      }
+    } catch {}
+    // Referral intelligence (for active members)
+    if (ctx.isWorker || ctx.isPremium) {
+      try {
+        const tree = await getReferralTree(ctx.phone);
+        const stats = await getReferralStats();
+        const gaps = await findNetworkGaps(ctx.phone);
+        const networkSize = await getNetworkDepth(ctx.phone, 3);
+        lifeCtx += "\n" + buildReferralIntelligenceContext(tree, stats, gaps, networkSize, ctx.language || "bn");
+      } catch {}
+    }
   }
 
   // Build stage-aware scripts
