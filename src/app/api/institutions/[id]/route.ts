@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (updates.length === 0) return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     updates.push("updated_at = datetime('now')");
     vals.push(parseInt(id));
-    await invalidateCache("institutions");
+    await invalidateCache("institutions:*");
     await execute(db, `UPDATE institutions SET ${updates.join(", ")} WHERE id = ?`, vals);
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -43,7 +43,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   const { id } = await params;
   try {
     const db = await getDB();
-    await invalidateCache("institutions");
+    await invalidateCache("institutions:*");
     await execute(db, "UPDATE trainers SET institution_id = NULL WHERE institution_id = ?", [parseInt(id)]);
     await execute(db, "DELETE FROM institutions WHERE id = ?", [parseInt(id)]);
     return NextResponse.json({ success: true });
