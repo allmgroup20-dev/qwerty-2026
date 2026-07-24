@@ -140,6 +140,13 @@ async function executeAction(action: WorkflowAction, context: Record<string, unk
         if (to && subject && html) await sendEmail({ to, subject, html });
         break;
       }
+      case "send_sms": {
+        const { sendSMS } = await import("../sms");
+        const to = (action.config.to || context.phone) as string;
+        const text = (action.config.text || action.config.template) as string;
+        if (to && text) await sendSMS({ to, text });
+        break;
+      }
       case "create_task": {
         const db = await ensureDB();
         await db.prepare(

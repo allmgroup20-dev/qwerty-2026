@@ -1444,6 +1444,62 @@ async function ensureSchema(env: { DB: D1Database }): Promise<void> {
     env.DB.prepare(`INSERT OR IGNORE INTO notification_preferences (worker_id, channel, category, enabled)
       SELECT w.worker_id, 'push', 'reminder', 1 FROM workers w
     `).run().catch(() => {});
+
+    // ── Phase 3: Workflow, Email & Funnel Tables ──
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS workflow_definitions (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, name_bn TEXT, description TEXT,
+      trigger_type TEXT NOT NULL, trigger_config TEXT, steps TEXT NOT NULL,
+      is_active INTEGER DEFAULT 1, priority INTEGER DEFAULT 0,
+      cooldown_minutes INTEGER DEFAULT 60, tags TEXT,
+      created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
+    )`).run().catch(() => {});
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS workflow_executions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, workflow_id TEXT NOT NULL,
+      trigger_event TEXT NOT NULL, context_json TEXT NOT NULL,
+      status TEXT DEFAULT 'pending', current_step TEXT,
+      started_at TEXT DEFAULT (datetime('now')), completed_at TEXT, error TEXT
+    )`).run().catch(() => {});
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS funnel_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT NOT NULL,
+      stage TEXT NOT NULL, event TEXT NOT NULL, metadata TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run().catch(() => {});
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS email_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, recipient TEXT NOT NULL,
+      subject TEXT NOT NULL, html_body TEXT, status TEXT DEFAULT 'sent',
+      error TEXT, sent_at TEXT DEFAULT (datetime('now'))
+    )`).run().catch(() => {});
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS email_templates (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, subject TEXT NOT NULL,
+      subject_bn TEXT, html_body TEXT NOT NULL, html_body_bn TEXT,
+      category TEXT DEFAULT 'general'
+    )`).run().catch(() => {});
+
+    // ── Phase 4: Campaign Engine & SMS Tables ──
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS segment_campaigns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, name_bn TEXT,
+      segment TEXT NOT NULL, channel TEXT DEFAULT 'whatsapp',
+      template TEXT, template_bn TEXT, schedule TEXT DEFAULT 'immediate',
+      scheduled_hour INTEGER DEFAULT 10, is_active INTEGER DEFAULT 1,
+      max_per_batch INTEGER DEFAULT 50, cooldown_days INTEGER DEFAULT 7,
+      last_run_at TEXT, created_at TEXT DEFAULT (datetime('now'))
+    )`).run().catch(() => {});
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS campaign_analytics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, campaign_id INTEGER NOT NULL,
+      segment TEXT NOT NULL, total_targeted INTEGER DEFAULT 0,
+      total_sent INTEGER DEFAULT 0, delivered INTEGER DEFAULT 0,
+      read_count INTEGER DEFAULT 0, replied INTEGER DEFAULT 0,
+      converted INTEGER DEFAULT 0, run_at TEXT DEFAULT (datetime('now'))
+    )`).run().catch(() => {});
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS sms_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, recipient TEXT NOT NULL,
+      text TEXT, status TEXT DEFAULT 'sent', error TEXT,
+      sent_at TEXT DEFAULT (datetime('now'))
+    )`).run().catch(() => {});
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS sms_templates (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, text TEXT NOT NULL,
+      text_bn TEXT, category TEXT DEFAULT 'general'
+    )`).run().catch(() => {});
   } catch (e) {
     g[DONE_FLAG] = false;
     g[DONE_LOCK] = false;
